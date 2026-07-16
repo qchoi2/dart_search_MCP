@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import http.cookiejar
 import ssl
 import time
 import urllib.error
@@ -42,9 +43,22 @@ class HttpClient:
     ):
         self.timeout = timeout
         self.user_agent = user_agent
-        self._opener = opener or urllib.request.urlopen
-        self._sleep = sleeper
         self._context = ssl.create_default_context()
+        self._cookie_jar = http.cookiejar.CookieJar()
+        if opener is None:
+            director = urllib.request.build_opener(
+                urllib.request.HTTPCookieProcessor(self._cookie_jar),
+                urllib.request.HTTPSHandler(context=self._context),
+            )
+
+            def session_open(request, *, timeout, context):
+                del context
+                return director.open(request, timeout=timeout)
+
+            self._opener = session_open
+        else:
+            self._opener = opener
+        self._sleep = sleeper
 
     def request(
         self,

@@ -8,7 +8,8 @@ from __future__ import annotations
 
 SCHEMA_VERSION = "1.0"
 PRODUCT_VERSION = "0.1.0"
-USER_AGENT = f"DartDisclosureMCP/{PRODUCT_VERSION} (personal-local-research; contact=local-user)"
+# Stage 0/0.6 measurement used this explicitly identifying, non-browser UA.
+USER_AGENT = "dart-search-mcp-stage0-probe/0.1 (local measurement; concurrency=1)"
 
 FAST_LIST_REQUEST_BUDGET = 10
 FAST_DART_REQUEST_BUDGET = 3
