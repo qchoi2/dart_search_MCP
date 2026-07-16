@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "official_report_name_prefixes": [
+    "[기재정정]", "[첨부정정]", "[첨부추가]", "[변경등록]",
+    "[연장결정]", "[발행조건확정]", "[정정명령부과]", "[정정제출요구]"
+  ],
+  "rm_meanings": {
+    "유": "유가증권시장", "코": "코스닥시장", "넥": "코넥스시장",
+    "공": "공정거래위원회", "연": "연결", "채": "채권상장법인",
+    "정": "정정공시", "철": "철회후보"
+  },
+  "confirmed_rm_flags": ["유", "코", "넥", "공", "연", "채"],
+  "candidate_only_rm_flags": ["정", "철"],
+  "withdrawal_verification_fields": ["original_receipt_no", "original_filing_date", "document_evidence"]
+}

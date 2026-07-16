@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "cache": {
+    "session_enabled": true,
+    "ttl_disk_enabled": false,
+    "ttl_hours": 24,
+    "max_size_mb": 500
+  },
+  "search": {
+    "list_concurrency": 2,
+    "document_concurrency": 3,
+    "local_parse_concurrency": 4,
+    "interactive_document_budget": 40,
+    "amendment_document_budget": 80,
+    "amendment_document_budget_max": 120,
+    "max_results": 20
+  },
+  "batch": {
+    "recommended_confirmation_minutes": 10,
+    "checkpoint_retention_days": 7
+  },
+  "audit": {"enabled": true, "retention_days": 30},
+  "features": {"dart_fulltext": true, "kind_search": false, "orchestrator": true}
+}

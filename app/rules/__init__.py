@@ -1,0 +1,1 @@
+"""Versioned rule resources."""
