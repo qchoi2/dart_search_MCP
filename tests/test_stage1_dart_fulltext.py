@@ -98,6 +98,8 @@ class FulltextTests(unittest.TestCase):
         with self.assertRaises(SearchError) as caught:
             client.search_page("x", date(2026, 1, 1), date(2026, 1, 2), diagnostics)
         self.assertEqual(caught.exception.code, ErrorCode.DART_FULLTEXT_STRUCTURE_CHANGED)
+        self.assertEqual(diagnostics.health_check_requests, 1)
+        self.assertEqual(diagnostics.dart_result_page_requests, 1)
         self.assertEqual(breaker.state.status, ChannelStatus.CIRCUIT_OPEN)
         self.assertEqual(breaker.state.blocked_until, 1900.0)
         request_count = len(http.requests)

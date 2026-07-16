@@ -287,7 +287,7 @@ class DartFulltextClient:
         return self.http.request(method, url, **kwargs)
 
     @staticmethod
-    def _form(query: str, date_from: date, date_to: date, mode: str, page: int) -> dict[str, str]:
+    def _form(query: str, date_from: date, date_to: date, mode: str, page: int, company: str | None = None) -> dict[str, str]:
         compact_from = date_from.strftime("%Y%m%d")
         compact_to = date_to.strftime("%Y%m%d")
         form = {
@@ -295,7 +295,7 @@ class DartFulltextClient:
             "sort": "DATE", "sortType": "desc", "option": mode,
             "keyword": query if mode == "contents" else "", "b_keyword": query if mode == "contents" else "",
             "reportName": query if mode == "report" else "", "b_reportName": query if mode == "report" else "",
-            "textCrpCik": "", "textCrpNm": "", "flrCik": "", "textPresenterNm": "",
+            "textCrpCik": "", "textCrpNm": company or "", "flrCik": "", "textPresenterNm": "",
             "startDate": compact_from, "endDate": compact_to,
             "b_startDate": compact_from, "b_endDate": compact_to,
             "docType": "", "b_docType": "", "dspTypeTab": "", "b_dspType": "",
@@ -343,11 +343,12 @@ class DartFulltextClient:
         mode: str = "contents",
         page: int = 1,
         request_budget: int = STANDARD_DART_REQUEST_BUDGET,
+        company: str | None = None,
     ) -> DartSearchPage:
         self._ensure_available(diagnostics)
         if mode not in MODE_ENDPOINTS:
             raise ValueError("mode must be contents or report")
-        form = self._form(query, date_from, date_to, mode, page)
+        form = self._form(query, date_from, date_to, mode, page, company)
         referer = {"Referer": f"{DART_BASE}/dsab007/main.do", "X-Requested-With": "XMLHttpRequest"}
         try:
             if self._active_mode != mode:
@@ -365,7 +366,8 @@ class DartFulltextClient:
                 # One status-diagnostic replay is required before structure failure is confirmed.
                 if diagnostics.health_check_requests + diagnostics.mode_setup_requests + diagnostics.dart_result_page_requests < request_budget:
                     retry = self._paced_request("POST", f"{DART_BASE}/dsab007/search.ax", form=form, headers=referer)
-                    diagnostics.dart_result_page_requests += 1
+                    # This replay is a structure-status diagnosis, not a new result page.
+                    diagnostics.health_check_requests += 1
                     parsed = parse_search_html(retry.body.decode("utf-8", errors="replace"), page)
                 if parsed.classification == "structure_failure_candidate":
                     self.breaker.failure("structure_or_access")
@@ -396,13 +398,14 @@ class DartFulltextClient:
         *,
         request_budget: int = STANDARD_DART_REQUEST_BUDGET,
         max_unique: int | None = None,
+        company: str | None = None,
     ) -> list[DisclosureCandidate]:
         rows: list[DartResultRow] = []
         query_by_receipt: dict[str, str] = {}
         for query in queries:
             page = 1
             while True:
-                result = self.search_page(query, date_from, date_to, diagnostics, page=page, request_budget=request_budget)
+                result = self.search_page(query, date_from, date_to, diagnostics, page=page, request_budget=request_budget, company=company)
                 for row in result.rows:
                     rows.append(row)
                     query_by_receipt.setdefault(row.receipt_no, query)
