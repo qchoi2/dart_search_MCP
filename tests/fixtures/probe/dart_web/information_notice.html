@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ko" lang="ko">
+	<head>
+		<title>전자공시시스템 | DART소개 | 정보이용시 유의사항</title>
+		<meta charset="UTF-8">
+		<meta id="Viewport" name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=yes">
+		<meta http-equiv="X-UA-Compatible" content="ie=edge">
+		
+
+	
+<script type="text/javascript" src="/resource/js/jquery-3.3.1.min.js"></script>
+
+<link rel="stylesheet" href="/js/jquery-ui/jquery-ui.min.css">
+<script type="text/javascript" src="/js/jquery-ui/jquery-ui.min.js"></script>
+
+<!-- 2011.11.01 ext 2.3 -->
+<!--[if lte IE 8]><link rel="stylesheet" type="text/css" href="/js/ext-main/resources/css/ext-all-ie8.css" /><![endif]-->
+<script type="text/javascript" src="/js/ext-main/adapter/ext/ext-base.js"></script>
+<script type="text/javascript" src="/js/ext-main/ext-all.js"></script>
+
+<!-- x-xeries js libraries  -->
+<script type="text/javascript" src="/js/xjs.js?ver=4"></script>
+
+<!-- application js libraries -->
+<script type="text/javascript" src="/js/jsval.js" ></script>
+
+<!-- 웹표준 추가 스크립트-->
+<script type="text/javascript" src="/js/jquery/gotop.js"></script>
+
+<!-- 웹표준화적용사항 위반으로 DSAB001L.jsp에서 헤드로 위치 이동 -->
+<style type="text/css">
+.checked-icon {background-image: url(/images/temp/add.gif);}
+.ui-autocomplete {max-height: 100px; overflow-y: auto; overflow-x: hidden;}
+.ui-menu-item .ui-menu-item-wrapper.ui-state-active {background: #eaeaea !important; border: none; color:#333;}
+</style>
+<!--end -->
+
+<!-- 추가 되는 js, css 시작 -->
+<link rel="stylesheet" href="/resource/css/bootstrap.min.css">
+<link rel="stylesheet" href="/resource/css/slick.css">
+<link rel="stylesheet" href="/js/jsTree/default/style.css" />
+<link rel="stylesheet" href="/resource/css/bootstrap-datepicker3.css">
+<script type="text/javascript" src="/resource/js/bootstrap.bundle.min.js"></script>
+<script type="text/javascript" src="/resource/js/slick.min.js"></script>
+<script type="text/javascript" src="/js/jsTree/jstree.js"></script>
+<script type="text/javascript" src="/js/bootstrap-datepicker.js"></script>
+<script type="text/javascript" src="/js/bootstrap-datepicker.kr.min.js"></script>
+<script type="text/javascript" src="/js/idart/idart.js"></script><!-- idart용 -->
+<!-- 추가 되는 js, css 끝 -->
+
+<script type="text/javascript">
+function loadHistoryContents() {
+	xajax.initParameter();
+	xajax.blockUI = false;
+	xajax.simpleSend("/dsaf001/history.ax", function(html) {
+		$j("#wingWrap").html(html);
+	});
+}
+
+</script>
+<script type="text/javascript">
+(
+	function(){
+		var s=function(){
+				__flash__removeCallback=function(i,n){if(i)i[n]=null;
+			};window.setTimeout(s,10);
+		};s();
+	}
+)();
+</script>
+
+<script type="text/javascript">
+function otherGongsi(){
+	var f_select = document.getElementById("f_select");
+	var link = f_select.options[f_select.selectedIndex].value;
+	if(link != "f_slt_1"){
+		window.open(link);
+	}
+	if(link == "f_slt_1"){
+		alert("해외전자공시를 선택해주세요");
+	}
+}
+</script>
+		
+
+	
+<link id="commonCss" rel="stylesheet" href="/css/common.css?ver=1.13" />
+<link id="userCssWeb" rel="stylesheet" href="/css/web.css?ver=24" />
+<link id="userCssTab" rel="stylesheet" href="/css/tablet.css?ver=11" />
+<link id="userCssMob" rel="stylesheet" href="/css/mobile.css?ver=14" />
+<link id="userCssFnt" rel="stylesheet" href="/css/fonts.css?ver=1.13" />
+
+<script type="text/javascript" src="/js/common.js?ver=7"></script>
+
+		<script type="text/javascript">
+		//localStorage
+		/* 향후 다크모드 적용발전을 위한 테스트
+		darkModeToggle('init');
+		function darkModeToggle(type){
+			var mode = localStorage.getItem('dartMode');
+			
+			if(!(type && type == 'init')){
+				if(mode && mode == 'on'){
+					//현재 dark 모드
+					localStorage.setItem('dartMode','off');
+				}else{
+					//현재 dark 모드
+					localStorage.setItem('dartMode','on');
+				}
+				
+				mode = localStorage.getItem('dartMode');
+			}
+			
+			if(mode && mode == 'on'){
+				$j('html').addClass('theme-dark');
+			}else{
+				$j('html').removeClass('theme-dark');
+			}
+		}
+		*/
+		
+		var word = fn_getLocalStorage('defaultSearchWord');
+		var val  = fn_getLocalStorage('defaultSearchValue');
+		
+		$j(document).ready(function() {				
+			
+			if(word && val){
+				var optionVal = val.replace(/\"/gi,'');
+				
+				if(optionVal=="corp"){
+					getRef("headOption").innerHTML = "<option value='''>전체</option><option value='corp' selected>회사명</option><option value='report'>보고서명</option><option value='reportList'>보고서 목차명</option><option value='contents'>본문내용</option><option value='high'>고급검색</option>";
+				}else if(optionVal=="report"){
+					getRef("headOption").innerHTML = "<option value='''>전체</option><option value='corp'>회사명</option><option value='report' selected>보고서명</option><option value='reportList'>보고서 목차명</option><option value='contents'>본문내용</option><option value='high'>고급검색</option>";
+				}else if(optionVal=="reportList"){
+					getRef("headOption").innerHTML = "<option value='''>전체</option><option value='corp'>회사명</option><option value='report'>보고서명</option><option value='reportList' selected>보고서 목차명</option><option value='contents'>본문내용</option><option value='high'>고급검색</option>";
+				}else if(optionVal=="contents"){
+					getRef("headOption").innerHTML = "<option value='''>전체</option><option value='corp'>회사명</option><option value='report'>보고서명</option><option value='reportList'>보고서 목차명</option><option value='contents' selected>본문내용</option><option value='high'>고급검색</option>";
+				}else if(optionVal=="contents"){
+					getRef("headOption").innerHTML = "<option value='''>전체</option><option value='corp'>회사명</option><option value='report'>보고서명</option><option value='reportList'>보고서 목차명</option><option value='contents'>본문내용</option><option value='high' selected>고급검색</option>";
+				}else{
+					getRef("headOption").innerHTML = "<option value=''' selected>전체</option><option value='corp'>회사명</option><option value='report'>보고서명</option><option value='reportList'>보고서 목차명</option><option value='contents'>본문내용</option><option value='high'>고급검색</option>";
+				}
+					
+			}else{
+				getRef("headOption").innerHTML = "<option value='''>전체</option><option value='corp' selected>회사명</option><option value='report'>보고서명</option><option value='reportList'>보고서 목차명</option><option value='contents'>본문내용</option><option value='high'>고급검색</option>";
+			}
+			
+			fn_headOptionChange();
+			fn_scrollWingWrapSub();
+		});
+		/* wingWrap */
+		function fn_scrollWingWrapSub(){
+			$j(window).scroll(function(){
+				var scrollTop = $j(document).scrollTop()+266;
+				if(scrollTop < 266){
+					scrollTop = 266;
+				}
+				$j('#wingWrap').stop();
+				$j('#wingWrap').animate({'top':scrollTop});
+			});
+		}
+	</script>
+	</head>
+	<body>
+	
+	<!-- 본문 바로가기 -->
+		<!-- skipMenu -->
+		<div class="loadingMask" id="loadingMask" style="display:none"></div>
+		<div class="loadingWrap" id="loadingWrap" style="display:none">
+			<div class="loadingImg"></div>
+			<div class="loadingMessage">잠시만 기다려주세요.</div>
+		</div>
+		<div class="skipMenu"><a href="#contents">본문 바로가기</a></div>
+		
+		<div class="wrapper subPageBg">
+			
+
+<script type="text/javascript">
+function openReportViewerEng(rcpNo, dcmNo){
+	var url = "/dsbh001/main.do?rcpNo=" + rcpNo;
+	if (dcmNo) {
+		//<![CDATA[
+		url += "&dcmNo=" + dcmNo;
+		//]]>
+	}
+
+	var size = getOpenSize(1024, 768);
+	window.open(url, rcpNo, size+",resizable=yes");
+	$j("#r_"+rcpNo).css("color","#cd0093");
+}
+
+var win_num = 1;
+function openReportViewer(rcpNo, dcmNo){
+	var url = "/dsaf001/main.do?rcpNo=" + rcpNo;
+	if (dcmNo) {
+		//<![CDATA[
+		url += "&dcmNo=" + dcmNo;
+		//]]>
+	}
+
+	var size = getOpenSize(1200, 810);
+	window.open(url, rcpNo+win_num, size+",resizable=yes");
+	win_num++;
+	if (dcmNo) {
+		$j("#r_"+rcpNo+dcmNo).css("color","#cd0093");
+	}else{
+		$j("#r_"+rcpNo).css("color","#cd0093");
+	}
+}
+
+function openReportViewerParam(rcpNo, dcmNo, params){
+	var url = "/dsaf001/main.do?rcpNo=" + rcpNo;
+	if (dcmNo) {
+		//<![CDATA[
+		url += "&dcmNo=" + dcmNo;
+		//]]>
+	}
+	if (params) {
+		//<![CDATA[
+		url += params;
+		//]]>
+	}
+
+	var size = getOpenSize(1200, 810);
+	window.open(url, rcpNo+win_num, size+",resizable=yes");
+	win_num++;
+	if (dcmNo) {
+		$j("#r_"+rcpNo+dcmNo).css("color","#cd0093");
+	}else{
+		$j("#r_"+rcpNo).css("color","#cd0093");
+	}
+}
+
+function openReportListViewer(rcpNo, dcmNo, eleId){
+
+	var url = "/dsaf001/main.do?rcpNo=" + rcpNo;
+	if (dcmNo) {
+		//<![CDATA[
+		url += "&dcmNo=" + dcmNo;
+		//]]>
+		if(eleId) {
+			url += "&eleId=" + eleId;
+		}
+	}
+
+	var size = getOpenSize(1200, 810);
+	window.open(url, rcpNo+win_num, size+",resizable=yes");
+	win_num++;
+	if (dcmNo) {
+		$j("#r_"+rcpNo+dcmNo).css("color","#cd0093");
+	}else{
+		$j("#r_"+rcpNo).css("color","#cd0093");
+	}
+}
+
+/*
+ * 통합검색용 문서뷰어 팝업 호출
+ * nrseo 2010. 10. 20
+ * 2016.09.30 jsp에 직접 명시 하여 미사용(DSAB007A.jsp)
+ * - a:visited 미작동으로 인한 조치
+ */
+function openReportViewerKeyword(rcpNo, dcmNo, keyword){
+	var url = "/dsaf001/main.do?rcpNo=" + rcpNo;
+	if (dcmNo) {
+		//<![CDATA[
+		url += "&dcmNo=" + dcmNo;
+		//]]>
+	}
+	//<![CDATA[
+	url += "&keyword=" + encodeURIComponent(keyword);
+	//]]>
+
+	var size = getOpenSize(1024, 768);
+	window.open(url, rcpNo+win_num, size+",resizable=yes");
+	win_num++;
+	if (dcmNo) {
+		$j("#r_"+rcpNo+dcmNo).css("color","#cd0093");
+	}else{
+		$j("#r_"+rcpNo).css("color","#cd0093");
+	}
+}
+
+/*
+ * 메인화면 전용
+ */
+function openReportViewerMain(rcpNo, dcmNo){
+	var url = "/dsaf001/main.do?rcpNo=" + rcpNo;
+	if (dcmNo) {
+		//<![CDATA[
+		url += "&dcmNo=" + dcmNo;
+		//]]>
+	}
+
+	var size = getOpenSize(1200, 810);
+	window.open(url, rcpNo+win_num, size+",resizable=yes");
+	win_num++;
+}
+
+/*
+ * 사용(xbrl 미리보기)
+ */
+function openXbrlViewer(rcpNo, dcmNo, lang){
+	var url = "";
+	if (lang == "en") url = "https://englishdart.fss.or.kr/dsbh002/main.do?rcpNo=" + rcpNo;
+	else url = "/dsaf002/main.do?rcpNo=" + rcpNo;
+	
+	if (dcmNo) {
+		//<![CDATA[
+		url += "&dcmNo=" + dcmNo;
+		//]]>
+	}
+
+	var size = getOpenSize(1200, 810);
+	window.open(url, "_blank", size+",resizable=yes");
+}
+
+/*
+ * 사용(xbrl뷰어 열기 팝업(opendart link))
+ */
+function openXbrlViewerNew(opendartUrl, rcpNo, stat, preview) {
+	if (stat == "Y") {
+		var url = opendartUrl + "/xbrl/viewer/main.do?rcpNo=" + rcpNo;
+
+		var size = getOpenSize(1200, 810);
+		window.open( url, rcpNo+win_num, size+",resizable=yes" );
+		win_num++;
+	} else if (stat == "N") {
+		if (preview == "Y") {
+			openXbrlViewer(rcpNo, "", "");
+		} else {
+			alert( '문서 생성중 입니다.\n잠시 후 다시 조회 하시기 바랍니다.' );
+		}
+	} else {
+		alert( '생성된 문서가 없습니다.' );
+	}
+}
+
+//영문보기
+function openViewer(rcpNo, lang){
+	var url = "";
+	if (lang == "en") url = "https://englishdart.fss.or.kr/dsbh001/main.do?rcpNo=" + rcpNo;
+	else url = "/dsaf001/main.do?rcpNo=" + rcpNo;
+
+	var size = getOpenSize(1200, 810);
+	window.open(url, "_blank", size+",resizable=yes");
+}
+
+function openHelp(menu) {
+	var url = "/guide/main.jsp";
+	if (menu) {
+		url += "?menu=" + menu;
+	}
+	var size = getOpenSize(1100, 761);
+	var win = window.open(url, "DartGuide", size + ",resizable=yes,scrollbars=no");
+	if (win == null) {
+		alert("팝업차단을 해제하시기 바랍니다.");
+	} else {
+		win.focus();
+	}
+}
+
+</script>
+<form name="reportForm" method="post" action="/dsaf001/main.do">
+	<input type="hidden" name="rcpNo" />
+	<input type="hidden" name="dcmNo" />
+	<input type="hidden" name="keyword" />
+	<input type="submit" style="display:none;" />
+</form>
+
+			<!-- TOP LAYOUT START -->
+			<div class="headerWrap">
+				<div class="header">
+					
+
+
+<!--  jsp:include flush="true"	page="/WEB-INF/jsp/include/includeTopLink.jsp" />-->
+<button class="btnMenu" title="메뉴 열기 버튼"></button>
+<div class="headerTop">
+	<h1 class="logo" title="DART시스템 "><a href="/main.do">홈으로 가기</a></h1>
+</div>
+<div class="headerBottom">
+	<div class="utilMenu">		
+		<form name="headSearchForm" id="headSearchForm" method="post" onsubmit="return false">
+			<input type="hidden" name="autoSearch" value="Y" />
+			<input type="hidden" name="selDate" id="headSelDate" value="4"/>
+			<input type="hidden" name="startDate" id="headStartDate" value=""/>
+			<input type="hidden" name="endDate" id="headEndDate" value=""/>
+			<input type="hidden" name="lateKeyword" id="headLateKeyword" value="0"/>
+			 
+			<div class="topSearchWrap dpfl">
+				<span class="frmSelect mgR5">
+					<label for="headOption">선택</label>
+					<select id="headOption" name="option" title="목록선택" onchange="fn_headOptionChange();">
+					</select>
+				</span>	
+				<span class="topSearch dpfl">					
+					<input type="text" name="keyword" id="headKeyword" title="검색어 입력" class="dpno" placeholder="검색어 입력" onkeypress="if(event.keyCode==13){headSearch(1); return false;}"/><label for="headKeyword">선택</label>
+					<input type="text" name="textCrpNm" id="headTextCrpNm" title="회사명/종목코드 입력" class="dpno" placeholder="회사명/종목코드 입력" onkeypress="if(event.keyCode==13){headSearch(1); return false;}" style="display:none"/><label for="headTextCrpNm">선택</label>
+					<input type="text" name="reportName" id="headReportName" title="보고서명 입력" class="dpno" placeholder="보고서명 입력" onkeypress="if(event.keyCode==13){headSearch(1); return false;}" style="display:none"/><label for="headReportName">선택</label>
+					<input type="text" name="tocSrch" id="headTocSrch" title="보고서목차명 입력" class="dpno" placeholder="보고서목차명 입력" onkeypress="if(event.keyCode==13){headSearch(1); return false;}" style="display:none"/><label for="headTocSrch">선택</label>
+					<input type="text" name="searchWord" id="headSearchWord" class="w01" title="회사명 보고서명 입력" placeholder="회사명 보고서명 입력" onkeypress="if(event.keyCode==13){headSearch(1); return false;}" style="display:none" /><label for="headSearchWord">선택</label>
+					<input type="text" name="contentWord" id="headContentWord" title="본문내용 입력" placeholder="본문내용 입력" onkeypress="if(event.keyCode==13){headSearch(1); return false;}" style="display:none" /><label for="headContentWord">선택</label>
+					<button onclick="headSearch()">검색</button>
+				</span>
+			</div>
+			<div class="languageChoice">
+			<ul>
+				<li><a href="https://englishdart.fss.or.kr" target="_blank">ENGLISH</a></li>
+			</ul>
+		</div>
+		</form>
+	</div>
+
+	<div class="gnb">
+		<ul>
+			<li id="menu_1">
+				<a data-click="/dsac001/mainY.do" href="javascript:void(0);">최근공시</a>
+				<ul>
+					<li><a onClick="goMenu('/dsac001/mainY.do', '');" href="javascript:void(0);">유가증권시장</a></li>
+					<li><a onClick="goMenu('/dsac001/mainK.do', '');" href="javascript:void(0);">코스닥시장</a></li>
+					<li><a onClick="goMenu('/dsac001/mainN.do', '');" href="javascript:void(0);">코넥스시장</a></li>
+					<li><a onClick="goMenu('/dsac001/mainG.do', '');" href="javascript:void(0);">기타법인</a></li>
+					<li><a onClick="goMenu('/dsac001/mainAll.do', '');" href="javascript:void(0);">전체</a></li>
+					<li><a onClick="goMenu('/dsac001/mainO.do', '');" href="javascript:void(0);">5%ㆍ임원보고</a></li>
+					<li><a onClick="goMenu('/dsac001/mainF.do', '');" href="javascript:void(0);">펀드공시</a></li>
+					<li><a onClick="goMenu('/dsac001/mainMy.do', '');" href="javascript:void(0);">My공시</a></li>
+				</ul>
+			</li>
+			<li id="menu_2" >
+				<a data-click="/dsab007/main.do?option=corp" href="javascript:void(0);">공시서류검색</a>
+				<ul>
+					<li><a onClick="goMenu('/dsab007/main.do?option=corp', '');" href="javascript:void(0);">공시통합검색</a></li>
+					<li><a onClick="goMenu('/dsab001/main.do', '');" href="javascript:void(0);">회사별검색</a></li>
+					
+					<li><a onClick="goMenu('/dsab005/main.do', '');" href="javascript:void(0);">펀드공시상세검색</a></li>
+					<li><a onClick="goMenu('/dsac003/mainY.do', '');" href="javascript:void(0);">최근정정보고서</a></li>
+					<li><a onClick="goMenu('/dsac004/main.do', '');" href="javascript:void(0);">최근삭제보고서</a></li>
+					<li><a onClick="goMenu('/dsab009/main.do', '');" href="javascript:void(0);">고급검색</a></li>
+				</ul>
+			</li>
+			
+			<li id="menu_3">
+				<a data-click="/dsae001/main.do" href="javascript:void(0);">기업개황</a>
+				<ul>
+					<li><a onClick="goMenu('/dsae001/main.do', '');" href="javascript:void(0);">기업개황</a></li>
+				</ul>
+			</li>
+	
+			 
+			<li id="menu_4">
+				<a data-click="/dsac005/main.do" href="javascript:void(0);">공모정보</a>
+				<ul>
+					<li><a onClick="goMenu('/dsac005/main.do', '');" href="javascript:void(0);">공모게시판</a></li>
+					<li><a onClick="goMenu('/dsac006/main.do', '');" href="javascript:void(0);">발행공시 검색</a></li>
+					<li><a onClick="goMenu('/dsac007/main.do', '');" href="javascript:void(0);">모집ㆍ매출 실적</a></li>
+					<li><a onClick="goMenu('/dsac008/main.do', '');" href="javascript:void(0);">청약달력(지분증권)</a></li>
+				</ul>
+			</li>
+			
+			<li>
+				<a data-click="https://opendart.fss.or.kr/disclosureinfo/biz/main.do" href="javascript:void(0);" data-gubun="open">OpenDART</a>
+				<ul>
+					<li><a href="https://opendart.fss.or.kr/disclosureinfo/biz/main.do" target="_blank">공시정보활용마당<i class="outsideLink">외부링크</i></a></li>
+					<li><a href="https://opendart.fss.or.kr/intro/infoApiList.do" target="_blank">오픈API<i class="outsideLink">외부링크</i></a></li>
+				</ul>
+			</li>
+			<li><a data-click="/info/main.do" href="javascript:void(0);" data-gubun="open">공시업무ㆍ제도</a>
+				<ul>
+					<li><a href="/info/main.do" target="_blank">기업공시길라잡이<i class="outsideLink">외부링크</i></a></li>
+					<li><a href="/info/searchGuide.do" target="_blank">기업공시제도일반<i class="outsideLink">외부링크</i></a></li>
+					<li><a href="/info/searchBodo.do" target="_blank">보도자료<i class="outsideLink">외부링크</i></a></li>
+					<li><a href="/info/main.do?menu=410" target="_blank">정기보고서 제출기한<i class="outsideLink">외부링크</i></a></li>
+				</ul>
+			</li>
+			<li><a data-click="/introduction/content1.do" href="javascript:void(0);">DART 소개</a>
+				<ul class="last">
+					<li><a onClick="goMenu('/introduction/content1.do', '');" href="javascript:void(0);">전자공시시스템이란</a></li>
+					<li><a onClick="goMenu('/introduction/content2.do', '');" href="javascript:void(0);">보고서정보</a></li>
+					<li><a onClick="goMenu('/introduction/content3.do', '');" href="javascript:void(0);">관계법규 등</a></li>
+					<li><a onClick="goMenu('/introduction/content4.do', '');" href="javascript:void(0);">정정신고서이용시 유의사항</a></li>
+					<li><a onClick="goMenu('/dsah004/main.do', '');" href="javascript:void(0);">DART알림마당</a></li>
+					<li><a onClick="goMenu('/introduction/content5.do', '');" href="javascript:void(0);">정보이용시 유의사항</a></li>
+					<li><a onClick="goMenu('/introduction/content6.do', '');" href="javascript:void(0);">RSS</a></li>
+				</ul>
+			</li>
+		</ul>
+	</div>
+	<button class="btnMenuAll" title="전체메뉴가기" onclick="location.href='/sitemap.do'">전체메뉴보기</button>
+	<button class="btnMenuClose" title="메뉴 닫기 버튼"></button>
+	<div class="subBg"></div>
+	<div class="mask"></div>
+</div>
+				</div>
+			</div>
+			<!-- TOP LAYOUT END -->
+			<!-- BODY LALYOUT START -->
+			<div id="container">
+				
+				<div id="contentsWrap">
+					<!-- LEFT LALYOUT START -->
+					
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+
+function menuOn(obj, url) {
+	/*자바스크립트를 제거 하더라도 이동이 가능하도록 a태그 안에 실제 URL맵핑함 2012/06/12 유영근*/
+	$j("#lnbWrap").find(".on").removeClass();
+	$j(obj).parent().addClass("on");
+	moveMenu(url);
+}
+function moveMenu(url) {
+	document.location.replace(url);
+}
+</script>
+<div id="lnbWrap">
+
+	
+	
+	
+	
+	
+	
+	
+	
+	<div id="lnb">
+		<h2>DART 소개</h2>
+		<ul>
+			<li id="introduction_content1">
+				<a href="#none" onclick="menuOn(this, '/introduction/content1.do');">전자공시시스템이란</a>	
+			</li>
+			<li id="introduction_content2">
+				<a href="#none" onclick="menuOn(this, '/introduction/content2.do');">보고서정보</a>	
+			</li>
+			<li id="introduction_content3">
+				<a href="#none" onclick="menuOn(this, '/introduction/content3.do');">관계법규 등</a>	
+			</li>
+			<li id="introduction_content4">
+				<a href="#none" onclick="menuOn(this, '/introduction/content4.do');">정정신고서이용시 유의사항</a>	
+			</li>
+			<li id="dsah004_main">
+				<a href="#none" onclick="menuOn(this, '/dsah004/main.do');">DART알림마당</a>	
+			</li>
+			<li id="introduction_content5">
+				<a href="#none" onclick="menuOn(this, '/introduction/content5.do');">정보이용시 유의사항</a>	
+			</li>
+			<li id="introduction_content6">
+				<a href="#none" onclick="menuOn(this, '/introduction/content6.do');">RSS</a>	
+			</li>
+		</ul>
+	</div>
+	
+	
+	
+	
+
+</div>
+					<!-- LEFT LAYOUT END -->
+					
+					<!-- MAIN LALYOUT START -->
+					<div id="contents" >
+						
+
+
+
+
+
+
+
+
+
+
+
+<script>
+	$j(document).ready(function() {
+		
+		
+		var uri = "/introduction/content5.do";
+		
+		var menuPath = uri.split("/");
+		var tempPath;
+		if(menuPath.length == 3){
+			tempPath = menuPath[2].split('.');
+			menuPath[2] = tempPath[0]
+		}
+		
+		var menuData = 
+		{
+			"dsac001":{
+				"mainY":{
+					"subTitle":"유가증권시장",
+					"path":["home" ,"최근공시", "유가증권시장"]
+				},
+				"mainK":{
+					"subTitle":"코스닥시장",
+					"path":["home" ,"최근공시", "코스닥시장"]
+				},	
+				"mainN":{
+					"subTitle":"코넥스시장",
+					"path":["home" ,"최근공시", "코넥스시장"]
+				},	
+				"mainG":{
+					"subTitle":"기타법인",
+					"path":["home" ,"최근공시", "기타법인"]
+				},	
+				"mainAll":{
+					"subTitle":"전체",
+					"path":["home" ,"최근공시", "전체"]
+				},	
+				"mainO":{
+					"subTitle":"5%ㆍ임원보고",
+					"path":["home" ,"최근공시", "5%ㆍ임원보고"]
+				},	
+				"mainF":{
+					"subTitle":"펀드공시",
+					"path":["home" ,"최근공시", "펀드공시"]
+				},	
+				"mainMy":{
+					"subTitle":"My 공시",
+					"path":["home" ,"최근공시", "My 공시"]
+				},
+			},  "dsac003":{
+				"mainY":{
+					"subTitle":"최근정정보고서",
+					"path":["home" ,"공시서류검색", "최근정정보고서"]
+				}
+			}, "dsac004":{
+				"main":{
+					"subTitle":"최근삭제보고서",
+					"path":["home" ,"공시서류검색", "최근삭제보고서"]
+				}
+			}, "dsab009":{
+				"main":{
+					"subTitle":"고급검색",
+					"path":["home" ,"공시서류검색", "고급검색"]
+				}			
+			}, "dsac005":{
+				"main":{
+					"subTitle":"공모게시판",
+					"path":["home" ,"공모정보", "공모게시판"]
+				}
+			}, "dsac006":{
+				"main":{
+					"subTitle":"발행공시 검색",
+					"path":["home" ,"공모정보", "발행공시 검색"]
+				}
+			}, "dsac007":{
+				"main":{
+					"subTitle":"모집ㆍ매출 실적",
+					"path":["home" ,"공모정보", "모집ㆍ매출 실적"]
+				}
+			}, "dsac008":{
+				"main":{
+					"subTitle":"청약 달력(지분증권)",
+					"path":["home" ,"공모정보", "청약 달력(지분증권)"]
+				}
+			}, "dsab005":{
+				"main":{
+					"subTitle":"펀드공시상세검색",
+					"path":["home" ,"공시서류검색", "펀드공시상세검색"]
+				}
+			}, "dsah004":{
+				"main":{
+					"subTitle":"DART알림마당",
+					"path":["home" ,"공시업무ㆍ제도", "DART알림마당"]
+				},
+				"select":{
+					"subTitle":"DART알림마당",
+					"path":["home" ,"공시업무ㆍ제도", "DART알림마당"]
+				}
+			}, "dsab007":{
+				"main":{
+					"subTitle":"공시통합검색",
+					"path":["home" ,"공시서류검색", "공시통합검색"]
+				}
+			}, "dsab001": {
+				"main":{
+					"subTitle":"회사별 검색",
+					"path":["home" ,"공시서류검색", "회사별검색"]
+				}
+			}, "dsae001":{
+				"main":{
+					"subTitle":"기업개황",
+					"path":["home" ,"기업개황",""]
+				}
+			}, "introduction":{
+				"content1":{
+					"subTitle":"전자공시시스템이란",
+					"path":["home" ,"DART 소개","전자공시시스템이란"]
+				},
+				"content2":{
+					"subTitle":"보고서정보",
+					"path":["home" ,"DART 소개","보고서정보"]
+				},
+				"content3":{
+					"subTitle":"관계법규 등",
+					"path":["home" ,"DART 소개","관계법규 등"]
+				},
+				"content4":{
+					"subTitle":"정정신고서이용시 유의사항",
+					"path":["home" ,"DART 소개","정정신고서이용시 유의사항"]
+				},
+				"content5":{
+					"subTitle":"정보이용시 유의사항",
+					"path":["home" ,"DART 소개","정보이용시 유의사항"]
+				},
+				"content6":{
+					"subTitle":"RSS",
+					"path":["home" ,"DART 소개","RSS"]
+				}
+			}, "sitemap":{
+				"sitemap":{
+					"subTitle":"사이트 맵",
+					"path":["home" ,"사이트 맵",""]
+				}
+			}
+		}	
+		
+		if(menuPath.length == 3){
+			var menu = menuData[menuPath[1]][menuPath[2]]
+			$j("#subTitle").text(menu.subTitle);
+			
+			var pathHTML = "";
+			var path = menu["path"];
+			path.forEach(function(data,key){
+				pathHTML += "<li>" + data + "</li>";
+			});
+			$j("#path").html(pathHTML);
+			
+			//상세화면 조건분리
+			if(menuPath[1] == 'dsah004' || menuPath[2] == 'select'){
+				menuPath[2] = 'main';
+			}
+			//menu on
+			$j("#"+menuPath[1] + '_' + menuPath[2]).addClass("on");
+		}
+		//상세화면 조건분리
+		if(menuPath[1] == 'sitemap.do'){
+			menuPath[1] = 'sitemap';
+			menuPath[2] = 'sitemap';
+			var menu = menuData[menuPath[1]][menuPath[2]]
+			$j("#subTitle").text(menu.subTitle);
+			
+			var pathHTML = "";
+			var path = menu["path"];
+			path.forEach(function(data,key){
+				pathHTML += "<li>" + data + "</li>";
+			});
+			$j("#path").html(pathHTML);
+		}
+	});
+</script>
+ <div class="headTitle">
+	<h3 id="subTitle"></h3>
+	<ul class="navy" id="path">
+	</ul>
+</div>
+						
+
+
+
+
+
+
+
+
+
+
+<!-- split -->
+<div class="splitWrap">
+	<!-- messageBox -->
+	<div class="messageBoxBig">
+		<ul>
+			<i class="iconInfoO"></i>
+			<li class="info"><span class="txtCB bold">DART 공시서류는</span> 공시의무자인 <span class="txtCB bold">제출인</span>의  <span class="txtCB bold">책임</span>하에 작성되었으며, 금감원은 <span class="txtCB bold">DART</span> 정보의 <span class="txtCB bold">정확성</span> 및 <span class="txtCB bold">완전성</span>을 보장하는 것은 아닙니다.</li>
+		</ul>
+	</div>
+</div>
+
+					</div>
+					<!-- MAIN LALYOUT END -->
+				</div>
+				<div id="wingWrap" class="wingWrap">
+					
+
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+$j(document).ready(function() {
+	$j('.btnTop').click(function(){
+		 $j(document).scrollTop(0);
+	});
+	if(onlyWebCssMode != null && onlyWebCssMode == "on"){
+		$j('#onlyWebCssMode').prop('checked', true);
+	}
+});
+function clickUpHistory() {
+	var width = $j('#history').find('li').outerHeight(true);
+	document.getElementById("history").scrollTop = document.getElementById("history").scrollTop - width;
+}
+
+function clickDownHistory() {
+	var width = $j('#history').find('li').outerHeight(true);
+	document.getElementById("history").scrollTop = document.getElementById("history").scrollTop + width;
+}
+
+</script>
+<script type="text/javascript">initMoving(document.getElementById("historyContents"), 180, 100, 250);</script>
+<span class="uiCheck">
+	<label for="onlyWebCssMode">창크기변경시 UI고정</label>
+	<input type="checkbox" id="onlyWebCssMode" name="onlyWebCssMode" value="on" />
+</span>
+
+<div class="title">오늘본문서</div>
+<div class="wingBtn">
+	<div>
+		<!--데이타가 나올때-->
+		<div class="psNumber">
+			(총0건)
+		</div>
+		<div class="btnUp" onclick="clickUpHistory();">
+			<a onclick="clickUpHistory();" title="이전 문서" href="javascript:void(0);">위로</a>
+		</div>
+		
+		<ul  id="history" style="overflow: hidden; ">
+			
+		</ul>
+		<div class="btnDown" onclick="clickDownHistory();">
+			<a onclick="clickDownHistory();" title="다음 문서" href="javascript:void(0);">아래로</a>
+		</div>
+	</div>
+</div>
+<div class="survey">
+	<a class="btnSuvey" href="/dsah004/select.do?no=78&gubun=N&list_no=13" title="FAQ 바로가기"><span>홈페이지<br/>이용관련</span><span>FAQ</span></a>
+</div>
+<div class="valueUp">
+	<a class="btnValueUp" href="https://kind.krx.co.kr/main.do?method=loadInitPage&scrnmode=3" title="기업밸류업 바로가기" target="_blank"><span>VALUE</span><span>-UP</span></br><span>기업밸류업</span><span>통합페이지</span></a>
+</div>
+<a class="btnGuide" onclick="openHelp(100); return false;" href="javascript:void(0);" title="이용가이드 바로가기">이용가이드</a>
+<a class="btnTop" href="javascript:void(0);">위로</a>
+
+				</div>
+			
+			</div>
+		</div>
+		<!-- BOTTOM LAYOUT START -->
+		<!-- <div id="layoutBottom"> -->
+			
+
+<script type="text/javascript">
+	function altChange(){
+		var sIndex = document.getElementById("f_select").options.selectedIndex;
+		document.getElementById("go_confirm").alt = document.getElementById("f_select").options[sIndex].text + " 이동";
+		document.getElementById("go_confirm").title = document.getElementById("f_select").options[sIndex].text + " 이동";
+	}
+
+	function doPrsnInfoPolicy(){
+		var size = getOpenSize(730, 750);
+		var popWin = window.open('/jsp/popup/prsnInfoPolicy.jsp', 'PRSNINFOPOLICY', ''+size+', status=no, scrollbars=yes');
+	   	popWin.focus();
+	}
+
+	function openBanner(ban_type){
+		xajax.initParameter();
+		xajax.addParameter("ban_type", ban_type);
+		xajax.simpleSend("/banner/count.ax");
+	}
+</script>
+
+<a class="btnClose" onclick="fn_scrollTop();" href="javascript:void(0);"><div class="mBtnTop">맨위로</div></a>
+<div id="footerBannerWrap">
+	<div id="footerBanner">
+		<div class="leftCont">
+			<ul>
+				<li><a href="https://www.fss.or.kr" target="_blank" title="새창열림"><img src="../images/footer_banner_01.png" alt="금융감독원 바로가기"></a></li>
+				<li><a href="http://www.fsc.go.kr/" target="_blank" title="새창열림"><img src="../images/footer_banner_02.png" alt="금융위원회 바로가기"></a></li>
+				<li><a href="http://www.ftc.go.kr/" target="_blank" title="새창열림"><img src="../images/footer_banner_03.png" alt="공정거래위원회 바로가기"></a></li>
+			</ul>
+		</div>
+		<div class="rightCont">
+			<ul>
+				<li><a href="https://www.fss.or.kr/fss/job/lrgInfoMain/intro.do?menuNo=200485" target="_blank" title="새창열림"><img src="../images/footer_banner_04.png" alt="금융감독법규 바로가기"></a></li>
+				<li><a href="https://www.fss.or.kr/fss/main/contents.do?menuNo=200289" target="_blank" title="새창열림"><img src="../images/footer_banner_05.png" alt="불법금융신고센터 바로가기"></a></li>
+				<li><a href="https://www.fss.or.kr/fss/main/contents.do?menuNo=200427" target="_blank"  title="새창열림"><img src="../images/footer_banner_06.png" alt="금융감독원 회계포탈 바로가기"></a></li>
+			</ul>
+		</div>
+	</div>
+</div>
+<div id="footerWrap">
+	<div id="footer">
+		<div class="logo"><img src="../images/footer_logo.png" alt="풋터 로고"></div>
+		<div class="fnbWrap">
+			<div class="fnb">
+				<ul>
+					<li><a href="/jsp/privacy.jsp" target="_blank" title="개인정보처리방침 새창"><b>개인정보 처리방침</b></a></li>
+					<li><a href="/introduction/content5.do">정보이용시 유의사항</a></li>
+					<li><a href="/introduction/content2.do">보고서정보</a></li>
+					<li><a href="/introduction/content6.do">RSS서비스</a></li>
+				</ul>
+			</div>
+			<div class="copy">
+				<p>서울특별시 영등포구 여의대로 38 대표전화 : 02) 3145-5114</p>
+				<p>Copyright ㉿FINANCIAL SUPERVISORY SERVICE ALL Rights Reserved.</p>
+			</div>
+		</div>
+		<div class="inquiry">
+			<p>홈페이지 이용문의 : (국번없이)1332 (5번-&gt;1번-&gt;1번)</p>
+			<p>기업공시 제도문의 : (국번없이)1332 (5번-&gt;1번-&gt;2,3,4,5번)</p>
+		</div>
+		<div class="footeMark"><img src="../images/footer_mark.png" alt="ISO 20000 인증" title="ISO 20000 인증"></div>
+	</div>
+</div>
+
+
+<!-- layer popup wrap -->
+<div id="winCommMsg" style="display:none">
+	<div class="mask" style="display:block"></div>
+	<!-- layer popup wrap -->
+</div>
+
+		<!-- </div> -->
+		<!-- BOTTOM LAYOUT END -->
+		<script type="text/javascript">
+			$j(document).ready(function() {
+				if( navigator.userAgent.match(/Android|iPhone|iPad/) == null) {
+					$j("#divMobileLink").css("display", "none");
+				} else {
+					$j("#divMobileLink").css("display", "block");
+				}
+			});
+		</script>
+	</body>
+</html>

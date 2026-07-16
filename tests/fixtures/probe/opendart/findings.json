@@ -1,0 +1,2528 @@
+{
+  "api_key_in_logs": "***MASKED***",
+  "api_key_source": "environment",
+  "cached_fixture_reuse": true,
+  "concurrency": 1,
+  "configured_min_interval_seconds": 0.35,
+  "d004": [
+    {
+      "corp_flr_different": true,
+      "corp_name_near_target_company_label": true,
+      "document_fixture": "opendart/d004/documents/20260715000002.zip",
+      "error": null,
+      "list_row": {
+        "corp_cls": "K",
+        "corp_code": "00357607",
+        "corp_name": "케이피티유",
+        "flr_nm": "알루텍",
+        "rcept_dt": "20260715",
+        "rcept_no": "20260715000002",
+        "report_nm": "공개매수설명서",
+        "rm": "",
+        "stock_code": "054410"
+      },
+      "snippet_fixture": "opendart\\d004\\snippets\\20260715000002.txt",
+      "verification": "원문에서 corp_name과 '대상회사' 표기의 근접 여부"
+    },
+    {
+      "corp_flr_different": true,
+      "corp_name_near_target_company_label": true,
+      "document_fixture": "opendart/d004/documents/20260715000001.zip",
+      "error": null,
+      "list_row": {
+        "corp_cls": "K",
+        "corp_code": "00357607",
+        "corp_name": "케이피티유",
+        "flr_nm": "알루텍",
+        "rcept_dt": "20260715",
+        "rcept_no": "20260715000001",
+        "report_nm": "공개매수신고서",
+        "rm": "",
+        "stock_code": "054410"
+      },
+      "snippet_fixture": "opendart\\d004\\snippets\\20260715000001.txt",
+      "verification": "원문에서 corp_name과 '대상회사' 표기의 근접 여부"
+    },
+    {
+      "corp_flr_different": true,
+      "corp_name_near_target_company_label": true,
+      "document_fixture": "opendart/d004/documents/20260629000008.zip",
+      "error": null,
+      "list_row": {
+        "corp_cls": "K",
+        "corp_code": "00674498",
+        "corp_name": "골프존홀딩스",
+        "flr_nm": "에스제이투자홀딩스",
+        "rcept_dt": "20260629",
+        "rcept_no": "20260629000008",
+        "report_nm": "공개매수설명서",
+        "rm": "",
+        "stock_code": "121440"
+      },
+      "snippet_fixture": "opendart\\d004\\snippets\\20260629000008.txt",
+      "verification": "원문에서 corp_name과 '대상회사' 표기의 근접 여부"
+    },
+    {
+      "corp_flr_different": true,
+      "corp_name_near_target_company_label": true,
+      "document_fixture": "opendart/d004/documents/20260629000007.zip",
+      "error": null,
+      "list_row": {
+        "corp_cls": "K",
+        "corp_code": "00674498",
+        "corp_name": "골프존홀딩스",
+        "flr_nm": "에스제이투자홀딩스",
+        "rcept_dt": "20260629",
+        "rcept_no": "20260629000007",
+        "report_nm": "공개매수신고서",
+        "rm": "",
+        "stock_code": "121440"
+      },
+      "snippet_fixture": "opendart\\d004\\snippets\\20260629000007.txt",
+      "verification": "원문에서 corp_name과 '대상회사' 표기의 근접 여부"
+    },
+    {
+      "corp_flr_different": true,
+      "corp_name_near_target_company_label": true,
+      "document_fixture": "opendart/d004/documents/20260629000004.zip",
+      "error": null,
+      "list_row": {
+        "corp_cls": "Y",
+        "corp_code": "00118451",
+        "corp_name": "동일제강",
+        "flr_nm": "에스폼",
+        "rcept_dt": "20260629",
+        "rcept_no": "20260629000004",
+        "report_nm": "공개매수설명서",
+        "rm": "",
+        "stock_code": "002690"
+      },
+      "snippet_fixture": "opendart\\d004\\snippets\\20260629000004.txt",
+      "verification": "원문에서 corp_name과 '대상회사' 표기의 근접 여부"
+    },
+    {
+      "corp_flr_different": true,
+      "corp_name_near_target_company_label": true,
+      "document_fixture": "opendart/d004/documents/20260629000003.zip",
+      "error": null,
+      "list_row": {
+        "corp_cls": "Y",
+        "corp_code": "00118451",
+        "corp_name": "동일제강",
+        "flr_nm": "에스폼",
+        "rcept_dt": "20260629",
+        "rcept_no": "20260629000003",
+        "report_nm": "공개매수신고서",
+        "rm": "",
+        "stock_code": "002690"
+      },
+      "snippet_fixture": "opendart\\d004\\snippets\\20260629000003.txt",
+      "verification": "원문에서 corp_name과 '대상회사' 표기의 근접 여부"
+    },
+    {
+      "corp_flr_different": true,
+      "corp_name_near_target_company_label": true,
+      "document_fixture": "opendart/d004/documents/20260616000004.zip",
+      "error": null,
+      "list_row": {
+        "corp_cls": "K",
+        "corp_code": "00350020",
+        "corp_name": "파인디앤씨",
+        "flr_nm": "파인엠텍",
+        "rcept_dt": "20260616",
+        "rcept_no": "20260616000004",
+        "report_nm": "공개매수설명서",
+        "rm": "",
+        "stock_code": "049120"
+      },
+      "snippet_fixture": "opendart\\d004\\snippets\\20260616000004.txt",
+      "verification": "원문에서 corp_name과 '대상회사' 표기의 근접 여부"
+    },
+    {
+      "corp_flr_different": true,
+      "corp_name_near_target_company_label": true,
+      "document_fixture": "opendart/d004/documents/20260616000003.zip",
+      "error": null,
+      "list_row": {
+        "corp_cls": "K",
+        "corp_code": "00350020",
+        "corp_name": "파인디앤씨",
+        "flr_nm": "파인엠텍",
+        "rcept_dt": "20260616",
+        "rcept_no": "20260616000003",
+        "report_nm": "공개매수신고서",
+        "rm": "",
+        "stock_code": "049120"
+      },
+      "snippet_fixture": "opendart\\d004\\snippets\\20260616000003.txt",
+      "verification": "원문에서 corp_name과 '대상회사' 표기의 근접 여부"
+    },
+    {
+      "corp_flr_different": true,
+      "corp_name_near_target_company_label": true,
+      "document_fixture": "opendart/d004/documents/20260610000510.zip",
+      "error": null,
+      "list_row": {
+        "corp_cls": "K",
+        "corp_code": "00125646",
+        "corp_name": "삼목에스폼",
+        "flr_nm": "에스폼",
+        "rcept_dt": "20260610",
+        "rcept_no": "20260610000510",
+        "report_nm": "공개매수결과보고서",
+        "rm": "",
+        "stock_code": "018310"
+      },
+      "snippet_fixture": "opendart\\d004\\snippets\\20260610000510.txt",
+      "verification": "원문에서 corp_name과 '대상회사' 표기의 근접 여부"
+    },
+    {
+      "corp_flr_different": true,
+      "corp_name_near_target_company_label": true,
+      "document_fixture": "opendart/d004/documents/20260518000004.zip",
+      "error": null,
+      "list_row": {
+        "corp_cls": "K",
+        "corp_code": "00125646",
+        "corp_name": "삼목에스폼",
+        "flr_nm": "에스폼",
+        "rcept_dt": "20260518",
+        "rcept_no": "20260518000004",
+        "report_nm": "공개매수설명서",
+        "rm": "",
+        "stock_code": "018310"
+      },
+      "snippet_fixture": "opendart\\d004\\snippets\\20260518000004.txt",
+      "verification": "원문에서 corp_name과 '대상회사' 표기의 근접 여부"
+    }
+  ],
+  "d004_case_count": 10,
+  "d004_verified_count": 10,
+  "discovery_row_count": 14810,
+  "last_reprt_all_match_plan": true,
+  "last_reprt_case_count": 3,
+  "last_reprt_comparisons": [
+    {
+      "N": [
+        {
+          "corp_cls": "Y",
+          "corp_code": "00163512",
+          "corp_name": "한진",
+          "flr_nm": "한진",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000676",
+          "report_nm": "증권신고서(채무증권)",
+          "rm": "정",
+          "stock_code": "002320"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00163512",
+          "corp_name": "한진",
+          "flr_nm": "한진",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000533",
+          "report_nm": "[기재정정]증권신고서(채무증권)",
+          "rm": "정",
+          "stock_code": "002320"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00163512",
+          "corp_name": "한진",
+          "flr_nm": "한진",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000545",
+          "report_nm": "[발행조건확정]증권신고서(채무증권)",
+          "rm": "",
+          "stock_code": "002320"
+        }
+      ],
+      "N_contains_original_intermediate_final": true,
+      "N_receipts": [
+        "20260710000676",
+        "20260716000533",
+        "20260716000545"
+      ],
+      "Y": [
+        {
+          "corp_cls": "Y",
+          "corp_code": "00163512",
+          "corp_name": "한진",
+          "flr_nm": "한진",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000545",
+          "report_nm": "[발행조건확정]증권신고서(채무증권)",
+          "rm": "",
+          "stock_code": "002320"
+        }
+      ],
+      "Y_is_only_latest_N_receipt": true,
+      "Y_receipts": [
+        "20260716000545"
+      ],
+      "case": 1,
+      "corp_code": "00163512",
+      "corp_name": "한진",
+      "normalized_report_name": "증권신고서(채무증권)",
+      "pblntf_ty": "C",
+      "period": {
+        "bgn_de": "20260610",
+        "end_de": "20260815"
+      },
+      "raw_fixtures": [
+        "opendart/last_report/case_1_N_page_001.json",
+        "opendart/last_report/case_1_Y_page_001.json"
+      ],
+      "same_name_Y_rows_outside_event": []
+    },
+    {
+      "N": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00148665",
+          "corp_name": "아이엠증권",
+          "flr_nm": "아이엠증권",
+          "rcept_dt": "20260709",
+          "rcept_no": "20260709000051",
+          "report_nm": "주요사항보고서(자본으로인정되는채무증권발행결정)",
+          "rm": "정",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00148665",
+          "corp_name": "아이엠증권",
+          "flr_nm": "아이엠증권",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000351",
+          "report_nm": "[기재정정]주요사항보고서(자본으로인정되는채무증권발행결정)",
+          "rm": "정",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00148665",
+          "corp_name": "아이엠증권",
+          "flr_nm": "아이엠증권",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000369",
+          "report_nm": "[기재정정]주요사항보고서(자본으로인정되는채무증권발행결정)",
+          "rm": "정",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00148665",
+          "corp_name": "아이엠증권",
+          "flr_nm": "아이엠증권",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000411",
+          "report_nm": "[기재정정]주요사항보고서(자본으로인정되는채무증권발행결정)",
+          "rm": "",
+          "stock_code": ""
+        }
+      ],
+      "N_contains_original_intermediate_final": true,
+      "N_receipts": [
+        "20260709000051",
+        "20260710000351",
+        "20260710000369",
+        "20260716000411"
+      ],
+      "Y": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00148665",
+          "corp_name": "아이엠증권",
+          "flr_nm": "아이엠증권",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000411",
+          "report_nm": "[기재정정]주요사항보고서(자본으로인정되는채무증권발행결정)",
+          "rm": "",
+          "stock_code": ""
+        }
+      ],
+      "Y_is_only_latest_N_receipt": true,
+      "Y_receipts": [
+        "20260716000411"
+      ],
+      "case": 2,
+      "corp_code": "00148665",
+      "corp_name": "아이엠증권",
+      "normalized_report_name": "주요사항보고서(자본으로인정되는채무증권발행결정)",
+      "pblntf_ty": "B",
+      "period": {
+        "bgn_de": "20260609",
+        "end_de": "20260815"
+      },
+      "raw_fixtures": [
+        "opendart/last_report/case_2_N_page_001.json",
+        "opendart/last_report/case_2_Y_page_001.json"
+      ],
+      "same_name_Y_rows_outside_event": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00148665",
+          "corp_name": "아이엠증권",
+          "flr_nm": "아이엠증권",
+          "rcept_dt": "20260709",
+          "rcept_no": "20260709000043",
+          "report_nm": "주요사항보고서(자본으로인정되는채무증권발행결정)",
+          "rm": "",
+          "stock_code": ""
+        }
+      ]
+    },
+    {
+      "N": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00248053",
+          "corp_name": "지에스엔텍",
+          "flr_nm": "지에스엔텍",
+          "rcept_dt": "20260706",
+          "rcept_no": "20260706000373",
+          "report_nm": "증권신고서(채무증권)",
+          "rm": "정",
+          "stock_code": "037640"
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00248053",
+          "corp_name": "지에스엔텍",
+          "flr_nm": "지에스엔텍",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000302",
+          "report_nm": "[발행조건확정]증권신고서(채무증권)",
+          "rm": "정",
+          "stock_code": "037640"
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00248053",
+          "corp_name": "지에스엔텍",
+          "flr_nm": "지에스엔텍",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000514",
+          "report_nm": "[발행조건확정]증권신고서(채무증권)",
+          "rm": "",
+          "stock_code": "037640"
+        }
+      ],
+      "N_contains_original_intermediate_final": true,
+      "N_receipts": [
+        "20260706000373",
+        "20260710000302",
+        "20260715000514"
+      ],
+      "Y": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00248053",
+          "corp_name": "지에스엔텍",
+          "flr_nm": "지에스엔텍",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000514",
+          "report_nm": "[발행조건확정]증권신고서(채무증권)",
+          "rm": "",
+          "stock_code": "037640"
+        }
+      ],
+      "Y_is_only_latest_N_receipt": true,
+      "Y_receipts": [
+        "20260715000514"
+      ],
+      "case": 3,
+      "corp_code": "00248053",
+      "corp_name": "지에스엔텍",
+      "normalized_report_name": "증권신고서(채무증권)",
+      "pblntf_ty": "C",
+      "period": {
+        "bgn_de": "20260606",
+        "end_de": "20260814"
+      },
+      "raw_fixtures": [
+        "opendart/last_report/case_3_N_page_001.json",
+        "opendart/last_report/case_3_Y_page_001.json"
+      ],
+      "same_name_Y_rows_outside_event": []
+    }
+  ],
+  "measured_at": "2026-07-16T13:21:49.609+00:00",
+  "network_requests_this_run": 0,
+  "prefixes": {
+    "all_eight_observed": true,
+    "counts": {
+      "기재정정": 5,
+      "발행조건확정": 5,
+      "변경등록": 5,
+      "연장결정": 1,
+      "정정명령부과": 1,
+      "정정제출요구": 5,
+      "첨부정정": 5,
+      "첨부추가": 5
+    },
+    "multi_prefix_observed": true,
+    "multi_prefix_samples": [
+      {
+        "_source_pblntf_ty": "C",
+        "corp_cls": "K",
+        "corp_code": "00232007",
+        "corp_name": "상지건설",
+        "flr_nm": "상지건설",
+        "parsed_prefixes": [
+          "정정제출요구",
+          "기재정정"
+        ],
+        "rcept_dt": "20260702",
+        "rcept_no": "20260702000567",
+        "report_nm": "[정정제출요구][기재정정]증권신고서(지분증권)",
+        "rm": "",
+        "stock_code": "042940"
+      },
+      {
+        "_source_pblntf_ty": "C",
+        "corp_cls": "K",
+        "corp_code": "00230814",
+        "corp_name": "휴림에이텍",
+        "flr_nm": "휴림에이텍",
+        "parsed_prefixes": [
+          "정정제출요구",
+          "기재정정"
+        ],
+        "rcept_dt": "20260626",
+        "rcept_no": "20260626000746",
+        "report_nm": "[정정제출요구][기재정정]증권신고서(지분증권)",
+        "rm": "",
+        "stock_code": "078590"
+      },
+      {
+        "_source_pblntf_ty": "C",
+        "corp_cls": "K",
+        "corp_code": "00309831",
+        "corp_name": "알에프텍",
+        "flr_nm": "알에프텍",
+        "parsed_prefixes": [
+          "정정제출요구",
+          "기재정정"
+        ],
+        "rcept_dt": "20260624",
+        "rcept_no": "20260624000396",
+        "report_nm": "[정정제출요구][기재정정]증권신고서(합병)",
+        "rm": "정",
+        "stock_code": "061040"
+      },
+      {
+        "_source_pblntf_ty": "C",
+        "corp_cls": "K",
+        "corp_code": "00605522",
+        "corp_name": "소룩스",
+        "flr_nm": "소룩스",
+        "parsed_prefixes": [
+          "정정제출요구",
+          "기재정정"
+        ],
+        "rcept_dt": "20260623",
+        "rcept_no": "20260623000368",
+        "report_nm": "[정정제출요구][기재정정]증권신고서(합병)",
+        "rm": "정",
+        "stock_code": "290690"
+      },
+      {
+        "_source_pblntf_ty": "C",
+        "corp_cls": "K",
+        "corp_code": "00547510",
+        "corp_name": "툴젠",
+        "flr_nm": "툴젠",
+        "parsed_prefixes": [
+          "정정제출요구",
+          "기재정정"
+        ],
+        "rcept_dt": "20260622",
+        "rcept_no": "20260622000325",
+        "report_nm": "[정정제출요구][기재정정]증권신고서(지분증권)",
+        "rm": "정",
+        "stock_code": "199800"
+      },
+      {
+        "_source_pblntf_ty": "C",
+        "corp_cls": "E",
+        "corp_code": "00920731",
+        "corp_name": "케이앤에스아이앤씨",
+        "flr_nm": "케이앤에스아이앤씨",
+        "parsed_prefixes": [
+          "정정제출요구",
+          "기재정정"
+        ],
+        "rcept_dt": "20260615",
+        "rcept_no": "20260615000244",
+        "report_nm": "[정정제출요구][기재정정]증권신고서(지분증권)",
+        "rm": "정",
+        "stock_code": ""
+      },
+      {
+        "_source_pblntf_ty": "C",
+        "corp_cls": "K",
+        "corp_code": "01359815",
+        "corp_name": "한울반도체",
+        "flr_nm": "한울반도체",
+        "parsed_prefixes": [
+          "정정제출요구",
+          "기재정정"
+        ],
+        "rcept_dt": "20260615",
+        "rcept_no": "20260615000049",
+        "report_nm": "[정정제출요구][기재정정]증권신고서(지분증권)",
+        "rm": "정",
+        "stock_code": "320000"
+      },
+      {
+        "_source_pblntf_ty": "C",
+        "corp_cls": "Y",
+        "corp_code": "00872984",
+        "corp_name": "이마트",
+        "flr_nm": "이마트",
+        "parsed_prefixes": [
+          "정정제출요구",
+          "기재정정"
+        ],
+        "rcept_dt": "20260320",
+        "rcept_no": "20260320000159",
+        "report_nm": "[정정제출요구][기재정정]증권신고서(주식의포괄적교환ㆍ이전)",
+        "rm": "정",
+        "stock_code": "139480"
+      },
+      {
+        "_source_pblntf_ty": "C",
+        "corp_cls": "K",
+        "corp_code": "00605522",
+        "corp_name": "소룩스",
+        "flr_nm": "소룩스",
+        "parsed_prefixes": [
+          "정정제출요구",
+          "기재정정"
+        ],
+        "rcept_dt": "20260316",
+        "rcept_no": "20260316001529",
+        "report_nm": "[정정제출요구][기재정정]증권신고서(합병)",
+        "rm": "정",
+        "stock_code": "290690"
+      }
+    ],
+    "prefixes_already_observed_in_discovery": [
+      "기재정정",
+      "발행조건확정",
+      "변경등록",
+      "연장결정",
+      "정정명령부과",
+      "정정제출요구",
+      "첨부정정",
+      "첨부추가"
+    ],
+    "samples": {
+      "기재정정": [
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "K",
+          "corp_code": "01359815",
+          "corp_name": "한울반도체",
+          "flr_nm": "한울반도체",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000830",
+          "report_nm": "[기재정정]증권신고서(지분증권)",
+          "rm": "",
+          "stock_code": "320000"
+        },
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "K",
+          "corp_code": "01397903",
+          "corp_name": "엔젠바이오",
+          "flr_nm": "엔젠바이오",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000702",
+          "report_nm": "[기재정정]증권신고서(지분증권)",
+          "rm": "",
+          "stock_code": "354200"
+        },
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "E",
+          "corp_code": "01947443",
+          "corp_name": "해치텍",
+          "flr_nm": "해치텍",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000552",
+          "report_nm": "[기재정정]증권신고서(지분증권)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "Y",
+          "corp_code": "00163512",
+          "corp_name": "한진",
+          "flr_nm": "한진",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000533",
+          "report_nm": "[기재정정]증권신고서(채무증권)",
+          "rm": "정",
+          "stock_code": "002320"
+        },
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "Y",
+          "corp_code": "00104856",
+          "corp_name": "삼성증권",
+          "flr_nm": "삼성증권",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000484",
+          "report_nm": "[기재정정]증권발행실적보고서",
+          "rm": "",
+          "stock_code": "016360"
+        }
+      ],
+      "발행조건확정": [
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "Y",
+          "corp_code": "00163512",
+          "corp_name": "한진",
+          "flr_nm": "한진",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000545",
+          "report_nm": "[발행조건확정]증권신고서(채무증권)",
+          "rm": "",
+          "stock_code": "002320"
+        },
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "E",
+          "corp_code": "00248053",
+          "corp_name": "지에스엔텍",
+          "flr_nm": "지에스엔텍",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000514",
+          "report_nm": "[발행조건확정]증권신고서(채무증권)",
+          "rm": "",
+          "stock_code": "037640"
+        },
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "K",
+          "corp_code": "00109310",
+          "corp_name": "대동기어",
+          "flr_nm": "대동기어",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000436",
+          "report_nm": "[발행조건확정]증권신고서(지분증권)",
+          "rm": "",
+          "stock_code": "008830"
+        },
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "Y",
+          "corp_code": "00296290",
+          "corp_name": "키움증권",
+          "flr_nm": "키움증권",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000512",
+          "report_nm": "[발행조건확정]증권신고서(채무증권)",
+          "rm": "",
+          "stock_code": "039490"
+        },
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "E",
+          "corp_code": "00138321",
+          "corp_name": "신한투자증권",
+          "flr_nm": "신한투자증권",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000511",
+          "report_nm": "[발행조건확정]증권신고서(채무증권)",
+          "rm": "",
+          "stock_code": "008670"
+        }
+      ],
+      "변경등록": [
+        {
+          "corp_cls": "E",
+          "corp_code": "01946107",
+          "corp_name": "엘더블유제이차유동화전문유한회사",
+          "flr_nm": "엘더블유제이차유동화전문유한회사",
+          "rcept_dt": "20260701",
+          "rcept_no": "20260701000192",
+          "report_nm": "[변경등록]자산유동화계획의등록신청서(유동화전문회사)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "01801460",
+          "corp_name": "더블유비에스2312유동화전문유한회사",
+          "flr_nm": "더블유비에스2312유동화전문유한회사",
+          "rcept_dt": "20260701",
+          "rcept_no": "20260701000124",
+          "report_nm": "[변경등록]자산유동화계획의등록신청서(유동화전문회사)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "01851252",
+          "corp_name": "더블유케이엔2406유동화전문유한회사",
+          "flr_nm": "더블유케이엔2406유동화전문유한회사",
+          "rcept_dt": "20260701",
+          "rcept_no": "20260701000113",
+          "report_nm": "[변경등록]자산유동화계획의등록신청서(유동화전문회사)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "01784835",
+          "corp_name": "더블유엔케이엔2309유동화전문유한회사",
+          "flr_nm": "더블유엔케이엔2309유동화전문유한회사",
+          "rcept_dt": "20260701",
+          "rcept_no": "20260701000109",
+          "report_nm": "[변경등록]자산유동화계획의등록신청서(유동화전문회사)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "01669828",
+          "corp_name": "더블유엔아이2206유동화전문유한회사",
+          "flr_nm": "더블유엔아이2206유동화전문유한회사",
+          "rcept_dt": "20260701",
+          "rcept_no": "20260701000097",
+          "report_nm": "[변경등록]자산유동화계획의등록신청서(유동화전문회사)",
+          "rm": "",
+          "stock_code": ""
+        }
+      ],
+      "연장결정": [
+        {
+          "corp_cls": "K",
+          "corp_code": "00155373",
+          "corp_name": "풍강",
+          "flr_nm": "풍강",
+          "rcept_dt": "20260106",
+          "rcept_no": "20260106000304",
+          "report_nm": "[연장결정]주요사항보고서(자기주식취득신탁계약체결결정)",
+          "rm": "정",
+          "stock_code": "093380"
+        }
+      ],
+      "정정명령부과": [
+        {
+          "_source_pblntf_ty": "B",
+          "corp_cls": "K",
+          "corp_code": "00219440",
+          "corp_name": "휴맥스홀딩스",
+          "flr_nm": "휴맥스홀딩스",
+          "rcept_dt": "20260701",
+          "rcept_no": "20260630001117",
+          "report_nm": "[정정명령부과]주요사항보고서(회사합병결정)",
+          "rm": "",
+          "stock_code": "028080"
+        }
+      ],
+      "정정제출요구": [
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "K",
+          "corp_code": "00232007",
+          "corp_name": "상지건설",
+          "flr_nm": "상지건설",
+          "rcept_dt": "20260702",
+          "rcept_no": "20260702000567",
+          "report_nm": "[정정제출요구][기재정정]증권신고서(지분증권)",
+          "rm": "",
+          "stock_code": "042940"
+        },
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "K",
+          "corp_code": "00787057",
+          "corp_name": "휴맥스",
+          "flr_nm": "휴맥스",
+          "rcept_dt": "20260701",
+          "rcept_no": "20260701000674",
+          "report_nm": "[정정제출요구]증권신고서(합병)",
+          "rm": "",
+          "stock_code": "115160"
+        },
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "K",
+          "corp_code": "01160363",
+          "corp_name": "에코프로비엠",
+          "flr_nm": "에코프로비엠",
+          "rcept_dt": "20260630",
+          "rcept_no": "20260630000974",
+          "report_nm": "[정정제출요구]증권신고서(지분증권)",
+          "rm": "",
+          "stock_code": "247540"
+        },
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "K",
+          "corp_code": "00230814",
+          "corp_name": "휴림에이텍",
+          "flr_nm": "휴림에이텍",
+          "rcept_dt": "20260626",
+          "rcept_no": "20260626000746",
+          "report_nm": "[정정제출요구][기재정정]증권신고서(지분증권)",
+          "rm": "",
+          "stock_code": "078590"
+        },
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "Y",
+          "corp_code": "00113526",
+          "corp_name": "대한항공",
+          "flr_nm": "대한항공",
+          "rcept_dt": "20260625",
+          "rcept_no": "20260625000630",
+          "report_nm": "[정정제출요구]증권신고서(합병)",
+          "rm": "정",
+          "stock_code": "003490"
+        }
+      ],
+      "첨부정정": [
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "K",
+          "corp_code": "00155948",
+          "corp_name": "로젠",
+          "flr_nm": "로젠",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000268",
+          "report_nm": "[첨부정정]증권신고서(합병)",
+          "rm": "",
+          "stock_code": "033290"
+        },
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "K",
+          "corp_code": "00155948",
+          "corp_name": "로젠",
+          "flr_nm": "로젠",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000225",
+          "report_nm": "[첨부정정]증권신고서(합병)",
+          "rm": "정",
+          "stock_code": "033290"
+        },
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "K",
+          "corp_code": "00309831",
+          "corp_name": "알에프텍",
+          "flr_nm": "알에프텍",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000569",
+          "report_nm": "[첨부정정]증권신고서(합병)",
+          "rm": "",
+          "stock_code": "061040"
+        },
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "K",
+          "corp_code": "00309831",
+          "corp_name": "알에프텍",
+          "flr_nm": "알에프텍",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000494",
+          "report_nm": "[첨부정정]증권신고서(합병)",
+          "rm": "정",
+          "stock_code": "061040"
+        },
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "K",
+          "corp_code": "00309831",
+          "corp_name": "알에프텍",
+          "flr_nm": "알에프텍",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000453",
+          "report_nm": "[첨부정정]증권신고서(합병)",
+          "rm": "정",
+          "stock_code": "061040"
+        }
+      ],
+      "첨부추가": [
+        {
+          "_source_pblntf_ty": "C",
+          "corp_cls": "E",
+          "corp_code": "00138321",
+          "corp_name": "신한투자증권",
+          "flr_nm": "신한투자증권",
+          "rcept_dt": "20260708",
+          "rcept_no": "20260708000146",
+          "report_nm": "[첨부추가]일괄신고추가서류(파생결합사채-주가연계파생결합사채)",
+          "rm": "",
+          "stock_code": "008670"
+        },
+        {
+          "_source_pblntf_ty": "B",
+          "corp_cls": "K",
+          "corp_code": "00580667",
+          "corp_name": "S&K폴리텍",
+          "flr_nm": "S&K폴리텍",
+          "rcept_dt": "20260713",
+          "rcept_no": "20260713000368",
+          "report_nm": "[첨부추가]주요사항보고서(회사합병결정)",
+          "rm": "",
+          "stock_code": "091340"
+        },
+        {
+          "_source_pblntf_ty": "B",
+          "corp_cls": "K",
+          "corp_code": "00152437",
+          "corp_name": "케이프",
+          "flr_nm": "케이프",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000343",
+          "report_nm": "[첨부추가]주요사항보고서(회사합병결정)",
+          "rm": "",
+          "stock_code": "064820"
+        },
+        {
+          "_source_pblntf_ty": "B",
+          "corp_cls": "Y",
+          "corp_code": "01722437",
+          "corp_name": "한화갤러리아",
+          "flr_nm": "한화갤러리아",
+          "rcept_dt": "20260713",
+          "rcept_no": "20260713000472",
+          "report_nm": "[첨부추가]주요사항보고서(유형자산양수결정)",
+          "rm": "정",
+          "stock_code": "452260"
+        },
+        {
+          "_source_pblntf_ty": "B",
+          "corp_cls": "K",
+          "corp_code": "00252269",
+          "corp_name": "아이에이",
+          "flr_nm": "아이에이",
+          "rcept_dt": "20260713",
+          "rcept_no": "20260713000370",
+          "report_nm": "[첨부추가]주요사항보고서(전환사채권발행결정)",
+          "rm": "",
+          "stock_code": "038880"
+        }
+      ]
+    },
+    "web_receipts_requested": {}
+  },
+  "request_count": 1,
+  "rm_event_count": 30,
+  "rm_flags_observed": [
+    "정",
+    "철"
+  ],
+  "rm_match_rate": 1.0,
+  "rm_matched_count": 30,
+  "rm_validation": [
+    {
+      "event": 1,
+      "evidence": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00564030",
+          "corp_name": "한국투자밸류자산운용",
+          "flr_nm": "한국투자밸류자산운용",
+          "rcept_dt": "20250814",
+          "rcept_no": "20250814002210",
+          "report_nm": "철회신고서(한국밸류라이프V파워증권투자신탁2호(사모투자재간접형))",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00564030",
+          "corp_name": "한국투자밸류자산운용",
+          "flr_nm": "한국투자밸류자산운용",
+          "rcept_dt": "20250814",
+          "rcept_no": "20250814002198",
+          "report_nm": "철회신고서(한국밸류라이프V파워증권투자신탁1호(사모투자재간접형))",
+          "rm": "",
+          "stock_code": ""
+        }
+      ],
+      "flag": "철",
+      "matched": true,
+      "method": "동일 회사·근접기간의 철회/철회간주 보고서 확인",
+      "raw_fixture": "opendart/rm_validation/event_01_20250814000105_page_001.json",
+      "source": {
+        "_flag": "철",
+        "_source_pblntf_ty": "G",
+        "corp_cls": "E",
+        "corp_code": "00564030",
+        "corp_name": "한국투자밸류자산운용",
+        "flr_nm": "한국투자밸류자산운용",
+        "rcept_dt": "20250814",
+        "rcept_no": "20250814000105",
+        "report_nm": "투자설명서(집합투자증권)(한국밸류라이프V파워증권투자신탁1호(사모투자재간접형))",
+        "rm": "철",
+        "stock_code": ""
+      }
+    },
+    {
+      "event": 2,
+      "evidence": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00564030",
+          "corp_name": "한국투자밸류자산운용",
+          "flr_nm": "한국투자밸류자산운용",
+          "rcept_dt": "20250814",
+          "rcept_no": "20250814002210",
+          "report_nm": "철회신고서(한국밸류라이프V파워증권투자신탁2호(사모투자재간접형))",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00564030",
+          "corp_name": "한국투자밸류자산운용",
+          "flr_nm": "한국투자밸류자산운용",
+          "rcept_dt": "20250814",
+          "rcept_no": "20250814002198",
+          "report_nm": "철회신고서(한국밸류라이프V파워증권투자신탁1호(사모투자재간접형))",
+          "rm": "",
+          "stock_code": ""
+        }
+      ],
+      "flag": "철",
+      "matched": true,
+      "method": "동일 회사·근접기간의 철회/철회간주 보고서 확인",
+      "raw_fixture": "opendart/rm_validation/event_02_20250814000119_page_001.json",
+      "source": {
+        "_flag": "철",
+        "_source_pblntf_ty": "G",
+        "corp_cls": "E",
+        "corp_code": "00564030",
+        "corp_name": "한국투자밸류자산운용",
+        "flr_nm": "한국투자밸류자산운용",
+        "rcept_dt": "20250814",
+        "rcept_no": "20250814000119",
+        "report_nm": "투자설명서(집합투자증권)(한국밸류라이프V파워증권투자신탁2호(사모투자재간접형))",
+        "rm": "철",
+        "stock_code": ""
+      }
+    },
+    {
+      "event": 3,
+      "evidence": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00251400",
+          "corp_name": "BNK투자증권",
+          "flr_nm": "BNK투자증권",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000393",
+          "report_nm": "투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00251400",
+          "corp_name": "BNK투자증권",
+          "flr_nm": "BNK투자증권",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000306",
+          "report_nm": "투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00251400",
+          "corp_name": "BNK투자증권",
+          "flr_nm": "BNK투자증권",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000302",
+          "report_nm": "투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00251400",
+          "corp_name": "BNK투자증권",
+          "flr_nm": "BNK투자증권",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000258",
+          "report_nm": "투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00251400",
+          "corp_name": "BNK투자증권",
+          "flr_nm": "BNK투자증권",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000255",
+          "report_nm": "투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00251400",
+          "corp_name": "BNK투자증권",
+          "flr_nm": "BNK투자증권",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000214",
+          "report_nm": "[기재정정]투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00251400",
+          "corp_name": "BNK투자증권",
+          "flr_nm": "BNK투자증권",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000118",
+          "report_nm": "투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00251400",
+          "corp_name": "BNK투자증권",
+          "flr_nm": "BNK투자증권",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000449",
+          "report_nm": "투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": ""
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_03_20260714000339_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "C",
+        "corp_cls": "E",
+        "corp_code": "00251400",
+        "corp_name": "BNK투자증권",
+        "flr_nm": "BNK투자증권",
+        "rcept_dt": "20260714",
+        "rcept_no": "20260714000339",
+        "report_nm": "투자설명서(일괄신고)",
+        "rm": "정",
+        "stock_code": ""
+      }
+    },
+    {
+      "event": 4,
+      "evidence": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00251400",
+          "corp_name": "BNK투자증권",
+          "flr_nm": "BNK투자증권",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000354",
+          "report_nm": "일괄신고추가서류(파생결합사채-주가연계파생결합사채)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00251400",
+          "corp_name": "BNK투자증권",
+          "flr_nm": "BNK투자증권",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000275",
+          "report_nm": "일괄신고추가서류(파생결합사채-주가연계파생결합사채)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00251400",
+          "corp_name": "BNK투자증권",
+          "flr_nm": "BNK투자증권",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000244",
+          "report_nm": "일괄신고추가서류(파생결합사채-주가연계파생결합사채)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00251400",
+          "corp_name": "BNK투자증권",
+          "flr_nm": "BNK투자증권",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000213",
+          "report_nm": "[기재정정]일괄신고추가서류(파생결합사채-주가연계파생결합사채)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00251400",
+          "corp_name": "BNK투자증권",
+          "flr_nm": "BNK투자증권",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000443",
+          "report_nm": "일괄신고추가서류(파생결합사채-주가연계파생결합사채)",
+          "rm": "",
+          "stock_code": ""
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_04_20260714000264_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "C",
+        "corp_cls": "E",
+        "corp_code": "00251400",
+        "corp_name": "BNK투자증권",
+        "flr_nm": "BNK투자증권",
+        "rcept_dt": "20260714",
+        "rcept_no": "20260714000264",
+        "report_nm": "일괄신고추가서류(파생결합사채-주가연계파생결합사채)",
+        "rm": "정",
+        "stock_code": ""
+      }
+    },
+    {
+      "event": 5,
+      "evidence": [
+        {
+          "corp_cls": "K",
+          "corp_code": "00155948",
+          "corp_name": "로젠",
+          "flr_nm": "로젠",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000268",
+          "report_nm": "[첨부정정]증권신고서(합병)",
+          "rm": "",
+          "stock_code": "033290"
+        },
+        {
+          "corp_cls": "K",
+          "corp_code": "00155948",
+          "corp_name": "로젠",
+          "flr_nm": "로젠",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000225",
+          "report_nm": "[첨부정정]증권신고서(합병)",
+          "rm": "정",
+          "stock_code": "033290"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_05_20260714000156_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "C",
+        "corp_cls": "K",
+        "corp_code": "00155948",
+        "corp_name": "로젠",
+        "flr_nm": "로젠",
+        "rcept_dt": "20260714",
+        "rcept_no": "20260714000156",
+        "report_nm": "[기재정정]증권신고서(합병)",
+        "rm": "정",
+        "stock_code": "033290"
+      }
+    },
+    {
+      "event": 6,
+      "evidence": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00100814",
+          "corp_name": "포스코이앤씨",
+          "flr_nm": "포스코이앤씨",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000511",
+          "report_nm": "[기재정정]주요사항보고서(자본으로인정되는채무증권발행결정)",
+          "rm": "",
+          "stock_code": ""
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_06_20260714000298_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "B",
+        "corp_cls": "E",
+        "corp_code": "00100814",
+        "corp_name": "포스코이앤씨",
+        "flr_nm": "포스코이앤씨",
+        "rcept_dt": "20260714",
+        "rcept_no": "20260714000298",
+        "report_nm": "주요사항보고서(자본으로인정되는채무증권발행결정)",
+        "rm": "정",
+        "stock_code": ""
+      }
+    },
+    {
+      "event": 7,
+      "evidence": [
+        {
+          "corp_cls": "Y",
+          "corp_code": "00162416",
+          "corp_name": "한양증권",
+          "flr_nm": "한양증권",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000564",
+          "report_nm": "[기재정정]주요사항보고서(유상증자결정)",
+          "rm": "",
+          "stock_code": "001750"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00162416",
+          "corp_name": "한양증권",
+          "flr_nm": "한양증권",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000522",
+          "report_nm": "[첨부정정]주요사항보고서(유상증자결정)",
+          "rm": "정",
+          "stock_code": "001750"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00162416",
+          "corp_name": "한양증권",
+          "flr_nm": "한양증권",
+          "rcept_dt": "20260713",
+          "rcept_no": "20260713000263",
+          "report_nm": "[기재정정]주요사항보고서(유상증자결정)",
+          "rm": "정",
+          "stock_code": "001750"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_07_20260713000209_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "B",
+        "corp_cls": "Y",
+        "corp_code": "00162416",
+        "corp_name": "한양증권",
+        "flr_nm": "한양증권",
+        "rcept_dt": "20260713",
+        "rcept_no": "20260713000209",
+        "report_nm": "[첨부정정]주요사항보고서(유상증자결정)",
+        "rm": "정",
+        "stock_code": "001750"
+      }
+    },
+    {
+      "event": 8,
+      "evidence": [
+        {
+          "corp_cls": "Y",
+          "corp_code": "01722437",
+          "corp_name": "한화갤러리아",
+          "flr_nm": "한화갤러리아",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000537",
+          "report_nm": "[첨부정정]주요사항보고서(유형자산양수결정)",
+          "rm": "",
+          "stock_code": "452260"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "01722437",
+          "corp_name": "한화갤러리아",
+          "flr_nm": "한화갤러리아",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000464",
+          "report_nm": "[첨부정정]주요사항보고서(유형자산양수결정)",
+          "rm": "정",
+          "stock_code": "452260"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_08_20260713000472_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "B",
+        "corp_cls": "Y",
+        "corp_code": "01722437",
+        "corp_name": "한화갤러리아",
+        "flr_nm": "한화갤러리아",
+        "rcept_dt": "20260713",
+        "rcept_no": "20260713000472",
+        "report_nm": "[첨부추가]주요사항보고서(유형자산양수결정)",
+        "rm": "정",
+        "stock_code": "452260"
+      }
+    },
+    {
+      "event": 9,
+      "evidence": [
+        {
+          "corp_cls": "Y",
+          "corp_code": "00138792",
+          "corp_name": "아시아나항공",
+          "flr_nm": "아시아나항공",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260713000496",
+          "report_nm": "[첨부정정]주요사항보고서(회사합병결정)",
+          "rm": "",
+          "stock_code": "020560"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_09_20260713000482_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "B",
+        "corp_cls": "Y",
+        "corp_code": "00138792",
+        "corp_name": "아시아나항공",
+        "flr_nm": "아시아나항공",
+        "rcept_dt": "20260713",
+        "rcept_no": "20260713000482",
+        "report_nm": "[기재정정]주요사항보고서(회사합병결정)",
+        "rm": "정",
+        "stock_code": "020560"
+      }
+    },
+    {
+      "event": 10,
+      "evidence": [
+        {
+          "corp_cls": "Y",
+          "corp_code": "00163512",
+          "corp_name": "한진",
+          "flr_nm": "한진",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000545",
+          "report_nm": "[발행조건확정]증권신고서(채무증권)",
+          "rm": "",
+          "stock_code": "002320"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00163512",
+          "corp_name": "한진",
+          "flr_nm": "한진",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000533",
+          "report_nm": "[기재정정]증권신고서(채무증권)",
+          "rm": "정",
+          "stock_code": "002320"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_10_20260710000676_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "C",
+        "corp_cls": "Y",
+        "corp_code": "00163512",
+        "corp_name": "한진",
+        "flr_nm": "한진",
+        "rcept_dt": "20260710",
+        "rcept_no": "20260710000676",
+        "report_nm": "증권신고서(채무증권)",
+        "rm": "정",
+        "stock_code": "002320"
+      }
+    },
+    {
+      "event": 11,
+      "evidence": [
+        {
+          "corp_cls": "Y",
+          "corp_code": "00104856",
+          "corp_name": "삼성증권",
+          "flr_nm": "삼성증권",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000484",
+          "report_nm": "[기재정정]증권발행실적보고서",
+          "rm": "",
+          "stock_code": "016360"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00104856",
+          "corp_name": "삼성증권",
+          "flr_nm": "삼성증권",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000454",
+          "report_nm": "증권발행실적보고서",
+          "rm": "",
+          "stock_code": "016360"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00104856",
+          "corp_name": "삼성증권",
+          "flr_nm": "삼성증권",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000681",
+          "report_nm": "증권발행실적보고서",
+          "rm": "",
+          "stock_code": "016360"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_11_20260710000303_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "C",
+        "corp_cls": "Y",
+        "corp_code": "00104856",
+        "corp_name": "삼성증권",
+        "flr_nm": "삼성증권",
+        "rcept_dt": "20260710",
+        "rcept_no": "20260710000303",
+        "report_nm": "증권발행실적보고서",
+        "rm": "정",
+        "stock_code": "016360"
+      }
+    },
+    {
+      "event": 12,
+      "evidence": [
+        {
+          "corp_cls": "K",
+          "corp_code": "00406037",
+          "corp_name": "CSA 코스믹",
+          "flr_nm": "CSA 코스믹",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000496",
+          "report_nm": "[기재정정]주요사항보고서(전환사채권발행결정)",
+          "rm": "",
+          "stock_code": "083660"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_12_20260710000465_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "B",
+        "corp_cls": "K",
+        "corp_code": "00406037",
+        "corp_name": "CSA 코스믹",
+        "flr_nm": "CSA 코스믹",
+        "rcept_dt": "20260710",
+        "rcept_no": "20260710000465",
+        "report_nm": "[기재정정]주요사항보고서(전환사채권발행결정)",
+        "rm": "정",
+        "stock_code": "083660"
+      }
+    },
+    {
+      "event": 13,
+      "evidence": [
+        {
+          "corp_cls": "K",
+          "corp_code": "00530413",
+          "corp_name": "더코디",
+          "flr_nm": "더코디",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000106",
+          "report_nm": "[기재정정]주요사항보고서(전환사채권발행결정)",
+          "rm": "",
+          "stock_code": "224060"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_13_20260710000698_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "B",
+        "corp_cls": "K",
+        "corp_code": "00530413",
+        "corp_name": "더코디",
+        "flr_nm": "더코디",
+        "rcept_dt": "20260710",
+        "rcept_no": "20260710000698",
+        "report_nm": "[기재정정]주요사항보고서(전환사채권발행결정)",
+        "rm": "정",
+        "stock_code": "224060"
+      }
+    },
+    {
+      "event": 14,
+      "evidence": [
+        {
+          "corp_cls": "K",
+          "corp_code": "00765897",
+          "corp_name": "한국피아이엠",
+          "flr_nm": "한국피아이엠",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000488",
+          "report_nm": "[기재정정]주요사항보고서(전환사채권발행결정)",
+          "rm": "",
+          "stock_code": "448900"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_14_20260710000677_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "B",
+        "corp_cls": "K",
+        "corp_code": "00765897",
+        "corp_name": "한국피아이엠",
+        "flr_nm": "한국피아이엠",
+        "rcept_dt": "20260710",
+        "rcept_no": "20260710000677",
+        "report_nm": "주요사항보고서(전환사채권발행결정)",
+        "rm": "정",
+        "stock_code": "448900"
+      }
+    },
+    {
+      "event": 15,
+      "evidence": [
+        {
+          "corp_cls": "K",
+          "corp_code": "00149594",
+          "corp_name": "한국캐피탈",
+          "flr_nm": "한국캐피탈",
+          "rcept_dt": "20260709",
+          "rcept_no": "20260709000694",
+          "report_nm": "[첨부정정]일괄신고추가서류",
+          "rm": "",
+          "stock_code": "023760"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_15_20260709000528_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "C",
+        "corp_cls": "K",
+        "corp_code": "00149594",
+        "corp_name": "한국캐피탈",
+        "flr_nm": "한국캐피탈",
+        "rcept_dt": "20260709",
+        "rcept_no": "20260709000528",
+        "report_nm": "일괄신고추가서류",
+        "rm": "정",
+        "stock_code": "023760"
+      }
+    },
+    {
+      "event": 16,
+      "evidence": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00148665",
+          "corp_name": "아이엠증권",
+          "flr_nm": "아이엠증권",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000411",
+          "report_nm": "[기재정정]주요사항보고서(자본으로인정되는채무증권발행결정)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00148665",
+          "corp_name": "아이엠증권",
+          "flr_nm": "아이엠증권",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000369",
+          "report_nm": "[기재정정]주요사항보고서(자본으로인정되는채무증권발행결정)",
+          "rm": "정",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00148665",
+          "corp_name": "아이엠증권",
+          "flr_nm": "아이엠증권",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000351",
+          "report_nm": "[기재정정]주요사항보고서(자본으로인정되는채무증권발행결정)",
+          "rm": "정",
+          "stock_code": ""
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_16_20260709000051_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "B",
+        "corp_cls": "E",
+        "corp_code": "00148665",
+        "corp_name": "아이엠증권",
+        "flr_nm": "아이엠증권",
+        "rcept_dt": "20260709",
+        "rcept_no": "20260709000051",
+        "report_nm": "주요사항보고서(자본으로인정되는채무증권발행결정)",
+        "rm": "정",
+        "stock_code": ""
+      }
+    },
+    {
+      "event": 17,
+      "evidence": [
+        {
+          "corp_cls": "K",
+          "corp_code": "01549472",
+          "corp_name": "대진첨단소재",
+          "flr_nm": "대진첨단소재",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000506",
+          "report_nm": "[기재정정]주요사항보고서(전환사채권발행결정)",
+          "rm": "",
+          "stock_code": "393970"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_17_20260709000398_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "B",
+        "corp_cls": "K",
+        "corp_code": "01549472",
+        "corp_name": "대진첨단소재",
+        "flr_nm": "대진첨단소재",
+        "rcept_dt": "20260709",
+        "rcept_no": "20260709000398",
+        "report_nm": "[첨부정정]주요사항보고서(전환사채권발행결정)",
+        "rm": "정",
+        "stock_code": "393970"
+      }
+    },
+    {
+      "event": 18,
+      "evidence": [
+        {
+          "corp_cls": "Y",
+          "corp_code": "00129679",
+          "corp_name": "녹십자",
+          "flr_nm": "녹십자",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260709000697",
+          "report_nm": "[기재정정]주요사항보고서(타법인주식및출자증권양도결정)",
+          "rm": "",
+          "stock_code": "006280"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_18_20260709000682_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "B",
+        "corp_cls": "Y",
+        "corp_code": "00129679",
+        "corp_name": "녹십자",
+        "flr_nm": "녹십자",
+        "rcept_dt": "20260709",
+        "rcept_no": "20260709000682",
+        "report_nm": "[기재정정]주요사항보고서(타법인주식및출자증권양도결정)",
+        "rm": "정",
+        "stock_code": "006280"
+      }
+    },
+    {
+      "event": 19,
+      "evidence": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00267331",
+          "corp_name": "다올자산운용",
+          "flr_nm": "다올자산운용",
+          "rcept_dt": "20260713",
+          "rcept_no": "20260713000136",
+          "report_nm": "[기재정정]일괄신고서(집합투자증권-신탁형)(다올월지급글로벌멀티에셋인컴EMP증권자투자신탁[혼합-재간접형])",
+          "rm": "",
+          "stock_code": ""
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_19_20260709000176_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "G",
+        "corp_cls": "E",
+        "corp_code": "00267331",
+        "corp_name": "다올자산운용",
+        "flr_nm": "다올자산운용",
+        "rcept_dt": "20260709",
+        "rcept_no": "20260709000176",
+        "report_nm": "[기재정정]일괄신고서(집합투자증권-신탁형)(다올월지급글로벌멀티에셋인컴EMP증권자투자신탁[혼합-재간접형])",
+        "rm": "정",
+        "stock_code": ""
+      }
+    },
+    {
+      "event": 20,
+      "evidence": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00259794",
+          "corp_name": "트러스톤자산운용",
+          "flr_nm": "트러스톤자산운용",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000167",
+          "report_nm": "[기재정정]일괄신고서(집합투자증권-신탁형)(트러스톤핀셋코어증권자투자신탁[주식])",
+          "rm": "",
+          "stock_code": ""
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_20_20260709000366_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "G",
+        "corp_cls": "E",
+        "corp_code": "00259794",
+        "corp_name": "트러스톤자산운용",
+        "flr_nm": "트러스톤자산운용",
+        "rcept_dt": "20260709",
+        "rcept_no": "20260709000366",
+        "report_nm": "[기재정정]일괄신고서(집합투자증권-신탁형)(트러스톤핀셋코어증권자투자신탁[주식])",
+        "rm": "정",
+        "stock_code": ""
+      }
+    },
+    {
+      "event": 21,
+      "evidence": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00259776",
+          "corp_name": "미래에셋자산운용",
+          "flr_nm": "미래에셋자산운용",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000593",
+          "report_nm": "[기재정정]일괄신고서(집합투자증권-신탁형)(미래에셋TIGER삼성전자단일종목레버리지증권상장지수투자신탁(주식-파생형))",
+          "rm": "",
+          "stock_code": ""
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_21_20260709000679_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "G",
+        "corp_cls": "E",
+        "corp_code": "00259776",
+        "corp_name": "미래에셋자산운용",
+        "flr_nm": "미래에셋자산운용",
+        "rcept_dt": "20260709",
+        "rcept_no": "20260709000679",
+        "report_nm": "[기재정정]일괄신고서(집합투자증권-신탁형)(미래에셋TIGER삼성전자단일종목레버리지증권상장지수투자신탁(주식-파생형))",
+        "rm": "정",
+        "stock_code": ""
+      }
+    },
+    {
+      "event": 22,
+      "evidence": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00259776",
+          "corp_name": "미래에셋자산운용",
+          "flr_nm": "미래에셋자산운용",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000586",
+          "report_nm": "[기재정정]일괄신고서(집합투자증권-신탁형)(미래에셋TIGERSK하이닉스단일종목레버리지증권상장지수투자신탁(주식-파생형))",
+          "rm": "",
+          "stock_code": ""
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_22_20260709000627_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "G",
+        "corp_cls": "E",
+        "corp_code": "00259776",
+        "corp_name": "미래에셋자산운용",
+        "flr_nm": "미래에셋자산운용",
+        "rcept_dt": "20260709",
+        "rcept_no": "20260709000627",
+        "report_nm": "[기재정정]일괄신고서(집합투자증권-신탁형)(미래에셋TIGERSK하이닉스단일종목레버리지증권상장지수투자신탁(주식-파생형))",
+        "rm": "정",
+        "stock_code": ""
+      }
+    },
+    {
+      "event": 23,
+      "evidence": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00259776",
+          "corp_name": "미래에셋자산운용",
+          "flr_nm": "미래에셋자산운용",
+          "rcept_dt": "20260713",
+          "rcept_no": "20260713000471",
+          "report_nm": "[기재정정]일괄신고서(집합투자증권-신탁형)(미래에셋K에너지인프라인덱스증권자투자신탁(주식))",
+          "rm": "",
+          "stock_code": ""
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_23_20260709000677_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "G",
+        "corp_cls": "E",
+        "corp_code": "00259776",
+        "corp_name": "미래에셋자산운용",
+        "flr_nm": "미래에셋자산운용",
+        "rcept_dt": "20260709",
+        "rcept_no": "20260709000677",
+        "report_nm": "[기재정정]일괄신고서(집합투자증권-신탁형)(미래에셋K에너지인프라인덱스증권자투자신탁(주식))",
+        "rm": "정",
+        "stock_code": ""
+      }
+    },
+    {
+      "event": 24,
+      "evidence": [
+        {
+          "corp_cls": "Y",
+          "corp_code": "00120182",
+          "corp_name": "NH투자증권",
+          "flr_nm": "NH투자증권",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000497",
+          "report_nm": "증권발행실적보고서",
+          "rm": "",
+          "stock_code": "005940"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00120182",
+          "corp_name": "NH투자증권",
+          "flr_nm": "NH투자증권",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000417",
+          "report_nm": "증권발행실적보고서",
+          "rm": "",
+          "stock_code": "005940"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00120182",
+          "corp_name": "NH투자증권",
+          "flr_nm": "NH투자증권",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000379",
+          "report_nm": "증권발행실적보고서",
+          "rm": "",
+          "stock_code": "005940"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00120182",
+          "corp_name": "NH투자증권",
+          "flr_nm": "NH투자증권",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000364",
+          "report_nm": "증권발행실적보고서",
+          "rm": "",
+          "stock_code": "005940"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00120182",
+          "corp_name": "NH투자증권",
+          "flr_nm": "NH투자증권",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000356",
+          "report_nm": "증권발행실적보고서",
+          "rm": "",
+          "stock_code": "005940"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00120182",
+          "corp_name": "NH투자증권",
+          "flr_nm": "NH투자증권",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000350",
+          "report_nm": "증권발행실적보고서",
+          "rm": "",
+          "stock_code": "005940"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00120182",
+          "corp_name": "NH투자증권",
+          "flr_nm": "NH투자증권",
+          "rcept_dt": "20260713",
+          "rcept_no": "20260713000084",
+          "report_nm": "증권발행실적보고서",
+          "rm": "",
+          "stock_code": "005940"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00120182",
+          "corp_name": "NH투자증권",
+          "flr_nm": "NH투자증권",
+          "rcept_dt": "20260713",
+          "rcept_no": "20260713000074",
+          "report_nm": "증권발행실적보고서",
+          "rm": "",
+          "stock_code": "005940"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00120182",
+          "corp_name": "NH투자증권",
+          "flr_nm": "NH투자증권",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000526",
+          "report_nm": "증권발행실적보고서",
+          "rm": "",
+          "stock_code": "005940"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00120182",
+          "corp_name": "NH투자증권",
+          "flr_nm": "NH투자증권",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000516",
+          "report_nm": "증권발행실적보고서",
+          "rm": "",
+          "stock_code": "005940"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_24_20260708000303_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "C",
+        "corp_cls": "Y",
+        "corp_code": "00120182",
+        "corp_name": "NH투자증권",
+        "flr_nm": "NH투자증권",
+        "rcept_dt": "20260708",
+        "rcept_no": "20260708000303",
+        "report_nm": "증권발행실적보고서",
+        "rm": "정",
+        "stock_code": "005940"
+      }
+    },
+    {
+      "event": 25,
+      "evidence": [
+        {
+          "corp_cls": "Y",
+          "corp_code": "00111722",
+          "corp_name": "미래에셋증권",
+          "flr_nm": "미래에셋증권",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000335",
+          "report_nm": "일괄신고추가서류(파생결합사채-주가연계파생결합사채)",
+          "rm": "",
+          "stock_code": "006800"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00111722",
+          "corp_name": "미래에셋증권",
+          "flr_nm": "미래에셋증권",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000064",
+          "report_nm": "일괄신고추가서류(파생결합사채-주가연계파생결합사채)",
+          "rm": "",
+          "stock_code": "006800"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00111722",
+          "corp_name": "미래에셋증권",
+          "flr_nm": "미래에셋증권",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000178",
+          "report_nm": "일괄신고추가서류(파생결합사채-주가연계파생결합사채)",
+          "rm": "",
+          "stock_code": "006800"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00111722",
+          "corp_name": "미래에셋증권",
+          "flr_nm": "미래에셋증권",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000243",
+          "report_nm": "일괄신고추가서류(파생결합사채-주가연계파생결합사채)",
+          "rm": "",
+          "stock_code": "006800"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00111722",
+          "corp_name": "미래에셋증권",
+          "flr_nm": "미래에셋증권",
+          "rcept_dt": "20260708",
+          "rcept_no": "20260708000090",
+          "report_nm": "[기재정정]일괄신고추가서류(파생결합사채-주가연계파생결합사채)",
+          "rm": "",
+          "stock_code": "006800"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_25_20260708000066_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "C",
+        "corp_cls": "Y",
+        "corp_code": "00111722",
+        "corp_name": "미래에셋증권",
+        "flr_nm": "미래에셋증권",
+        "rcept_dt": "20260708",
+        "rcept_no": "20260708000066",
+        "report_nm": "일괄신고추가서류(파생결합사채-주가연계파생결합사채)",
+        "rm": "정",
+        "stock_code": "006800"
+      }
+    },
+    {
+      "event": 26,
+      "evidence": [
+        {
+          "corp_cls": "Y",
+          "corp_code": "00104856",
+          "corp_name": "삼성증권",
+          "flr_nm": "삼성증권",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000326",
+          "report_nm": "투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": "016360"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00104856",
+          "corp_name": "삼성증권",
+          "flr_nm": "삼성증권",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000202",
+          "report_nm": "투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": "016360"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00104856",
+          "corp_name": "삼성증권",
+          "flr_nm": "삼성증권",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000148",
+          "report_nm": "투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": "016360"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00104856",
+          "corp_name": "삼성증권",
+          "flr_nm": "삼성증권",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000293",
+          "report_nm": "투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": "016360"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00104856",
+          "corp_name": "삼성증권",
+          "flr_nm": "삼성증권",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000281",
+          "report_nm": "투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": "016360"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00104856",
+          "corp_name": "삼성증권",
+          "flr_nm": "삼성증권",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000273",
+          "report_nm": "투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": "016360"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00104856",
+          "corp_name": "삼성증권",
+          "flr_nm": "삼성증권",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000220",
+          "report_nm": "투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": "016360"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00104856",
+          "corp_name": "삼성증권",
+          "flr_nm": "삼성증권",
+          "rcept_dt": "20260708",
+          "rcept_no": "20260708000332",
+          "report_nm": "투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": "016360"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00104856",
+          "corp_name": "삼성증권",
+          "flr_nm": "삼성증권",
+          "rcept_dt": "20260708",
+          "rcept_no": "20260708000294",
+          "report_nm": "투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": "016360"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00104856",
+          "corp_name": "삼성증권",
+          "flr_nm": "삼성증권",
+          "rcept_dt": "20260708",
+          "rcept_no": "20260708000283",
+          "report_nm": "[기재정정]투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": "016360"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_26_20260708000254_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "C",
+        "corp_cls": "Y",
+        "corp_code": "00104856",
+        "corp_name": "삼성증권",
+        "flr_nm": "삼성증권",
+        "rcept_dt": "20260708",
+        "rcept_no": "20260708000254",
+        "report_nm": "투자설명서(일괄신고)",
+        "rm": "정",
+        "stock_code": "016360"
+      }
+    },
+    {
+      "event": 27,
+      "evidence": [
+        {
+          "corp_cls": "Y",
+          "corp_code": "00296290",
+          "corp_name": "키움증권",
+          "flr_nm": "키움증권",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000512",
+          "report_nm": "[발행조건확정]증권신고서(채무증권)",
+          "rm": "",
+          "stock_code": "039490"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00296290",
+          "corp_name": "키움증권",
+          "flr_nm": "키움증권",
+          "rcept_dt": "20260714",
+          "rcept_no": "20260714000510",
+          "report_nm": "[기재정정]증권신고서(채무증권)",
+          "rm": "정",
+          "stock_code": "039490"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_27_20260708000578_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "C",
+        "corp_cls": "Y",
+        "corp_code": "00296290",
+        "corp_name": "키움증권",
+        "flr_nm": "키움증권",
+        "rcept_dt": "20260708",
+        "rcept_no": "20260708000578",
+        "report_nm": "증권신고서(채무증권)",
+        "rm": "정",
+        "stock_code": "039490"
+      }
+    },
+    {
+      "event": 28,
+      "evidence": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00624244",
+          "corp_name": "에이치엘지노믹스",
+          "flr_nm": "에이치엘지노믹스",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000298",
+          "report_nm": "[기재정정]투자설명서",
+          "rm": "",
+          "stock_code": ""
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_28_20260708000052_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "C",
+        "corp_cls": "E",
+        "corp_code": "00624244",
+        "corp_name": "에이치엘지노믹스",
+        "flr_nm": "에이치엘지노믹스",
+        "rcept_dt": "20260708",
+        "rcept_no": "20260708000052",
+        "report_nm": "투자설명서",
+        "rm": "정",
+        "stock_code": ""
+      }
+    },
+    {
+      "event": 29,
+      "evidence": [
+        {
+          "corp_cls": "Y",
+          "corp_code": "00980122",
+          "corp_name": "JB금융지주",
+          "flr_nm": "JB금융지주",
+          "rcept_dt": "20260708",
+          "rcept_no": "20260708000582",
+          "report_nm": "[기재정정]투자설명서(일괄신고)",
+          "rm": "",
+          "stock_code": "175330"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_29_20260708000545_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "C",
+        "corp_cls": "Y",
+        "corp_code": "00980122",
+        "corp_name": "JB금융지주",
+        "flr_nm": "JB금융지주",
+        "rcept_dt": "20260708",
+        "rcept_no": "20260708000545",
+        "report_nm": "투자설명서(일괄신고)",
+        "rm": "정",
+        "stock_code": "175330"
+      }
+    },
+    {
+      "event": 30,
+      "evidence": [
+        {
+          "corp_cls": "Y",
+          "corp_code": "00980122",
+          "corp_name": "JB금융지주",
+          "flr_nm": "JB금융지주",
+          "rcept_dt": "20260708",
+          "rcept_no": "20260708000581",
+          "report_nm": "[기재정정]일괄신고추가서류",
+          "rm": "",
+          "stock_code": "175330"
+        }
+      ],
+      "flag": "정",
+      "matched": true,
+      "method": "동일 회사·정규화 보고서명의 후속 접수 확인",
+      "raw_fixture": "opendart/rm_validation/event_30_20260708000530_page_001.json",
+      "source": {
+        "_flag": "정",
+        "_source_pblntf_ty": "C",
+        "corp_cls": "Y",
+        "corp_code": "00980122",
+        "corp_name": "JB금융지주",
+        "flr_nm": "JB금융지주",
+        "rcept_dt": "20260708",
+        "rcept_no": "20260708000530",
+        "report_nm": "일괄신고추가서류",
+        "rm": "정",
+        "stock_code": "175330"
+      }
+    }
+  ],
+  "status_013": {
+    "fixture": "opendart/status/status_013_empty_window.json",
+    "has_list": false,
+    "message": "조회된 데이타가 없습니다.",
+    "normal_no_data_confirmed": true,
+    "request_condition": {
+      "bgn_de": "19990101",
+      "end_de": "19990101",
+      "pblntf_detail_ty": "D004"
+    },
+    "status": "013"
+  }
+}

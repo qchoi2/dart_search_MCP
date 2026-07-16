@@ -1,0 +1,58 @@
+{
+  "checks": [
+    {
+      "approved": true,
+      "id": "last_reprt_at_N_all_Y_final",
+      "result": true
+    },
+    {
+      "approved": true,
+      "id": "rm_flags_match_actual_chains_for_30_events",
+      "result": true
+    },
+    {
+      "approved": true,
+      "id": "all_official_report_nm_prefixes_observed",
+      "result": true
+    },
+    {
+      "approved": true,
+      "id": "multiple_report_nm_prefixes_exist",
+      "result": true
+    },
+    {
+      "approved": true,
+      "id": "status_013_is_empty_result",
+      "result": true
+    },
+    {
+      "approved": true,
+      "id": "D004_corp_name_is_target_company",
+      "result": true
+    },
+    {
+      "approved": true,
+      "id": "DART_normal_zero_has_explicit_marker",
+      "result": true
+    },
+    {
+      "approved": false,
+      "id": "DART_actual_structure_failure_branch",
+      "result": "미확인"
+    },
+    {
+      "approved": true,
+      "id": "DART_concurrency_1_technically_operated",
+      "result": true
+    },
+    {
+      "approved": false,
+      "id": "DART_automation_permission_and_allowed_interval",
+      "result": "미확인"
+    }
+  ],
+  "generated_at": "2026-07-16T13:34:25.087+00:00",
+  "product_development_started": false,
+  "release_gate_approved": false,
+  "stage0_complete": false
+}

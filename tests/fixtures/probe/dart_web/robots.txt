@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /dsaf001/main.do
+Disallow: /report/viewer.do
+Disallow: /report/download.do
+Disallow: /pdf/download/
+Disallow: /dsae001/selectPopup.ax
+Disallow: /html/search/SearchCompany_M2.html
+
