@@ -53,6 +53,10 @@ class FakeDart:
         self.error = error
         self.calls = 0
 
+    def health_check(self, diagnostics):
+        diagnostics.health_check_requests += 1
+        return True
+
     def search_variants(self, variants, date_from, date_to, diagnostics, **kwargs):
         self.calls += 1
         diagnostics.mode_setup_requests += 1
@@ -77,6 +81,9 @@ class SearchExecutionTests(unittest.TestCase):
         self.assertEqual(plan.primary_channel, "dart_fulltext")
         self.assertNotIn("상계 납입", plan.query_variants)
         self.assertIn("주금납입채무와 상계", plan.query_variants)
+        conversion = query_variants("채권의 출자전환")
+        self.assertIn("채권의 출자전환", conversion)
+        self.assertNotIn("상계 납입", conversion)
 
     def test_global_dedupe_precedes_document_budget_and_evidence_is_returned(self):
         candidate = candidate_from_list_row(row())
@@ -88,6 +95,8 @@ class SearchExecutionTests(unittest.TestCase):
         self.assertEqual(result["status"], "completed")
         self.assertEqual(len(result["results"]), 1)
         self.assertEqual(opendart.downloads, [candidate.receipt_no])
+        self.assertEqual(result["diagnostics"]["health_check_requests"], 1)
+        self.assertEqual(result["diagnostics"]["mode_setup_requests"], 1)
         filing = result["results"][0]["filings"][0]
         self.assertIn("dart_fulltext", filing["source_channels"])
         self.assertIn("opendart_document", filing["source_channels"])

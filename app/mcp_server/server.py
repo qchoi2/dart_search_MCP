@@ -11,6 +11,7 @@ from typing import Any
 from app.channels.dart_fulltext import DartFulltextClient
 from app.channels.opendart import OpenDartClient
 from app.config.env import get_opendart_api_key, load_env_file
+from app.config.defaults import COMPANY_EXACT_MATCH_LIMIT, PRODUCT_VERSION, SCHEMA_VERSION
 from app.config.paths import AppPaths
 from app.config.settings import load_settings
 from app.contracts import SearchRequest
@@ -36,7 +37,7 @@ def build_engine() -> SearchEngine:
         if opendart is None:
             return None
         paths.ensure("cache")
-        matches = opendart.load_company_directory(paths.cache / "corpCode.zip").lookup(name, limit=2)
+        matches = opendart.load_company_directory(paths.cache / "corpCode.zip").lookup(name, limit=COMPANY_EXACT_MATCH_LIMIT)
         return matches[0].corp_code if len(matches) == 1 else None
 
     return SearchEngine(opendart=opendart, dart=dart, audit=audit, company_resolver=resolve_company)
@@ -58,7 +59,7 @@ class McpApplication:
                 error = exc.to_dict()
             else:
                 error = {"code": "INVALID_ARGUMENT", "message": str(exc), "retryable": False}
-            return {"status": "failed", "schema_version": "1.0", "error": error}
+            return {"status": "failed", "schema_version": SCHEMA_VERSION, "error": error}
 
     def handle(self, request: dict[str, Any]) -> dict[str, Any] | None:
         method = request.get("method")
@@ -66,7 +67,7 @@ class McpApplication:
         if method == "notifications/initialized":
             return None
         if method == "initialize":
-            result = {"protocolVersion": "2025-03-26", "capabilities": {"tools": {}}, "serverInfo": {"name": "dart-disclosure-search", "version": "0.1.0"}}
+            result = {"protocolVersion": "2025-03-26", "capabilities": {"tools": {}}, "serverInfo": {"name": "dart-disclosure-search", "version": PRODUCT_VERSION}}
         elif method == "tools/list":
             result = {"tools": [SEARCH_TOOL, EVIDENCE_TOOL]}
         elif method == "tools/call":

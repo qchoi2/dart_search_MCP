@@ -20,6 +20,7 @@ from app.errors import ErrorCode, SearchError
 from app.http_client import HttpResponse
 from app.research.evidence import extract_evidence
 from app.research.normalization import dart_viewer_url, parse_report_name, parse_rm
+from app.research.withdrawal import verify_withdrawal_reference
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests" / "fixtures" / "probe"
@@ -105,12 +106,25 @@ class OpenDartTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, ErrorCode.OPENDART_REQUEST_LIMIT_EXCEEDED)
         self.assertEqual(len(limited.requests), 1)
 
+    def test_diagnostics_count_status_retry_as_two_actual_requests(self):
+        http = FakeHttp([
+            {"status": "900", "message": "undefined"},
+            {"status": "013", "message": "none"},
+        ])
+        diagnostics = SearchExecutionDiagnostics()
+        OpenDartClient("masked", http=http).collect_lists(  # type: ignore[arg-type]
+            date_from=date(2026, 1, 1), date_to=date(2026, 1, 1), diagnostics=diagnostics,
+        )
+        self.assertEqual(diagnostics.actual_list_requests, 2)
+
     def test_rm_and_multiple_prefixes_preserve_order(self):
         self.assertEqual(parse_rm("공정X채"), (("공", "정", "채"), ("X",)))
         prefixes, name, unknown = parse_report_name("[정정제출요구][기재정정]증권신고서(지분증권)")
         self.assertEqual(prefixes, ("[정정제출요구]", "[기재정정]"))
         self.assertEqual(name, "증권신고서(지분증권)")
         self.assertFalse(unknown)
+        unknown_candidate = candidate_from_list_row({**self._row("20260102000001"), "report_nm": "[새접두어]보고서"})
+        self.assertTrue(unknown_candidate.unknown_prefix_combination)
 
     def test_candidate_preserves_bond_flag_and_viewer_link(self):
         candidate = candidate_from_list_row(self._row("20260102000001", rm="채X"))
@@ -129,6 +143,40 @@ class OpenDartTests(unittest.TestCase):
         snippets = extract_evidence("20260102000001", text, ["상계납입"])
         self.assertEqual(len(snippets), 1)
         self.assertIn("상계납입", snippets[0].text)
+
+    def test_document_status_900_retries_once_and_014_does_not(self):
+        import io, zipfile
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, "w") as archive:
+            archive.writestr("doc.xml", "<DOCUMENT><P>근거</P></DOCUMENT>")
+        retrying = FakeHttp([{"status": "900", "message": "undefined"}, stream.getvalue()])
+        text = OpenDartClient("masked", http=retrying).download_document("20260101000001")  # type: ignore[arg-type]
+        self.assertIn("근거", text)
+        self.assertEqual(len(retrying.requests), 2)
+        missing = FakeHttp([{"status": "014", "message": "missing"}])
+        with self.assertRaises(SearchError) as caught:
+            OpenDartClient("masked", http=missing).download_document("20260101000001")  # type: ignore[arg-type]
+        self.assertEqual(caught.exception.code, ErrorCode.OPENDART_FILE_NOT_FOUND)
+        self.assertEqual(len(missing.requests), 1)
+
+    def test_withdrawal_requires_explicit_receipt_or_labeled_original_date(self):
+        golden = json.loads((FIXTURES / "stage0_6" / "golden" / "rm_withdrawal.json").read_text(encoding="utf-8"))
+        case = next(item for item in golden["cases"] if item.get("explicit_plan_submission_date") == "20260602")
+        verified = verify_withdrawal_reference(
+            case["evidence_snippet"],
+            followup_receipt_no=case["follow"],
+            proposed_original_receipt_no=case["source"],
+            proposed_original_filing_date="20260602",
+        )
+        self.assertTrue(verified.verified)
+        self.assertEqual(verified.basis, "explicit_labeled_original_filing_date")
+        false_proximity = verify_withdrawal_reference(
+            "같은 회사가 가까운 시기에 철회보고서를 제출했다.",
+            followup_receipt_no=case["follow"],
+            proposed_original_receipt_no=case["source"],
+            proposed_original_filing_date="20260602",
+        )
+        self.assertFalse(false_proximity.verified)
 
     @staticmethod
     def _row(receipt, rm=""):

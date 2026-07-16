@@ -6,6 +6,8 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
+from app.config.defaults import RECEIPT_NO_LENGTH
+
 
 @lru_cache(maxsize=1)
 def _rules() -> dict:
@@ -43,6 +45,6 @@ def parse_report_name(value: str) -> tuple[tuple[str, ...], str, bool]:
 
 
 def dart_viewer_url(receipt_no: str) -> str:
-    if not receipt_no.isdigit() or len(receipt_no) != 14:
-        raise ValueError("receipt_no must contain 14 digits")
+    if not receipt_no.isdigit() or len(receipt_no) != RECEIPT_NO_LENGTH:
+        raise ValueError(f"receipt_no must contain {RECEIPT_NO_LENGTH} digits")
     return f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={receipt_no}"

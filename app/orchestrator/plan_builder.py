@@ -20,14 +20,19 @@ def query_variants(query: str) -> tuple[str, ...]:
     rules = search_term_rules()
     compact = " ".join(query.split())
     variants: list[str] = []
-    if "상계" in compact or "납입" in compact:
+    has_setoff = "상계" in compact or "납입" in compact
+    has_conversion = "출자전환" in compact
+    if has_setoff:
         variants.extend(rules["precise"])
-    if "출자전환" in compact:
+    if has_conversion:
         variants.extend(rules["concept"])
     broad_requested = any(marker in compact.casefold() for marker in ("broad", "광범위", "넓게"))
     broad_literal = any(term in compact for term in rules["broad_only"])
     if broad_requested or broad_literal:
-        variants.extend(rules["broad_only"])
+        if has_setoff:
+            variants.extend(rules["broad_only"][:2])
+        if has_conversion:
+            variants.extend(rules["broad_only"][2:])
     if not variants:
         variants.append(compact)
     return tuple(dict.fromkeys(value for value in variants if value))
@@ -56,12 +61,15 @@ def build_search_plan(request: SearchRequest) -> SearchPlan:
         list_budget = defaults.STANDARD_LIST_REQUEST_BUDGET
         dart_budget = defaults.STANDARD_DART_REQUEST_BUDGET
         # Scale down below the 20-result ceiling, while preserving validation headroom.
-        document_budget = min(defaults.STANDARD_DOCUMENT_BUDGET, max(request.target_count * 2, request.target_count))
+        document_budget = min(
+            defaults.STANDARD_DOCUMENT_BUDGET,
+            max(request.target_count * defaults.DOCUMENT_CANDIDATE_HEADROOM_MULTIPLIER, request.target_count),
+        )
         result_budget = min(request.target_count, defaults.STANDARD_RESULT_BUDGET)
         soft = defaults.STANDARD_SOFT_TIMEOUT_SECONDS
         hard = defaults.STANDARD_HARD_TIMEOUT_SECONDS
     user_ceiling = request.max_documents or document_budget
-    effective = min(document_budget, user_ceiling, defaults.AMENDMENT_DOCUMENT_BUDGET_MAX)
+    effective = min(document_budget, user_ceiling, defaults.DOCUMENT_BUDGET_ABSOLUTE_MAX)
     return SearchPlan(
         strategy=strategy,
         primary_channel=primary,

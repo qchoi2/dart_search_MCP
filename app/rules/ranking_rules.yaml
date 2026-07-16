@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "weights": {
+    "exact_compact_snippet": 10.0,
+    "body_or_mixed": 3.0,
+    "report_name": 2.0
+  }
+}

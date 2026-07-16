@@ -7,6 +7,7 @@ from datetime import date
 from enum import Enum
 from typing import Any
 
+from app.config import defaults
 from app.config.defaults import SCHEMA_VERSION
 
 
@@ -24,7 +25,7 @@ class SearchRequest:
     company: str | None = None
     date_from: str | None = None
     date_to: str | None = None
-    target_count: int = 10
+    target_count: int = defaults.DEFAULT_TARGET_COUNT
     mode: str = "standard"
     max_documents: int | None = None
     cache_mode: str = "auto"
@@ -36,13 +37,13 @@ class SearchRequest:
     schema_version: str = SCHEMA_VERSION
 
     def __post_init__(self) -> None:
-        if not 1 <= len(self.query.strip()) <= 1000:
-            raise ValueError("query must contain 1 to 1000 characters")
-        limit = 500 if self.output_mode == "batch" else 20
-        if not 1 <= self.target_count <= limit:
-            raise ValueError(f"target_count must be between 1 and {limit}")
-        if self.max_documents is not None and not 1 <= self.max_documents <= 120:
-            raise ValueError("max_documents must be between 1 and 120")
+        if not defaults.MIN_TARGET_COUNT <= len(self.query.strip()) <= defaults.QUERY_MAX_CHARS:
+            raise ValueError(f"query must contain {defaults.MIN_TARGET_COUNT} to {defaults.QUERY_MAX_CHARS} characters")
+        limit = defaults.BATCH_TARGET_MAX if self.output_mode == "batch" else defaults.INTERACTIVE_TARGET_MAX
+        if not defaults.MIN_TARGET_COUNT <= self.target_count <= limit:
+            raise ValueError(f"target_count must be between {defaults.MIN_TARGET_COUNT} and {limit}")
+        if self.max_documents is not None and not defaults.MIN_TARGET_COUNT <= self.max_documents <= defaults.DOCUMENT_BUDGET_ABSOLUTE_MAX:
+            raise ValueError(f"max_documents must be between {defaults.MIN_TARGET_COUNT} and {defaults.DOCUMENT_BUDGET_ABSOLUTE_MAX}")
         if self.date_from and self.date_to:
             if date.fromisoformat(self.date_from) > date.fromisoformat(self.date_to):
                 raise ValueError("date_from must be on or before date_to")
@@ -143,6 +144,7 @@ class DisclosureCandidate:
     verification_status: str
     evidence: tuple[EvidenceSnippet, ...] = ()
     dart_viewer_url: str | None = None
+    unknown_prefix_combination: bool = False
     schema_version: str = SCHEMA_VERSION
 
 

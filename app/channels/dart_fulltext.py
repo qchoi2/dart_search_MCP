@@ -3,16 +3,21 @@
 from __future__ import annotations
 
 import html
+import json
 import math
 import re
 import time
+import threading
 from dataclasses import dataclass, field, replace
 from datetime import date, timedelta
 from html.parser import HTMLParser
 from typing import Callable, Iterable
+from functools import lru_cache
+from pathlib import Path
 
 from app.config.defaults import (
     DART_EFFECTIVE_PAGE_SIZE,
+    DART_MAX_LINKS,
     DART_MIN_REQUEST_INTERVAL_SECONDS,
     STANDARD_DART_REQUEST_BUDGET,
     STRUCTURE_CIRCUIT_SECONDS,
@@ -46,6 +51,7 @@ class DartResultRow:
     filer_name: str
     receipt_date: str
     row_tags: tuple[str, ...]
+    unknown_prefix_combination: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,6 +62,14 @@ class DartSearchPage:
     zero_markers: tuple[str, ...]
     current_page: int
     estimated_pages: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class DartWindowCollection:
+    candidates: tuple[DisclosureCandidate, ...]
+    windows: tuple[dict[str, object], ...]
+    complete: bool
+    continuous: bool
 
 
 class _DartParser(HTMLParser):
@@ -146,7 +160,7 @@ class _DartParser(HTMLParser):
         if not receipt:
             return
         report_raw = _clean(" ".join(self._chunks["report"]))
-        prefixes, report, _ = parse_report_name(report_raw)
+        prefixes, report, unknown_prefix_combination = parse_report_name(report_raw)
         info = _clean(" ".join(self._chunks["info"]))
         tags = tuple(re.findall(r"\[([^\]]+)\]", info))
         scope = "body" if "본문" in tags else "attachment" if "첨부문서" in tags else "mixed"
@@ -165,6 +179,7 @@ class _DartParser(HTMLParser):
             filer_name=filer,
             receipt_date=_clean(" ".join(self._chunks["date"]).replace(".", "")),
             row_tags=tags,
+            unknown_prefix_combination=unknown_prefix_combination,
         ))
 
 
@@ -205,15 +220,23 @@ def merge_duplicate_rows(rows: Iterable[DartResultRow]) -> list[DartResultRow]:
 
 
 def mechanical_score(row: DartResultRow, query: str) -> float:
+    weights = _ranking_weights()
     score = 0.0
     normalized = query.casefold().replace(" ", "")
     if normalized and normalized in row.snippet.casefold().replace(" ", ""):
-        score += 10.0
+        score += weights["exact_compact_snippet"]
     if row.match_scope in {"body", "mixed"}:
-        score += 3.0
+        score += weights["body_or_mixed"]
     if query.casefold() in row.report_name.casefold():
-        score += 2.0
+        score += weights["report_name"]
     return score
+
+
+@lru_cache(maxsize=1)
+def _ranking_weights() -> dict[str, float]:
+    path = Path(__file__).resolve().parents[1] / "rules" / "ranking_rules.yaml"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return {key: float(value) for key, value in payload["weights"].items()}
 
 
 def row_to_candidate(row: DartResultRow, query: str) -> DisclosureCandidate:
@@ -246,6 +269,7 @@ def row_to_candidate(row: DartResultRow, query: str) -> DisclosureCandidate:
         event_id=None,
         verification_status="unverified",
         dart_viewer_url=dart_viewer_url(row.receipt_no),
+        unknown_prefix_combination=row.unknown_prefix_combination,
     )
 
 
@@ -276,22 +300,24 @@ class DartFulltextClient:
         self.sleeper = sleeper
         self._last_request_started: float | None = None
         self._active_mode: str | None = None
+        self._request_lock = threading.Lock()
 
     def _paced_request(self, method: str, url: str, **kwargs):
-        now = self.clock()
-        if self._last_request_started is not None:
-            remaining = DART_MIN_REQUEST_INTERVAL_SECONDS - (now - self._last_request_started)
-            if remaining > 0:
-                self.sleeper(remaining)
-        self._last_request_started = self.clock()
-        return self.http.request(method, url, **kwargs)
+        with self._request_lock:
+            now = self.clock()
+            if self._last_request_started is not None:
+                remaining = DART_MIN_REQUEST_INTERVAL_SECONDS - (now - self._last_request_started)
+                if remaining > 0:
+                    self.sleeper(remaining)
+            self._last_request_started = self.clock()
+            return self.http.request(method, url, **kwargs)
 
     @staticmethod
     def _form(query: str, date_from: date, date_to: date, mode: str, page: int, company: str | None = None) -> dict[str, str]:
         compact_from = date_from.strftime("%Y%m%d")
         compact_to = date_to.strftime("%Y%m%d")
         form = {
-            "currentPage": str(page), "maxResults": str(DART_EFFECTIVE_PAGE_SIZE), "maxLinks": "10",
+            "currentPage": str(page), "maxResults": str(DART_EFFECTIVE_PAGE_SIZE), "maxLinks": str(DART_MAX_LINKS),
             "sort": "DATE", "sortType": "desc", "option": mode,
             "keyword": query if mode == "contents" else "", "b_keyword": query if mode == "contents" else "",
             "reportName": query if mode == "report" else "", "b_reportName": query if mode == "report" else "",
@@ -321,8 +347,8 @@ class DartFulltextClient:
     def health_check(self, diagnostics: SearchExecutionDiagnostics) -> bool:
         self._ensure_available(diagnostics)
         try:
-            response = self._paced_request("GET", f"{DART_BASE}/dsab007/main.do")
             diagnostics.health_check_requests += 1
+            response = self._paced_request("GET", f"{DART_BASE}/dsab007/main.do")
             healthy = response.status == 200 and b"detailSearch" in response.body
         except SearchError:
             healthy = False
@@ -354,20 +380,20 @@ class DartFulltextClient:
             if self._active_mode != mode:
                 if diagnostics.health_check_requests + diagnostics.mode_setup_requests + diagnostics.dart_result_page_requests >= request_budget:
                     raise SearchError(ErrorCode.DOCUMENT_BUDGET_EXCEEDED, "DART 요청예산이 소진되었습니다.")
-                self._paced_request("POST", f"{DART_BASE}/dsab007/{MODE_ENDPOINTS[mode]}", form=form, headers=referer)
                 diagnostics.mode_setup_requests += 1
+                self._paced_request("POST", f"{DART_BASE}/dsab007/{MODE_ENDPOINTS[mode]}", form=form, headers=referer)
                 self._active_mode = mode
             if diagnostics.health_check_requests + diagnostics.mode_setup_requests + diagnostics.dart_result_page_requests >= request_budget:
                 raise SearchError(ErrorCode.DOCUMENT_BUDGET_EXCEEDED, "DART 요청예산이 소진되었습니다.")
-            response = self._paced_request("POST", f"{DART_BASE}/dsab007/search.ax", form=form, headers=referer)
             diagnostics.dart_result_page_requests += 1
+            response = self._paced_request("POST", f"{DART_BASE}/dsab007/search.ax", form=form, headers=referer)
             parsed = parse_search_html(response.body.decode("utf-8", errors="replace"), page)
             if parsed.classification == "structure_failure_candidate":
                 # One status-diagnostic replay is required before structure failure is confirmed.
                 if diagnostics.health_check_requests + diagnostics.mode_setup_requests + diagnostics.dart_result_page_requests < request_budget:
-                    retry = self._paced_request("POST", f"{DART_BASE}/dsab007/search.ax", form=form, headers=referer)
                     # This replay is a structure-status diagnosis, not a new result page.
                     diagnostics.health_check_requests += 1
+                    retry = self._paced_request("POST", f"{DART_BASE}/dsab007/search.ax", form=form, headers=referer)
                     parsed = parse_search_html(retry.body.decode("utf-8", errors="replace"), page)
                 if parsed.classification == "structure_failure_candidate":
                     self.breaker.failure("structure_or_access")
@@ -425,3 +451,47 @@ class DartFulltextClient:
         merged = merge_duplicate_rows(rows)
         candidates = [row_to_candidate(row, query_by_receipt[row.receipt_no]) for row in merged]
         return sorted(candidates, key=lambda item: (item.mechanical_score, item.receipt_date, item.receipt_no), reverse=True)
+
+    def search_date_windows(
+        self,
+        queries: Iterable[str],
+        date_from: date,
+        date_to: date,
+        diagnostics: SearchExecutionDiagnostics,
+        *,
+        window_days: int,
+        request_budget: int = STANDARD_DART_REQUEST_BUDGET,
+    ) -> DartWindowCollection:
+        """Search contiguous inclusive windows and union by receipt number.
+
+        This is an explicit exhaustive/batch primitive. The Stage 1 interactive
+        engine does not start it automatically.
+        """
+        windows = dart_date_windows(date_from, date_to, window_days)
+        by_receipt: dict[str, DisclosureCandidate] = {}
+        coverage: list[dict[str, object]] = []
+        complete = True
+        for start, end in windows:
+            before = diagnostics.health_check_requests + diagnostics.mode_setup_requests + diagnostics.dart_result_page_requests
+            found = self.search_variants(
+                queries, start, end, diagnostics,
+                request_budget=request_budget,
+            )
+            for candidate in found:
+                previous = by_receipt.get(candidate.receipt_no)
+                if previous is None or candidate.mechanical_score > previous.mechanical_score:
+                    by_receipt[candidate.receipt_no] = candidate
+            after = diagnostics.health_check_requests + diagnostics.mode_setup_requests + diagnostics.dart_result_page_requests
+            window_complete = after < request_budget and not diagnostics.latest_first_bias
+            coverage.append({
+                "date_from": start.isoformat(), "date_to": end.isoformat(),
+                "request_count": after - before, "unique_receipts": len({item.receipt_no for item in found}),
+                "complete": window_complete,
+            })
+            if not window_complete:
+                complete = False
+                break
+        continuous = bool(windows) and windows[0][0] == date_from and windows[-1][1] == date_to and all(
+            left[1] + timedelta(days=1) == right[0] for left, right in zip(windows, windows[1:])
+        )
+        return DartWindowCollection(tuple(by_receipt.values()), tuple(coverage), complete and len(coverage) == len(windows), continuous)

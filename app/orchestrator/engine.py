@@ -18,13 +18,14 @@ from app.security.untrusted_text import mark_untrusted
 from app.storage.audit_log import AuditLog
 from app.storage.continuation import ContinuationStore
 from app.storage.session_cache import SessionTextCache
+from app.config import defaults
 
 from .plan_builder import build_search_plan
 
 
 def _lineage(request: SearchRequest) -> str:
     normalized = "|".join((" ".join(request.query.casefold().split()), (request.company or "").casefold(), request.date_from or "", request.date_to or ""))
-    return "search_" + hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:20]
+    return "search_" + hashlib.sha256(normalized.encode("utf-8")).hexdigest()[: defaults.LINEAGE_HASH_CHARS]
 
 
 def _candidate_dict(candidate: DisclosureCandidate) -> dict[str, Any]:
@@ -88,12 +89,17 @@ class SearchEngine:
         fallback = False
         if plan.primary_channel == "dart_fulltext" and self.dart is not None:
             try:
-                candidates = self.dart.search_variants(
-                    plan.query_variants, from_date, to_date, diagnostics,
-                    request_budget=plan.dart_request_budget,
-                    max_unique=plan.effective_document_budget,
-                    company=request.company,
-                )
+                if not self.dart.health_check(diagnostics):
+                    fallback = True
+                    diagnostics.fallback_used = True
+                    warnings.append("DART 본문검색 상태진단이 실패하여 OpenDART 원문검색으로 폴백합니다.")
+                else:
+                    candidates = self.dart.search_variants(
+                        plan.query_variants, from_date, to_date, diagnostics,
+                        request_budget=plan.dart_request_budget,
+                        max_unique=plan.effective_document_budget,
+                        company=request.company,
+                    )
             except SearchError as exc:
                 if exc.code in {ErrorCode.DART_FULLTEXT_CIRCUIT_OPEN, ErrorCode.DART_FULLTEXT_STRUCTURE_CHANGED, ErrorCode.OPENDART_TEMPORARY_FAILURE}:
                     fallback = True
@@ -112,8 +118,8 @@ class SearchEngine:
                         error={"code": ErrorCode.API_KEY_MISSING.value, "message": "DART_API_KEY를 설정해 주세요."},
                     )
             else:
-                corp_code = self._resolve_company(request.company, warnings)
                 try:
+                    corp_code = self._resolve_company(request.company, warnings)
                     list_result = self.opendart.collect_lists(
                         date_from=from_date, date_to=to_date, diagnostics=diagnostics,
                         request_budget=plan.list_request_budget, corp_code=corp_code,
@@ -154,12 +160,11 @@ class SearchEngine:
             if text is not None:
                 diagnostics.cache_hits += 1
             elif diagnostics.actual_document_requests < plan.effective_document_budget:
+                requests_before = getattr(self.opendart, "requests_started", None)
                 try:
                     text = self.opendart.download_document(candidate.receipt_no)
-                    diagnostics.actual_document_requests += 1
                     self.cache.put(candidate.receipt_no, text)
                 except SearchError as exc:
-                    diagnostics.actual_document_requests += 1
                     if exc.code in {
                         ErrorCode.OPENDART_KEY_UNREGISTERED, ErrorCode.OPENDART_KEY_SUSPENDED,
                         ErrorCode.OPENDART_IP_NOT_ALLOWED, ErrorCode.OPENDART_REQUEST_LIMIT_EXCEEDED,
@@ -170,6 +175,11 @@ class SearchEngine:
                     status = "document_unavailable" if exc.code == ErrorCode.OPENDART_FILE_NOT_FOUND else "parse_failed"
                     preliminary.append(replace(candidate, verification_status=status))
                     continue
+                finally:
+                    if requests_before is None:
+                        diagnostics.actual_document_requests += 1
+                    else:
+                        diagnostics.actual_document_requests += self.opendart.requests_started - requests_before
             else:
                 preliminary.append(candidate)
                 continue
@@ -180,7 +190,7 @@ class SearchEngine:
                     candidate,
                     verification_status="verified",
                     matched_terms=matched,
-                    evidence=evidence[:3],
+                    evidence=evidence[: defaults.EVIDENCE_PER_CASE],
                     source_channels=tuple(dict.fromkeys((*candidate.source_channels, "opendart_document"))),
                 )
                 verified.append(self._to_case(finalized, request.query))
@@ -263,8 +273,8 @@ class SearchEngine:
         )
 
     def get_evidence(self, receipt_no: str, keywords: list[str], *, include_full_preview: bool = False, include_amendment_context: bool = True) -> dict[str, Any]:
-        if not receipt_no.isdigit() or len(receipt_no) != 14:
-            raise ValueError("receipt_no must contain 14 digits")
+        if not receipt_no.isdigit() or len(receipt_no) != defaults.RECEIPT_NO_LENGTH:
+            raise ValueError(f"receipt_no must contain {defaults.RECEIPT_NO_LENGTH} digits")
         text = self.cache.get(receipt_no)
         if text is None:
             if self.opendart is None:
@@ -284,7 +294,7 @@ class SearchEngine:
     def _resolve_company(self, company: str | None, warnings: list[str]) -> str | None:
         if not company:
             return None
-        if company.isdigit() and len(company) == 8:
+        if company.isdigit() and len(company) == defaults.CORP_CODE_LENGTH:
             return company
         if self.company_resolver is not None:
             resolved = self.company_resolver(company)

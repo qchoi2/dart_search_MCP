@@ -10,7 +10,7 @@ from typing import Any
 
 from app.storage.atomic import atomic_write_json
 
-from .defaults import DEFAULT_SETTINGS
+from .defaults import DEFAULT_SETTINGS, INTERACTIVE_TARGET_MAX
 
 
 def _merge(base: dict[str, Any], update: dict[str, Any]) -> dict[str, Any]:
@@ -49,8 +49,8 @@ def validate_settings(values: dict[str, Any]) -> None:
     _positive_int(values["search"]["document_concurrency"], "search.document_concurrency")
     _positive_int(values["search"]["interactive_document_budget"], "search.interactive_document_budget")
     _positive_int(values["search"]["max_results"], "search.max_results")
-    if values["search"]["max_results"] > 20:
-        raise ValueError("search.max_results cannot exceed 20")
+    if values["search"]["max_results"] > INTERACTIVE_TARGET_MAX:
+        raise ValueError(f"search.max_results cannot exceed {INTERACTIVE_TARGET_MAX}")
     if not isinstance(values["cache"]["ttl_disk_enabled"], bool):
         raise ValueError("cache.ttl_disk_enabled must be boolean")
 

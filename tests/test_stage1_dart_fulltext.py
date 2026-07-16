@@ -10,9 +10,10 @@ from app.channels.dart_fulltext import (
     dart_date_windows,
     merge_duplicate_rows,
     parse_search_html,
+    row_to_candidate,
 )
 from app.channels.health import CircuitBreaker
-from app.config.defaults import DART_EFFECTIVE_PAGE_SIZE, USER_AGENT
+from app.config.defaults import DART_EFFECTIVE_PAGE_SIZE, NETWORK_CIRCUIT_SECONDS, USER_AGENT
 from app.contracts import ChannelStatus, SearchExecutionDiagnostics
 from app.errors import ErrorCode, SearchError
 from app.http_client import HttpResponse
@@ -111,6 +112,47 @@ class FulltextTests(unittest.TestCase):
     def test_identifying_user_agent_is_not_browser(self):
         self.assertIn("dart-search-mcp", USER_AGENT)
         self.assertNotIn("Mozilla", USER_AGENT)
+
+    def test_request_start_interval_is_at_least_one_second(self):
+        current = [0.0]
+        sleeps = []
+        def sleep(seconds):
+            sleeps.append(seconds)
+            current[0] += seconds
+        client = DartFulltextClient(http=FakeHttp([b"a", b"b"]), clock=lambda: current[0], sleeper=sleep)  # type: ignore[arg-type]
+        client._paced_request("GET", "https://example.invalid/one")
+        client._paced_request("GET", "https://example.invalid/two")
+        self.assertEqual(sleeps, [1.0])
+
+    def test_network_failure_circuit_is_three_minutes(self):
+        clock = [100.0]
+        breaker = CircuitBreaker(clock=lambda: clock[0])
+        self.assertEqual(breaker.failure("network"), ChannelStatus.DEGRADED)
+        self.assertEqual(breaker.failure("network"), ChannelStatus.CIRCUIT_OPEN)
+        self.assertEqual(breaker.state.blocked_until, 100.0 + NETWORK_CIRCUIT_SECONDS)
+
+    def test_exhaustive_date_window_primitive_dedupes_global_receipts(self):
+        base = DartResultRow(
+            receipt_no="20260101000001", corp_code=None, company="회사", market="유",
+            report_name="보고서", report_name_prefixes=(), snippet="상계납입", disclosure_group="발행공시",
+            match_scope="body", filer_name="회사", receipt_date="20260101", row_tags=("본문",),
+        )
+        candidate = row_to_candidate(base, "상계납입")
+        class WindowClient(DartFulltextClient):
+            def __init__(self):
+                pass
+            def search_variants(self, queries, date_from, date_to, diagnostics, **kwargs):
+                diagnostics.dart_result_page_requests += 1
+                return [candidate]
+        diagnostics = SearchExecutionDiagnostics()
+        result = WindowClient().search_date_windows(
+            ["상계납입"], date(2026, 1, 1), date(2026, 1, 6), diagnostics,
+            window_days=3, request_budget=10,
+        )
+        self.assertTrue(result.complete)
+        self.assertTrue(result.continuous)
+        self.assertEqual(len(result.windows), 2)
+        self.assertEqual(len(result.candidates), 1)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,200 @@
+{
+  "schema_version": "1.0",
+  "source": "Stage 0, 0.5 and 0.6 measured fixtures; no Stage 1 re-probe",
+  "queries": [
+    {
+      "id": "E01_COMPANY_LIST",
+      "category": "specific_company_list",
+      "request": {"query": "공시 목록", "company": "01359815", "date_from": "2026-06-01", "date_to": "2026-06-30"},
+      "fixtures": ["tests/fixtures/probe/stage0_6/raw/stage0_6_20260716T163708Z/opendart/rm_withdrawal/new_pair_01_01359815_list.json"],
+      "expected_receipts": ["20260618000391", "20260618000384"]
+    },
+    {
+      "id": "E02_COMPANY_FULLTEXT",
+      "category": "specific_company_fulltext",
+      "request": {"query": "상계납입", "company": "영풍", "date_from": "2026-04-01", "date_to": "2026-07-16"},
+      "fixtures": ["tests/fixtures/probe/stage0_6/raw/stage0_6_20260716T163708Z/dart/query_switch/01_상계납입_control.html"],
+      "expected_receipts": ["20260708000160"],
+      "expected_search_count": 42
+    },
+    {
+      "id": "E03_PRECISE_SET_OFF",
+      "category": "precise_setoff_payment",
+      "request": {"query": "상계납입", "date_from": "2025-07-16", "date_to": "2026-07-16"},
+      "fixtures": ["tests/fixtures/probe/golden/stage0_5/flagship_terms.json"],
+      "expected_receipts": ["20260708000160", "20260616000322"]
+    },
+    {
+      "id": "E04_PRECISE_OBLIGATION_SET_OFF",
+      "category": "precise_obligation_setoff",
+      "request": {"query": "주금납입채무와 상계", "date_from": "2025-07-16", "date_to": "2026-07-16"},
+      "fixtures": ["tests/fixtures/probe/golden/stage0_5/flagship_terms.json"],
+      "expected_receipts": ["20260714000499", "20260529001247"]
+    },
+    {
+      "id": "E05_CONCEPT_DEBT_EQUITY",
+      "category": "concept_debt_equity_conversion",
+      "request": {"query": "출자전환", "date_from": "2025-07-16", "date_to": "2026-07-16"},
+      "fixtures": ["tests/fixtures/probe/golden/stage0_5/flagship_terms.json"],
+      "expected_receipts": ["20260716000830", "20260715000006"]
+    },
+    {
+      "id": "E06_HEALTHY_ZERO",
+      "category": "healthy_no_results",
+      "request": {"query": "정상 0건", "date_from": "1900-01-01", "date_to": "1900-01-01"},
+      "fixtures": ["tests/fixtures/probe/opendart/status/status_013_empty_window.json"],
+      "expected_status_code": "013",
+      "expected_channel_status": "HEALTHY"
+    },
+    {
+      "id": "E07_INVALID_API_KEY",
+      "category": "invalid_api_key",
+      "request": {"query": "인증 오류", "date_from": "2026-01-01", "date_to": "2026-01-02"},
+      "fixtures": [],
+      "expected_status_code": "010",
+      "expected_error": "OPENDART_KEY_UNREGISTERED"
+    },
+    {
+      "id": "E08_WITHDRAWAL_SIGNAL",
+      "category": "withdrawal_candidate",
+      "request": {"query": "철회 후보", "company": "00958451", "date_from": "2026-06-01", "date_to": "2026-06-30"},
+      "fixtures": ["tests/fixtures/probe/stage0_6/golden/rm_withdrawal.json"],
+      "expected_receipts": ["20260601001369"],
+      "expected_rm_raw": "철",
+      "expected_rm_flags": ["철"]
+    },
+    {
+      "id": "E09_WITHDRAWAL_EXPLICIT_FOLLOWUP",
+      "category": "withdrawal_explicit_link",
+      "request": {"query": "철회 후속문서", "company": "00564030", "date_from": "2025-07-01", "date_to": "2025-08-31"},
+      "fixtures": ["tests/fixtures/probe/stage0_6/golden/rm_withdrawal.json"],
+      "expected_receipts": ["20250814000105", "20250814002198"],
+      "expected_link_rule": "document_evidence_required"
+    },
+    {
+      "id": "E10_AMENDMENT_CHAIN",
+      "category": "amendment_chain",
+      "request": {"query": "정정 체인", "company": "00148665", "date_from": "2026-06-09", "date_to": "2026-08-15"},
+      "fixtures": ["tests/fixtures/probe/golden/stage0_5/amendment_strata.json"],
+      "expected_receipts": ["20260716000411", "20260709000043"],
+      "expected_fast_path": "unlinked_prefix_only"
+    },
+    {
+      "id": "E11_TENDER_TARGET",
+      "category": "tender_offer_target_company",
+      "request": {"query": "공개매수 대상회사", "company": "00138516", "date_from": "2026-04-01", "date_to": "2026-04-30"},
+      "fixtures": ["tests/fixtures/probe/golden/stage0_5/d004_equal_filer.json"],
+      "expected_receipts": ["20260407001618", "20260414002268"],
+      "expected_role": "target_company_opinion"
+    },
+    {
+      "id": "E12_BODY_ATTACHMENT_DEDUPE",
+      "category": "body_attachment_duplicate",
+      "request": {"query": "상계 납입", "date_from": "2025-07-16", "date_to": "2026-07-16"},
+      "fixtures": ["tests/fixtures/probe/golden/stage0_5/dart_pagination.json"],
+      "expected_receipts": ["20260716000830"],
+      "expected_dedupe_key": "rcept_no",
+      "expected_preference": "body"
+    },
+    {
+      "id": "E13_DATE_BOUNDARY",
+      "category": "date_window_boundary",
+      "request": {"query": "상계납입", "date_from": "2026-04-01", "date_to": "2026-07-16", "exhaustive": true},
+      "fixtures": ["tests/fixtures/probe/stage0_6/golden/date_window.json"],
+      "expected_receipts": ["20260601000409", "20260601000332"],
+      "expected_boundary_inclusive": true,
+      "expected_union_count": 9
+    },
+    {
+      "id": "E14_INDEPENDENT_EVENTS",
+      "category": "independent_event_no_false_merge",
+      "request": {"query": "독립 사건", "company": "00148665", "date_from": "2026-06-09", "date_to": "2026-08-15"},
+      "fixtures": ["tests/fixtures/probe/golden/stage0_5/amendment_strata.json"],
+      "expected_receipts": ["20260716000411", "20260709000043"],
+      "expected_distinct_case_count": 2
+    },
+    {
+      "id": "E15_RM_BOND",
+      "category": "rm_bond_flag",
+      "request": {"query": "채권상장법인", "date_from": "2026-04-01", "date_to": "2026-06-30"},
+      "fixtures": ["tests/fixtures/probe/stage0_6/golden/rm_bond.json"],
+      "expected_receipts": ["20260630701438"],
+      "expected_rm_raw": "채",
+      "expected_rm_flags": ["채"],
+      "expected_combination_status": "unconfirmed"
+    },
+    {
+      "id": "E16_RM_ORDER_PRESERVATION",
+      "category": "rm_order_and_unknown_preservation",
+      "request": {"query": "rm 조합", "date_from": "2026-01-01", "date_to": "2026-01-02"},
+      "fixtures": ["tests/fixtures/probe/golden/stage0_5/rm_market.json"],
+      "expected_rm_raw": "공정X",
+      "expected_rm_flags": ["공", "정"],
+      "expected_unknown_rm_flags": ["X"]
+    },
+    {
+      "id": "E17_MULTIPLE_PREFIXES",
+      "category": "multiple_report_prefixes",
+      "request": {"query": "복수 정정 접두어", "date_from": "2026-06-01", "date_to": "2026-06-30"},
+      "fixtures": ["tests/fixtures/probe/stage0_6/raw/stage0_6_20260716T163708Z/opendart/rm_withdrawal/new_pair_07_00230814_list.json"],
+      "expected_receipts": ["20260626000746"],
+      "expected_report_name": "[정정제출요구][기재정정]증권신고서(지분증권)",
+      "expected_prefixes": ["[정정제출요구]", "[기재정정]"]
+    },
+    {
+      "id": "E18_EFFECTIVE_PAGE_SIZE",
+      "category": "fixed_effective_page_size",
+      "request": {"query": "페이지 크기", "date_from": "2025-07-16", "date_to": "2026-07-16"},
+      "fixtures": ["tests/fixtures/probe/stage0_6/golden/page_size.json"],
+      "expected_effective_page_size": 10,
+      "expected_max_results_dependency": false
+    },
+    {
+      "id": "E19_QUERY_MODE_REUSE",
+      "category": "query_switch_mode_reuse",
+      "request": {"query": "상계납입→주금납입채무와 상계→출자전환", "date_from": "2025-07-16", "date_to": "2026-07-16"},
+      "fixtures": ["tests/fixtures/probe/stage0_6/golden/query_switch.json"],
+      "expected_mode_setup_delta_on_query_switch": 0,
+      "expected_sequence_count": 3
+    },
+    {
+      "id": "E20_DOCUMENT_MISSING",
+      "category": "document_missing_status",
+      "request": {"query": "문서 없음", "date_from": "2026-01-01", "date_to": "2026-01-02"},
+      "fixtures": [],
+      "expected_status_code": "014",
+      "expected_verification_status": "document_unavailable"
+    },
+    {
+      "id": "E21_REQUEST_LIMIT",
+      "category": "request_limit_no_retry",
+      "request": {"query": "요청한도", "date_from": "2026-01-01", "date_to": "2026-01-02"},
+      "fixtures": [],
+      "expected_status_code": "020",
+      "expected_retry": false
+    },
+    {
+      "id": "E22_BROAD_GUARD",
+      "category": "broad_query_guard",
+      "request": {"query": "상계납입", "date_from": "2026-01-01", "date_to": "2026-01-02"},
+      "fixtures": ["tests/fixtures/probe/golden/stage0_5/flagship_terms.json"],
+      "expected_excluded_variants": ["상계 납입", "주금 납입 채무와 상계", "채권의 출자전환"]
+    },
+    {
+      "id": "E23_STRUCTURE_CIRCUIT",
+      "category": "dart_structure_circuit",
+      "request": {"query": "구조장애", "date_from": "2026-01-01", "date_to": "2026-01-02"},
+      "fixtures": [],
+      "expected_block_seconds": 900,
+      "expected_fallback": "opendart_document_search"
+    },
+    {
+      "id": "E24_NETWORK_CIRCUIT",
+      "category": "dart_network_circuit",
+      "request": {"query": "네트워크장애", "date_from": "2026-01-01", "date_to": "2026-01-02"},
+      "fixtures": [],
+      "expected_block_seconds": 180,
+      "expected_fallback": "opendart_document_search"
+    }
+  ]
+}

@@ -14,6 +14,7 @@ from typing import Iterable
 
 from app.config.defaults import (
     CORPCODE_TTL_HOURS,
+    COMPANY_LOOKUP_LIMIT,
     DOCUMENT_MAX_TEXT_MB,
     OPENDART_COMPANY_BATCH_SIZE,
     OPENDART_PAGE_COUNT,
@@ -115,7 +116,7 @@ class CompanyDirectory:
                 records.append(CompanyRecord(code, name, get("corp_eng_name"), get("stock_code") or None, get("modify_date")))
         return cls(records)
 
-    def lookup(self, query: str, limit: int = 20) -> list[CompanyRecord]:
+    def lookup(self, query: str, limit: int = COMPANY_LOOKUP_LIMIT) -> list[CompanyRecord]:
         key = query.strip().casefold()
         if query in self.by_code:
             return [self.by_code[query]]
@@ -172,7 +173,7 @@ def normalize_document_zip(payload: bytes) -> str:
 
 def candidate_from_list_row(row: dict, *, source: str = "opendart") -> DisclosureCandidate:
     receipt = str(row.get("rcept_no", "")).strip()
-    prefixes, report_name, _ = parse_report_name(str(row.get("report_nm", "")))
+    prefixes, report_name, unknown_prefix_combination = parse_report_name(str(row.get("report_nm", "")))
     rm_raw = str(row.get("rm", "") or "")
     flags, unknown = parse_rm(rm_raw)
     market = next((flag for flag in flags if flag in {"유", "코", "넥", "채"}), None)
@@ -206,6 +207,7 @@ def candidate_from_list_row(row: dict, *, source: str = "opendart") -> Disclosur
         event_id=None,
         verification_status="unverified",
         dart_viewer_url=dart_viewer_url(receipt),
+        unknown_prefix_combination=unknown_prefix_combination,
     )
 
 
@@ -215,9 +217,14 @@ class OpenDartClient:
             raise SearchError(ErrorCode.API_KEY_MISSING, "OpenDART API 키가 필요합니다.")
         self._api_key = api_key
         self.http = http or HttpClient()
+        self.requests_started = 0
+
+    def _request(self, method: str, url: str, **kwargs):
+        self.requests_started += 1
+        return self.http.request(method, url, **kwargs)
 
     def _json(self, endpoint: str, params: dict) -> dict:
-        response = self.http.request("GET", f"{BASE_URL}/{endpoint}", params={"crtfc_key": self._api_key, **params})
+        response = self._request("GET", f"{BASE_URL}/{endpoint}", params={"crtfc_key": self._api_key, **params})
         try:
             return response.json()
         except (ValueError, UnicodeError) as exc:
@@ -267,8 +274,11 @@ class OpenDartClient:
                     result.next_window_index = window_index
                     result.next_page = page
                     return result
-                payload = self.list_page(date_from=window.date_from, date_to=window.date_to, page_no=page, corp_code=corp_code, corp_cls=corp_cls, disclosure_type=disclosure_type)
-                diagnostics.actual_list_requests += 1
+                before_requests = self.requests_started
+                try:
+                    payload = self.list_page(date_from=window.date_from, date_to=window.date_to, page_no=page, corp_code=corp_code, corp_cls=corp_cls, disclosure_type=disclosure_type)
+                finally:
+                    diagnostics.actual_list_requests += self.requests_started - before_requests
                 diagnostics.measured_total_count_by_window[window.key] = int(payload.get("total_count", 0))
                 diagnostics.measured_total_pages_by_window[window.key] = int(payload.get("total_page", 0))
                 if str(payload.get("status")) == "013":
@@ -289,25 +299,45 @@ class OpenDartClient:
         return result
 
     def download_document(self, receipt_no: str) -> str:
-        response = self.http.request("GET", f"{BASE_URL}/document.xml", params={"crtfc_key": self._api_key, "rcept_no": receipt_no})
+        params = {"crtfc_key": self._api_key, "rcept_no": receipt_no}
+        response = self._request("GET", f"{BASE_URL}/document.xml", params=params)
         if not response.body.startswith(b"PK"):
-            try:
-                payload = json.loads(response.body.decode("utf-8-sig"))
-            except (ValueError, UnicodeError):
-                try:
-                    root = parse_xml_safely(response.body)
-                    payload = {child.tag: child.text for child in root}
-                except SearchError as exc:
-                    raise SearchError(ErrorCode.DOCUMENT_PARSE_FAILED, "원문 응답이 ZIP 또는 오류 JSON/XML이 아닙니다.") from exc
-            ensure_success(payload, allow_no_data=False)
+            payload = self._non_zip_payload(response.body, "원문")
+            if str(payload.get("status")) == "900":
+                response = self._request("GET", f"{BASE_URL}/document.xml", params=params)
+                if not response.body.startswith(b"PK"):
+                    payload = self._non_zip_payload(response.body, "원문")
+                    ensure_success(payload, allow_no_data=False)
+            else:
+                ensure_success(payload, allow_no_data=False)
         return normalize_document_zip(response.body)
 
     def load_company_directory(self, cache_path: Path, *, now: float | None = None) -> CompanyDirectory:
         current = time.time() if now is None else now
         if cache_path.exists() and current - cache_path.stat().st_mtime < CORPCODE_TTL_HOURS * 3600:
             return CompanyDirectory.from_zip(cache_path.read_bytes())
-        response = self.http.request("GET", f"{BASE_URL}/corpCode.xml", params={"crtfc_key": self._api_key})
+        params = {"crtfc_key": self._api_key}
+        response = self._request("GET", f"{BASE_URL}/corpCode.xml", params=params)
+        if not response.body.startswith(b"PK"):
+            payload = self._non_zip_payload(response.body, "회사코드")
+            if str(payload.get("status")) == "900":
+                response = self._request("GET", f"{BASE_URL}/corpCode.xml", params=params)
+                if not response.body.startswith(b"PK"):
+                    ensure_success(self._non_zip_payload(response.body, "회사코드"), allow_no_data=False)
+            else:
+                ensure_success(payload, allow_no_data=False)
         directory = CompanyDirectory.from_zip(response.body)
         atomic_write_bytes(cache_path, response.body)
         atomic_write_json(cache_path.with_suffix(".manifest.json"), {"fetched_at_epoch": current, "ttl_hours": CORPCODE_TTL_HOURS, "record_count": len(directory.records)})
         return directory
+
+    @staticmethod
+    def _non_zip_payload(body: bytes, label: str) -> dict:
+        try:
+            return json.loads(body.decode("utf-8-sig"))
+        except (ValueError, UnicodeError):
+            try:
+                root = parse_xml_safely(body)
+                return {child.tag: child.text for child in root}
+            except SearchError as exc:
+                raise SearchError(ErrorCode.DOCUMENT_PARSE_FAILED, f"{label} 응답이 ZIP 또는 오류 JSON/XML이 아닙니다.") from exc

@@ -64,6 +64,13 @@ class BaseInfrastructureTests(unittest.TestCase):
         with self.assertRaises(SearchError):
             read_safe_zip(malicious.getvalue())
 
+    def test_zip_guard_blocks_extreme_compression_ratio(self):
+        bomb = io.BytesIO()
+        with zipfile.ZipFile(bomb, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("bomb.xml", "0" * 1_000_000)
+        with self.assertRaises(SearchError):
+            read_safe_zip(bomb.getvalue())
+
     def test_xml_guard_rejects_doctype(self):
         self.assertEqual(parse_xml_safely(b"<root><x>1</x></root>").tag, "root")
         with self.assertRaises(SearchError):
@@ -77,13 +84,31 @@ class BaseInfrastructureTests(unittest.TestCase):
         self.assertIsNone(cache.get("a"))
         self.assertEqual(len(cache), 2)
 
+    def test_session_cache_evicts_by_text_bytes_before_count(self):
+        cache = SessionTextCache(max_documents=100, max_text_mb=1)
+        for index in range(5):
+            cache.put(str(index), "가" * 200_000)
+        self.assertLessEqual(cache.total_bytes, 1024 * 1024)
+        self.assertLess(len(cache), 5)
+
     def test_audit_redacts_secrets_and_full_document(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "audit.jsonl"
-            AuditLog(path).append_summary({"api_key": "secret", "cookie": "sid", "document_text": "whole", "count": 1})
+            AuditLog(path).append_summary({"api_key": "secret", "DART_API_KEY": "secret2", "cookie": "sid", "document_text": "whole", "count": 1})
             saved = json.loads(path.read_text(encoding="utf-8"))
             self.assertEqual(saved["api_key"], "***")
+            self.assertEqual(saved["DART_API_KEY"], "***")
             self.assertNotIn("whole", path.read_text(encoding="utf-8"))
+
+    def test_audit_log_is_size_bounded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audit.jsonl"
+            log = AuditLog(path, max_size_mb=1)
+            for index in range(20):
+                log.append_summary({"index": index, "value": "x" * 80_000})
+            self.assertLessEqual(path.stat().st_size, 1024 * 1024)
+            for line in path.read_text(encoding="utf-8").splitlines():
+                json.loads(line)
 
     def test_continuation_is_opaque_and_validated(self):
         store = ContinuationStore()

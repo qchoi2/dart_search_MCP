@@ -1,5 +1,54 @@
 # 테스트 결과
 
+## 단계 1 핵심 공시검색 MCP 검증
+
+- 검증일: 2026-07-17 KST
+- 기준: `DEVELOPMENT_PLAN.md` v19 및 완료된 단계 0·0.5·0.6 fixture
+- 단계 1 추가 실측 네트워크 요청: 0건
+- Python: 3.14.6
+
+### 자동 테스트
+
+`python -m unittest discover -s tests -p "test*.py"`
+
+- 총 72개 통과, 실패 0개
+- 계약·설정·복구·strict TLS Cookie 세션·감사로그 마스킹·continuation·프롬프트 인젝션: 통과
+- 안전 ZIP 경로이탈·고압축률, XML DOCTYPE/ENTITY 차단: 통과
+- CORPCODE 실제 fixture 10만 건 이상 파싱, 회사명·종목코드 조회, 3개월 포함경계 창: 통과
+- OpenDART `000·013·010·011·012·014·020·021·100·101·800·900·901`, 900 1회 제한 재시도, 020 무재시도: 통과
+- DART 실제 HTML 42건/10행, 구조 필드, 본문·첨부 중복제거, 동일 모드 검색어 전환, 정상 0건: 통과
+- 구조 상태진단 후 15분 차단, 네트워크 3분 차단, open 상태 무호출: 통과
+- 검색기간 무지정 무호출, 전역 접수번호 중복제거 후 원문예산, 근거·링크, continuation, 정상 0건/장애 분리: 통과
+- MCP `tools/list`, `search_disclosure_cases`, `get_disclosure_evidence` 호출: 통과
+- settings/rules/schema/계획서 상수 드리프트 및 `verify=False`·브라우저 UA·`maxResultsCb` 의존 금지: 통과
+- `python -m compileall -q app tests`: 통과
+
+### 고정 평가질의
+
+`python -m app.evaluation`
+
+- 24개 중 24개 통과, 실패 0개
+- 평가세트: `tests/golden_cases/stage1/evaluation_queries.json`
+- 포함 범주: 특정회사 목록/본문, 정밀질의 2종, 출자전환, 정상 0건, 잘못된 키, 철회 후보·명시 후속, 정정 체인, 공개매수 대상회사, 본문·첨부 중복, 날짜창 경계, 독립사건 오병합 방지, rm `채`·순서·미지문자, 복수 접두어, 페이지 크기, 모드 재사용, 014·020, broad 제한, 두 회로차단.
+
+### 성능·메모리
+
+- 반복 수: 계획 생성 1,000회, 실제 DART fixture 파싱 100회
+- `SearchPlan` 생성 p95: 0.0144ms (목표 50ms 이하)
+- DART 결과 HTML 파싱 p95: 2.2860ms
+- 세션 캐시: 45회 입력 후 40문서 유지, 파싱 텍스트 7,680,000바이트
+- 캐시 벤치마크 `tracemalloc`: current 5,127,859바이트, peak 5,447,992바이트
+- 계약 상한: 40문서 또는 파싱 텍스트 64MB 중 먼저 도달; 문서 수·바이트 양쪽 퇴출 테스트 통과
+- 네트워크 p50/p95와 상주 RSS는 라이브 성능시험을 다시 수행하지 말라는 지시에 따라 이번 단계에서 측정하지 않았다.
+
+### 보수 유지·미확인
+
+- 실제 DART 구조장애 발생률과 자동화 허용빈도는 여전히 미확인이다.
+- `rm=철`은 provisional 후보 신호이며 명시 연결 근거 없이는 사건을 합치지 않는다.
+- `rm=채` 의미는 confirmed지만 `채` 포함 실제 조합문자의 순서·다른 플래그 보존 실측은 unconfirmed다.
+- TTL 디스크 캐시는 단계 1에서 구현·기본 활성화하지 않았고 `settings.json`에서 `false`다.
+- 네트워크 종단간 성능, 정정 구조 diff, 복수 사건 연결, KIND, 승인형 배치는 단계 1 Fast Path 범위 밖이다.
+
 ## 단계 0.6 검증
 
 - 검증일: 2026-07-17 KST

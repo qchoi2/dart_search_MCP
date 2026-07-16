@@ -7,7 +7,7 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-from app.config.defaults import CONTINUATION_TOKEN_MAX_LENGTH, CONTINUATION_TTL_SECONDS
+from app.config.defaults import CONTINUATION_TOKEN_MAX_LENGTH, CONTINUATION_TOKEN_RANDOM_BYTES, CONTINUATION_TTL_SECONDS
 from app.errors import ErrorCode, SearchError
 
 
@@ -24,7 +24,7 @@ class ContinuationStore:
 
     def issue(self, state: dict[str, Any]) -> str:
         self.cleanup()
-        token = "cursor_" + secrets.token_urlsafe(18)
+        token = "cursor_" + secrets.token_urlsafe(CONTINUATION_TOKEN_RANDOM_BYTES)
         self._entries[token] = _Entry(time.time() + self.ttl_seconds, state.copy())
         return token
 

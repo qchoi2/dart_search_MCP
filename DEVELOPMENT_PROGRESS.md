@@ -1,16 +1,23 @@
 # 개발 진행 현황
 
-## 이번 세션 반영 요약
+## 단계 1 핵심 공시검색 MCP 완료 (이번 세션)
 
-- `DEVELOPMENT_PLAN.md`를 v19로 갱신해 단계 0.6 실측 결과를 구현 규칙과 요청예산 계약에 반영했다.
-- 같은 Cookie 세션·검색 모드에서는 검색어가 바뀌어도 모드설정 POST를 반복하지 않는 규칙을 확정했다.
-- `maxResults`·`maxResultsCb` 확대가 실제 결과행을 늘리지 못하므로 `effective_page_size=10`을 유지하고 확대 파라미터에 의존하지 않도록 했다.
-- DART 날짜 범위가 시작일·종료일 포함 경계임을 기록하고, 비중첩 연속 날짜창·창별 완료·전역 접수번호 합집합을 전수성 배치 규칙으로 활성화했다.
-- `rm=철`은 명시 연결 9건과 오병합 반례 1건을 근거로 provisional 후보 신호를 유지하고, 회사명·보고서명·근접기간만으로 병합·제외하지 않도록 했다.
-- 실제 `rm=채` 16건으로 `채=채권상장법인` 의미는 confirmed로 올렸지만, 실제 조합문자 표본이 없어 조합 파싱 신뢰도는 unconfirmed로 분리했다.
-- 단계 0.6 전용 runner, 실행별 raw fixture, curated golden fixture, 원자적 manifest, 결과 보고서와 회귀 테스트를 추가했다.
-- `python -m unittest tests.test_probe -v` 16개, compileall, golden hash, raw 실응답을 제외한 소스·문서 `git diff --check` 검증을 통과했다.
-- 단계 1 본개발과 기존 제품 기능 구현은 시작하지 않았다.
+- 단계 0·0.5·0.6은 다시 실측하지 않고 완료 fixture와 `DEVELOPMENT_PLAN.md` v19를 기준으로 구현했다.
+- `SearchRequest`, 불변 `SearchPlan`, 실행 전용 `SearchExecutionDiagnostics`, `DisclosureCandidate`, `VerifiedCase`, `EvidenceSnippet`, `ChannelStatus`, `schema_version=1.0` 계약을 고정했다.
+- 설정·경로·환경변수, Cookie 세션을 유지하는 strict-TLS HTTP, 오류모델, 원자적 저장, ZIP/XML 방어, 감사로그, continuation, 프롬프트 인젝션 경계를 구현했다.
+- 모든 운영 수치 기본값은 `app/config/defaults.py`를 단일 출처로 두고 `settings.json`, rules, 계획서와의 불일치를 CI 테스트로 탐지한다. TTL 디스크 캐시는 기본 `false`다.
+- OpenDART 회사코드 1일 TTL, 회사명·종목코드 조회, 포함경계 3개월 창, 100건 페이지네이션, 날짜 내림차순, `total_count/total_page`, `corp_cls`, 전역 접수번호 중복제거, 원문 ZIP·인코딩·근거발췌·뷰어 링크를 구현했다.
+- OpenDART 상태 `000·013·010·011·012·014·020·021·100·101·800·900·901`을 정상·무데이터·사용자조치·개발오류·즉시중단·제한적 재시도로 분리했다.
+- DART 본문검색은 동일 Cookie 세션·검색 모드에서 검색어가 바뀌어도 모드설정 POST를 반복하지 않으며, 실효 페이지 크기 10·동시성 1·최소 1,000ms·식별형 UA·TLS 검증을 고정했다.
+- DART 결과행의 시장문자, 공시그룹, 본문/첨부, 제출인, 접수일, 접수번호를 파싱하고 본문 우선 중복제거, 로컬 `mechanical_score`, 최신순 조기종료 편향 진단을 구현했다.
+- `rm` 원문·순서·미지 플래그와 공식 8종/복수 보고서 접두어를 보존한다. `철`은 명시적 원접수번호·원 제출일·원문 근거 없이는 연결하지 않고, `채` 조합은 일반 문자분해만 적용한다.
+- `search_disclosure_cases`, `get_disclosure_evidence` MCP 도구와 stdio JSON-RPC 진입점을 구현했다. 기간 불명확 시 무호출 확인요청, 최대 원문 40·결과 20·예비 10, 부분결과 continuation, 정상 0건/채널 장애 구분, 근거·링크 반환을 적용했다.
+- DART 구조·접근 장애 15분, 일시 네트워크 장애 3분 회로차단과 open 상태 무호출 OpenDART 폴백을 구현했다.
+- Fast Path 제외항목(KIND 자동검색, 정정 구조 diff, 복수 사건 연결, 승인형 배치 실행, 전체 기간창 사전조사, 별도 LLM, TTL 디스크 기본 활성화)은 구현·자동실행하지 않았다.
+- 내부 커밋 경계 `common-contracts-and-config`, `opendart-core`, `dart-fulltext-adapter`, `search-execution-and-mcp`, `evaluation-and-regression-tests`를 유지했다.
+- 고정 평가질의 24개와 기지 정답을 `tests/golden_cases/stage1/evaluation_queries.json`에 추가했다. 자동 테스트 72개와 24/24 평가가 통과했다.
+- 로컬 벤치마크: 계획 생성 p95 0.0144ms, DART fixture 파서 p95 2.2860ms, 캐시 40문서·7,680,000 텍스트 바이트, `tracemalloc` peak 5,447,992바이트다.
+- 현재 중단점: 단계 1 핵심 공시검색 MCP 구현·검증 완료. 단계 2 이후 기능은 시작하지 않는다.
 
 ## 단계 0.6 완료
 
