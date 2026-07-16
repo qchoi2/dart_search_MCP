@@ -187,6 +187,12 @@ class ProbeClassifierTests(unittest.TestCase):
         counterexample = next(
             item for item in withdrawal["cases"] if item["source"] == "20260618000391"
         )
+        self.assertEqual("20260618000384", counterexample["follow"])
+        self.assertEqual("20260618", counterexample["source_dt"])
+        self.assertEqual("20260521", counterexample["explicit_plan_submission_date"])
+        self.assertTrue(counterexample["list_pair_exact"])
+        self.assertFalse(counterexample["source_document_has_explicit_plan_date"])
+        self.assertFalse(counterexample["explicit_document_link"])
         self.assertFalse(counterexample["explicitly_linked"])
 
         bond = findings["rm_bond"]
