@@ -1,6 +1,6 @@
 # Stage 0 Probe Results
 
-- 생성시각(UTC): 2026-07-16T13:34:25.087+00:00
+- 생성시각(UTC): 2026-07-16T14:11:23.182+00:00
 - 범위: 단계 0 실측 전용. 본 프로그램 기능은 구현하지 않음.
 - API 키: 요청 로그에서 `***MASKED***`로 저장하며 원문 키는 저장하지 않음.
 
@@ -127,12 +127,12 @@
 
 ## 계획서 가정과 실제 결과
 
-- `last_reprt_at_N_all_Y_final`: 일치/확인
-- `rm_flags_match_actual_chains_for_30_events`: 일치/확인
+- `last_reprt_at_measured_3_cases_N_all_Y_event_final`: 일치/확인
+- `rm_flags_have_followup_evidence_for_30_sampled_events`: 일치/확인
 - `all_official_report_nm_prefixes_observed`: 일치/확인
 - `multiple_report_nm_prefixes_exist`: 일치/확인
 - `status_013_is_empty_result`: 일치/확인
-- `D004_corp_name_is_target_company`: 일치/확인
+- `D004_corp_name_matches_target_in_10_sampled_filings`: 일치/확인
 - `DART_normal_zero_has_explicit_marker`: 일치/확인
 - `DART_actual_structure_failure_branch`: 미확인
 - `DART_concurrency_1_technically_operated`: 일치/확인
@@ -141,5 +141,15 @@
 ## 단계 0 승인 상태
 
 - 모든 판정 확정(미확인 없음): 아니오
-- 출시 게이트 승인: 아니오
+- 출시 게이트 승인(실측 당시): 아니오
 - 미확인 항목은 추론으로 보완하지 않음.
+
+## 후속 사용자 결정
+
+- 이 절은 실측 결과를 변경하지 않고 실측 이후의 운영 결정을 기록한다.
+- 사용범위: 개인용 로컬 사용
+- DART 본문검색: 명시적 정책 근거가 미확인이어도 기술 상태가 정상이고 검색 품질 향상이 확인되면 조건부 사용
+- 초기 안전값: 동시성 1, 요청 시작간격 최소 1.0초
+- 중단조건: 명시적 금지, 접근거부, 반복 구조장애, 또는 검색 품질 이득 부재
+- 폴백: OpenDART 목록·원문검색
+- 다수 사용자 배포·공유 서버·서비스 제공으로 범위가 바뀌면 정책 게이트를 다시 판정함

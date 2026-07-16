@@ -1,0 +1,13 @@
+# Python runtime artifacts
+__pycache__/
+*.py[cod]
+
+# Local secrets, caches, and run-state
+.env
+_local_data/
+*.lock
+*.pid
+
+# Editor and OS metadata
+.DS_Store
+Thumbs.db

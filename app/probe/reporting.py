@@ -16,10 +16,10 @@ def combine_findings(
     opendart: dict[str, Any] | None,
 ) -> dict[str, Any]:
     plan_comparison = {
-        "last_reprt_at_N_all_Y_final": _bool_or_unconfirmed(
+        "last_reprt_at_measured_3_cases_N_all_Y_event_final": _bool_or_unconfirmed(
             opendart and opendart.get("last_reprt_all_match_plan")
         ),
-        "rm_flags_match_actual_chains_for_30_events": _rm_comparison(opendart),
+        "rm_flags_have_followup_evidence_for_30_sampled_events": _rm_comparison(opendart),
         "all_official_report_nm_prefixes_observed": _bool_or_unconfirmed(
             opendart and opendart.get("prefixes", {}).get("all_eight_observed")
         ),
@@ -29,7 +29,7 @@ def combine_findings(
         "status_013_is_empty_result": _bool_or_unconfirmed(
             opendart and opendart.get("status_013", {}).get("normal_no_data_confirmed")
         ),
-        "D004_corp_name_is_target_company": _d004_comparison(opendart),
+        "D004_corp_name_matches_target_in_10_sampled_filings": _d004_comparison(opendart),
         "DART_normal_zero_has_explicit_marker": _bool_or_unconfirmed(
             web and web.get("normal_zero", {}).get("classification") == "normal_zero"
         ),
@@ -94,10 +94,19 @@ def _decisions(
     if web:
         decisions.append(
             {
-                "topic": "DART 본문검색 출시 게이트",
+                "topic": "DART 본문검색 개인용 조건부 사용",
                 "actual_result": "robots.txt에서 /dsab007 금지는 확인되지 않았고 순차 요청은 성공했으나, 자동화 허용 빈도와 명시적 허용 문구는 확인하지 못함",
-                "change": "접근정책의 명시적 근거가 추가 확인될 때까지 출시 게이트를 승인하지 않음",
-                "reason": "기술적 접근 성공은 정책상 허용을 의미하지 않음",
+                "change": "개인용 로컬 환경에서는 기술 상태가 정상이고 검색 품질 향상이 확인되면 동시성 1·요청 시작간격 최소 1,000ms로 조건부 사용",
+                "reason": "사용자가 개인용 범위에서 정책 미확인 위험을 수용했으며, 명시적 금지·접근거부·반복 구조장애 시에는 OpenDART로 폴백함",
+            }
+        )
+    if web and opendart:
+        decisions.append(
+            {
+                "topic": "단계 0 게이트 분리",
+                "actual_result": "OpenDART 관련 항목과 DART 정상 파서는 통과했지만 DART 정책과 실제 구조장애는 미확인",
+                "change": "OpenDART 목록·정정규칙·D004·DART 파서·DART 개인용·DART 정책 게이트를 분리",
+                "reason": "DART의 미확인 항목이 OpenDART 기반 개발 전체를 차단하지 않도록 함",
             }
         )
     if opendart and any(
@@ -108,8 +117,25 @@ def _decisions(
             {
                 "topic": "정정 사건 그룹 키",
                 "actual_result": "같은 회사·기간·정규화 보고서명에도 서로 독립적인 공시 사건이 함께 반환된 실제 사례가 확인됨",
-                "change": "회사와 정규화 보고서명만으로 사건을 합치지 않고, 접수번호·접수일·정정 순서와 사건 시간 군집을 함께 사용",
+                "change": "명시적 원접수번호·정정대상 접수번호·정정사항표를 우선 사용하고 회사·보고서명·시간 군집은 보조수단으로만 사용",
                 "reason": "아이엠증권의 last_reprt_at=Y 응답에 비교 대상 체인 밖의 동일 보고서명 공시가 별도로 존재함",
+            }
+        )
+        decisions.append(
+            {
+                "topic": "last_reprt_at 사용범위",
+                "actual_result": "측정한 3개 사건에서 N은 체인 전체, Y는 해당 사건 최종 접수를 반환했지만 Y에 독립 사건이 함께 존재함",
+                "change": "N은 체인 수집, Y는 후보 축소에만 사용하고 사건 식별키나 최종본 증명으로 사용하지 않음",
+                "reason": "동일 회사·기간·정규화 보고서명이 사건의 유일성을 보장하지 않음",
+            }
+        )
+    if opendart and opendart.get("rm_event_count", 0) >= 30:
+        decisions.append(
+            {
+                "topic": "rm 표본 신뢰도",
+                "actual_result": "정 28건·철 2건이 후속 문서와 일치했으나 검증에 회사·보고서명·근접기간 휴리스틱이 포함됨",
+                "change": "rm은 후보 신호로만 사용하고 명시적 접수번호·정정사항표·후속 공시로 최종 검증",
+                "reason": "철 표본이 적고 휴리스틱이 독립 사건을 혼합할 수 있음",
             }
         )
     if opendart and opendart.get("prefixes", {}).get("counts", {}).get("연장결정", 0):
@@ -119,6 +145,33 @@ def _decisions(
                 "actual_result": "[연장결정]은 B 계열 주요사항보고서(자기주식취득신탁계약체결결정)에서 실제 관측됨",
                 "change": "연장결정 표본 탐색을 E002가 아니라 B 공시유형으로 라우팅",
                 "reason": "실제 OpenDART 목록 JSON의 report_nm과 pblntf_ty=B 조건으로 확인",
+            }
+        )
+    if opendart and opendart.get("d004_case_count", 0) >= 10:
+        decisions.append(
+            {
+                "topic": "D004 사건 단위와 대상회사 신뢰도",
+                "actual_result": "corp_name 대상회사 일치는 공시 10건에서 확인됐지만 회사·제출인 조합은 5개",
+                "change": "공시 건수와 공개매수 사건 수를 분리하고 원문 생략 시 출처·미검증 상태·신뢰도를 표시",
+                "reason": "같은 사건의 신고서·설명서·결과보고서가 별도 공시로 반환될 수 있음",
+            }
+        )
+    if opendart and opendart.get("status_013", {}).get("normal_no_data_confirmed"):
+        decisions.append(
+            {
+                "topic": "013 적용범위",
+                "actual_result": "목록 API D004 빈 기간창에서 013과 목록 부재를 확인",
+                "change": "목록 API의 013을 정상 빈 배열로 처리하되 다른 엔드포인트까지 실측됐다고 일반화하지 않음",
+                "reason": "실측 조건과 엔드포인트의 범위를 규칙 신뢰도에 반영",
+            }
+        )
+    if web:
+        decisions.append(
+            {
+                "topic": "DART 구조장애 판정",
+                "actual_result": "정상 결과와 정상 0건은 확인했지만 실제 구조장애는 관찰하지 못함",
+                "change": "첫 모호 응답은 structure_failure_candidate로 두고 상태진단 재시도에서도 반복될 때만 구조장애로 승격",
+                "reason": "합성 fixture는 분류기 분기 검증일 뿐 실제 장애의 증거가 아님",
             }
         )
     return decisions
@@ -152,6 +205,15 @@ def _approval_checklist(findings: dict[str, Any]) -> dict[str, Any]:
         ],
         "stage0_complete": all(value != UNCONFIRMED for value in comparison.values()),
         "release_gate_approved": False,
+        "personal_dart_use_conditionally_approved": True,
+        "personal_dart_use_conditions": {
+            "scope": "personal_local_only",
+            "concurrency": 1,
+            "minimum_request_start_interval_seconds": 1.0,
+            "requires_technical_health": True,
+            "requires_search_quality_gain": True,
+            "fallback": "OpenDART",
+        },
     }
 
 
@@ -332,8 +394,18 @@ def _probe_results_markdown(findings: dict[str, Any], checklist: dict[str, Any])
             "## 단계 0 승인 상태",
             "",
             f"- 모든 판정 확정(미확인 없음): {'예' if checklist['stage0_complete'] else '아니오'}",
-            f"- 출시 게이트 승인: {'예' if checklist['release_gate_approved'] else '아니오'}",
+            f"- 출시 게이트 승인(실측 당시): {'예' if checklist['release_gate_approved'] else '아니오'}",
             "- 미확인 항목은 추론으로 보완하지 않음.",
+            "",
+            "## 후속 사용자 결정",
+            "",
+            "- 이 절은 실측 결과를 변경하지 않고 실측 이후의 운영 결정을 기록한다.",
+            "- 사용범위: 개인용 로컬 사용",
+            "- DART 본문검색: 명시적 정책 근거가 미확인이어도 기술 상태가 정상이고 검색 품질 향상이 확인되면 조건부 사용",
+            "- 초기 안전값: 동시성 1, 요청 시작간격 최소 1.0초",
+            "- 중단조건: 명시적 금지, 접근거부, 반복 구조장애, 또는 검색 품질 이득 부재",
+            "- 폴백: OpenDART 목록·원문검색",
+            "- 다수 사용자 배포·공유 서버·서비스 제공으로 범위가 바뀌면 정책 게이트를 다시 판정함",
             "",
         ]
     )
@@ -345,7 +417,7 @@ def _decisions_markdown(findings: dict[str, Any]) -> str:
     lines = [
         "# Stage 0 Decisions",
         "",
-        "실측으로 확인된 계획 차이만 기록한다. 미확인은 결론으로 바꾸지 않는다.",
+        "실측 결과와 후속 사용자 결정을 기록한다. 미확인 사실과 개인용 사용 결정을 구분한다.",
         "",
     ]
     if not decisions:

@@ -2,12 +2,12 @@
   "checks": [
     {
       "approved": true,
-      "id": "last_reprt_at_N_all_Y_final",
+      "id": "last_reprt_at_measured_3_cases_N_all_Y_event_final",
       "result": true
     },
     {
       "approved": true,
-      "id": "rm_flags_match_actual_chains_for_30_events",
+      "id": "rm_flags_have_followup_evidence_for_30_sampled_events",
       "result": true
     },
     {
@@ -27,7 +27,7 @@
     },
     {
       "approved": true,
-      "id": "D004_corp_name_is_target_company",
+      "id": "D004_corp_name_matches_target_in_10_sampled_filings",
       "result": true
     },
     {
@@ -51,7 +51,16 @@
       "result": "미확인"
     }
   ],
-  "generated_at": "2026-07-16T13:34:25.087+00:00",
+  "generated_at": "2026-07-16T14:11:23.182+00:00",
+  "personal_dart_use_conditionally_approved": true,
+  "personal_dart_use_conditions": {
+    "concurrency": 1,
+    "fallback": "OpenDART",
+    "minimum_request_start_interval_seconds": 1.0,
+    "requires_search_quality_gain": true,
+    "requires_technical_health": true,
+    "scope": "personal_local_only"
+  },
   "product_development_started": false,
   "release_gate_approved": false,
   "stage0_complete": false
