@@ -1,0 +1,332 @@
+{
+  "classification_counts": {
+    "debt_equity_conversion": 2,
+    "direct_setoff_payment": 4,
+    "in_kind_contribution": 0,
+    "other_or_accounting_setoff": 0,
+    "query_term_not_found_in_downloaded_document": 0
+  },
+  "document_validations": [
+    {
+      "classification": "direct_setoff_payment",
+      "document_is_zip": true,
+      "raw_document_fixture": "opendart/flagship/documents/20260708000160.zip",
+      "raw_snippet_fixture": "opendart\\flagship\\snippets\\20260708000160.txt",
+      "rcept_no": "20260708000160",
+      "snippet_sha256": "c6766613b45552349f8d481727ecade0cd157a62040f478d1c61aa5dd87f22b9",
+      "source_query": "상계납입",
+      "term_found": true
+    },
+    {
+      "classification": "direct_setoff_payment",
+      "document_is_zip": true,
+      "raw_document_fixture": "opendart/flagship/documents/20260616000322.zip",
+      "raw_snippet_fixture": "opendart\\flagship\\snippets\\20260616000322.txt",
+      "rcept_no": "20260616000322",
+      "snippet_sha256": "66897dda42884bc21094fba5873d69156c14241cc7cc904af7e68ecf0197c1b9",
+      "source_query": "상계납입",
+      "term_found": true
+    },
+    {
+      "classification": "debt_equity_conversion",
+      "document_is_zip": true,
+      "raw_document_fixture": "opendart/flagship/documents/20260716000830.zip",
+      "raw_snippet_fixture": "opendart\\flagship\\snippets\\20260716000830.txt",
+      "rcept_no": "20260716000830",
+      "snippet_sha256": "826549854d12069de6efadad43d41be905c58c982bb90744bd310d9ee7b3972a",
+      "source_query": "상계 납입",
+      "term_found": true
+    },
+    {
+      "classification": "direct_setoff_payment",
+      "document_is_zip": true,
+      "raw_document_fixture": "opendart/flagship/documents/20260714000499.zip",
+      "raw_snippet_fixture": "opendart\\flagship\\snippets\\20260714000499.txt",
+      "rcept_no": "20260714000499",
+      "snippet_sha256": "50116a9ebea5be4bcaf2f29422c43100ffbbda3ec9ae98c35caea37bf6d023ad",
+      "source_query": "주금납입채무와 상계",
+      "term_found": true
+    },
+    {
+      "classification": "direct_setoff_payment",
+      "document_is_zip": true,
+      "raw_document_fixture": "opendart/flagship/documents/20260529001247.zip",
+      "raw_snippet_fixture": "opendart\\flagship\\snippets\\20260529001247.txt",
+      "rcept_no": "20260529001247",
+      "snippet_sha256": "7f214862c1821691455dd91a242d3fb2de74e29697a56f8afe7e6a539c33a978",
+      "source_query": "주금납입채무와 상계",
+      "term_found": true
+    },
+    {
+      "classification": "debt_equity_conversion",
+      "document_is_zip": true,
+      "raw_document_fixture": "opendart/flagship/documents/20260715000006.zip",
+      "raw_snippet_fixture": "opendart\\flagship\\snippets\\20260715000006.txt",
+      "rcept_no": "20260715000006",
+      "snippet_sha256": "144faf745f56eddd07fcb00fa75106542018ca3c032c25769a61356325f83e1f",
+      "source_query": "주금 납입 채무와 상계",
+      "term_found": true
+    }
+  ],
+  "document_verified_count": 6,
+  "gate_status": "passed",
+  "queries": [
+    {
+      "classification": "results",
+      "effective_page_size": 10,
+      "first_page_receipts": [
+        "20260708000160",
+        "20260616000322",
+        "20260612000426",
+        "20260601000409",
+        "20260601000332",
+        "20260515003113",
+        "20260514000747",
+        "20260415000035",
+        "20260413002173",
+        "20260330001066"
+      ],
+      "new_candidate_contribution_count": 10,
+      "new_candidate_contribution_rate": 1.0,
+      "new_candidate_receipts": [
+        "20260330001066",
+        "20260413002173",
+        "20260415000035",
+        "20260514000747",
+        "20260515003113",
+        "20260601000332",
+        "20260601000409",
+        "20260612000426",
+        "20260616000322",
+        "20260708000160"
+      ],
+      "page_links": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "query": "상계납입",
+      "raw_fixture": "dart\\terms\\01_상계납입_page_001.html",
+      "result_count": 42,
+      "within_page_duplicate_count": 0,
+      "within_page_duplicate_rate": 0.0
+    },
+    {
+      "classification": "results",
+      "effective_page_size": 10,
+      "first_page_receipts": [
+        "20260716000830",
+        "20260716000830",
+        "20260716000830",
+        "20260716000839",
+        "20260716000787",
+        "20260716000768",
+        "20260716000751",
+        "20260716000751",
+        "20260716000719",
+        "20260716000702"
+      ],
+      "new_candidate_contribution_count": 7,
+      "new_candidate_contribution_rate": 1.0,
+      "new_candidate_receipts": [
+        "20260716000702",
+        "20260716000719",
+        "20260716000751",
+        "20260716000768",
+        "20260716000787",
+        "20260716000830",
+        "20260716000839"
+      ],
+      "page_links": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        5087
+      ],
+      "query": "상계 납입",
+      "raw_fixture": "dart\\terms\\02_상계_납입_page_001.html",
+      "result_count": 50864,
+      "within_page_duplicate_count": 3,
+      "within_page_duplicate_rate": 0.3
+    },
+    {
+      "classification": "results",
+      "effective_page_size": 10,
+      "first_page_receipts": [
+        "20260714000499",
+        "20260529001247",
+        "20260529001010",
+        "20260529000886",
+        "20260515001601",
+        "20260513000552",
+        "20260407001596",
+        "20260403003019",
+        "20260331003558",
+        "20260331002160"
+      ],
+      "new_candidate_contribution_count": 10,
+      "new_candidate_contribution_rate": 1.0,
+      "new_candidate_receipts": [
+        "20260331002160",
+        "20260331003558",
+        "20260403003019",
+        "20260407001596",
+        "20260513000552",
+        "20260515001601",
+        "20260529000886",
+        "20260529001010",
+        "20260529001247",
+        "20260714000499"
+      ],
+      "page_links": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "query": "주금납입채무와 상계",
+      "raw_fixture": "dart\\terms\\03_주금납입채무와_상계_page_001.html",
+      "result_count": 54,
+      "within_page_duplicate_count": 0,
+      "within_page_duplicate_rate": 0.0
+    },
+    {
+      "classification": "results",
+      "effective_page_size": 10,
+      "first_page_receipts": [
+        "20260715000006",
+        "20260714000512",
+        "20260714000511",
+        "20260714000510",
+        "20260714000510",
+        "20260709000680",
+        "20260709000675",
+        "20260709000675",
+        "20260708000578",
+        "20260708000578"
+      ],
+      "new_candidate_contribution_count": 7,
+      "new_candidate_contribution_rate": 1.0,
+      "new_candidate_receipts": [
+        "20260708000578",
+        "20260709000675",
+        "20260709000680",
+        "20260714000510",
+        "20260714000511",
+        "20260714000512",
+        "20260715000006"
+      ],
+      "page_links": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        54
+      ],
+      "query": "주금 납입 채무와 상계",
+      "raw_fixture": "dart\\terms\\04_주금_납입_채무와_상계_page_001.html",
+      "result_count": 531,
+      "within_page_duplicate_count": 3,
+      "within_page_duplicate_rate": 0.3
+    },
+    {
+      "classification": "results",
+      "effective_page_size": 10,
+      "first_page_receipts": [
+        "20260716000830",
+        "20260716000830",
+        "20260716000830",
+        "20260716000784",
+        "20260716000773",
+        "20260716000751",
+        "20260716000751",
+        "20260716000751",
+        "20260716000730",
+        "20260716000719"
+      ],
+      "new_candidate_contribution_count": 3,
+      "new_candidate_contribution_rate": 0.5,
+      "new_candidate_receipts": [
+        "20260716000730",
+        "20260716000773",
+        "20260716000784"
+      ],
+      "page_links": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        1309
+      ],
+      "query": "출자전환",
+      "raw_fixture": "dart\\terms\\05_출자전환_page_001.html",
+      "result_count": 13084,
+      "within_page_duplicate_count": 4,
+      "within_page_duplicate_rate": 0.4
+    },
+    {
+      "classification": "results",
+      "effective_page_size": 10,
+      "first_page_receipts": [
+        "20260716000830",
+        "20260716000830",
+        "20260716000830",
+        "20260716000773",
+        "20260716000751",
+        "20260716000751",
+        "20260716000730",
+        "20260716000719",
+        "20260716000702",
+        "20260716000702"
+      ],
+      "new_candidate_contribution_count": 0,
+      "new_candidate_contribution_rate": 0.0,
+      "new_candidate_receipts": [],
+      "page_links": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        723
+      ],
+      "query": "채권의 출자전환",
+      "raw_fixture": "dart\\terms\\06_채권의_출자전환_page_001.html",
+      "result_count": 7228,
+      "within_page_duplicate_count": 4,
+      "within_page_duplicate_rate": 0.4
+    }
+  ],
+  "semantically_useful_document_count": 6,
+  "source_scope": "first response page per query; duplicate and contribution rates are first-page rates"
+}

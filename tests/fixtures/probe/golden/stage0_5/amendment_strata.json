@@ -1,0 +1,427 @@
+{
+  "gate_status": "passed",
+  "im_securities_regression_assertion": true,
+  "independent_event_samples": [
+    {
+      "Y_receipts": [
+        "20260716000411",
+        "20260709000043"
+      ],
+      "Y_rows": [
+        {
+          "corp_cls": "E",
+          "corp_code": "00148665",
+          "corp_name": "아이엠증권",
+          "flr_nm": "아이엠증권",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000411",
+          "report_nm": "[기재정정]주요사항보고서(자본으로인정되는채무증권발행결정)",
+          "rm": "",
+          "stock_code": ""
+        },
+        {
+          "corp_cls": "E",
+          "corp_code": "00148665",
+          "corp_name": "아이엠증권",
+          "flr_nm": "아이엠증권",
+          "rcept_dt": "20260709",
+          "rcept_no": "20260709000043",
+          "report_nm": "주요사항보고서(자본으로인정되는채무증권발행결정)",
+          "rm": "",
+          "stock_code": ""
+        }
+      ],
+      "bgn_de": "20260609",
+      "chain_final": "20260716000411",
+      "corp_code": "00148665",
+      "end_de": "20260815",
+      "independent_events_preserved": true,
+      "name": "아이엠증권 회귀",
+      "normalized": "주요사항보고서(자본으로인정되는채무증권발행결정)",
+      "outside": "20260709000043",
+      "pblntf_ty": "B",
+      "raw_fixture": "opendart/amendment/independent_01_Y.json"
+    },
+    {
+      "Y_receipts": [
+        "20241212000662",
+        "20241212000661",
+        "20241212000660"
+      ],
+      "Y_rows": [
+        {
+          "corp_cls": "Y",
+          "corp_code": "00132868",
+          "corp_name": "우성머티리얼스",
+          "flr_nm": "우성머티리얼스",
+          "rcept_dt": "20241213",
+          "rcept_no": "20241212000662",
+          "report_nm": "[기재정정]주요사항보고서(유상증자결정)",
+          "rm": "",
+          "stock_code": "011300"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00132868",
+          "corp_name": "우성머티리얼스",
+          "flr_nm": "우성머티리얼스",
+          "rcept_dt": "20241212",
+          "rcept_no": "20241212000661",
+          "report_nm": "[기재정정]주요사항보고서(유상증자결정)",
+          "rm": "",
+          "stock_code": "011300"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00132868",
+          "corp_name": "우성머티리얼스",
+          "flr_nm": "우성머티리얼스",
+          "rcept_dt": "20241212",
+          "rcept_no": "20241212000660",
+          "report_nm": "[기재정정]주요사항보고서(유상증자결정)",
+          "rm": "",
+          "stock_code": "011300"
+        }
+      ],
+      "bgn_de": "20240801",
+      "corp_code": "00132868",
+      "end_de": "20241231",
+      "independent_events_preserved": true,
+      "name": "우성머티리얼스 유상증자 다중사건",
+      "normalized": "주요사항보고서(유상증자결정)",
+      "pblntf_ty": "B",
+      "raw_fixture": "opendart/amendment/independent_02_Y.json"
+    },
+    {
+      "Y_receipts": [
+        "20260716000649",
+        "20260708000271",
+        "20260611000645"
+      ],
+      "Y_rows": [
+        {
+          "corp_cls": "K",
+          "corp_code": "00615723",
+          "corp_name": "알엔티엑스",
+          "flr_nm": "알엔티엑스",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000649",
+          "report_nm": "[기재정정]주요사항보고서(전환사채권발행결정)",
+          "rm": "",
+          "stock_code": "123010"
+        },
+        {
+          "corp_cls": "K",
+          "corp_code": "00615723",
+          "corp_name": "알엔티엑스",
+          "flr_nm": "알엔티엑스",
+          "rcept_dt": "20260708",
+          "rcept_no": "20260708000271",
+          "report_nm": "[기재정정]주요사항보고서(전환사채권발행결정)",
+          "rm": "",
+          "stock_code": "123010"
+        },
+        {
+          "corp_cls": "K",
+          "corp_code": "00615723",
+          "corp_name": "알엔티엑스",
+          "flr_nm": "알엔티엑스",
+          "rcept_dt": "20260611",
+          "rcept_no": "20260611000645",
+          "report_nm": "[기재정정]주요사항보고서(전환사채권발행결정)",
+          "rm": "",
+          "stock_code": "123010"
+        }
+      ],
+      "bgn_de": "20260501",
+      "corp_code": "00615723",
+      "end_de": "20260716",
+      "independent_events_preserved": true,
+      "name": "알엔티엑스 전환사채 다중사건",
+      "normalized": "주요사항보고서(전환사채권발행결정)",
+      "pblntf_ty": "B",
+      "raw_fixture": "opendart/amendment/independent_03_Y.json"
+    }
+  ],
+  "strata": [
+    {
+      "N_chain_rows": [
+        {
+          "corp_cls": "K",
+          "corp_code": "00232007",
+          "corp_name": "상지건설",
+          "flr_nm": "상지건설",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000809",
+          "report_nm": "[기재정정]주요사항보고서(유상증자결정)",
+          "rm": "",
+          "stock_code": "042940"
+        },
+        {
+          "corp_cls": "K",
+          "corp_code": "00232007",
+          "corp_name": "상지건설",
+          "flr_nm": "상지건설",
+          "rcept_dt": "20260625",
+          "rcept_no": "20260625000325",
+          "report_nm": "[기재정정]주요사항보고서(유상증자결정)",
+          "rm": "정",
+          "stock_code": "042940"
+        },
+        {
+          "corp_cls": "K",
+          "corp_code": "00232007",
+          "corp_name": "상지건설",
+          "flr_nm": "상지건설",
+          "rcept_dt": "20260619",
+          "rcept_no": "20260619000662",
+          "report_nm": "[기재정정]주요사항보고서(유상증자결정)",
+          "rm": "정",
+          "stock_code": "042940"
+        },
+        {
+          "corp_cls": "K",
+          "corp_code": "00232007",
+          "corp_name": "상지건설",
+          "flr_nm": "상지건설",
+          "rcept_dt": "20260605",
+          "rcept_no": "20260605000403",
+          "report_nm": "[기재정정]주요사항보고서(유상증자결정)",
+          "rm": "정",
+          "stock_code": "042940"
+        },
+        {
+          "corp_cls": "K",
+          "corp_code": "00232007",
+          "corp_name": "상지건설",
+          "flr_nm": "상지건설",
+          "rcept_dt": "20260508",
+          "rcept_no": "20260508000511",
+          "report_nm": "주요사항보고서(유상증자결정)",
+          "rm": "정",
+          "stock_code": "042940"
+        }
+      ],
+      "N_receipts": [
+        "20260716000809",
+        "20260625000325",
+        "20260619000662",
+        "20260605000403",
+        "20260508000511"
+      ],
+      "Y_chain_rows": [
+        {
+          "corp_cls": "K",
+          "corp_code": "00232007",
+          "corp_name": "상지건설",
+          "flr_nm": "상지건설",
+          "rcept_dt": "20260716",
+          "rcept_no": "20260716000809",
+          "report_nm": "[기재정정]주요사항보고서(유상증자결정)",
+          "rm": "",
+          "stock_code": "042940"
+        }
+      ],
+      "Y_receipts": [
+        "20260716000809"
+      ],
+      "bgn_de": "20260508",
+      "chain": [
+        "20260508000511",
+        "20260605000403",
+        "20260619000662",
+        "20260625000325",
+        "20260716000809"
+      ],
+      "chain_passed": true,
+      "corp_code": "00232007",
+      "corp_name": "상지건설",
+      "end_de": "20260716",
+      "final_receipt": "20260716000809",
+      "intermediate_receipts": [
+        "20260605000403",
+        "20260619000662",
+        "20260625000325"
+      ],
+      "name": "유상증자",
+      "normalized": "주요사항보고서(유상증자결정)",
+      "original_receipt": "20260508000511",
+      "raw_fixtures": [
+        "opendart/amendment/유상증자_N.json",
+        "opendart/amendment/유상증자_Y.json"
+      ]
+    },
+    {
+      "N_chain_rows": [
+        {
+          "corp_cls": "Y",
+          "corp_code": "00133618",
+          "corp_name": "세기상사",
+          "flr_nm": "세기상사",
+          "rcept_dt": "20260713",
+          "rcept_no": "20260713000345",
+          "report_nm": "[기재정정]주요사항보고서(회사합병결정)",
+          "rm": "",
+          "stock_code": "002420"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00133618",
+          "corp_name": "세기상사",
+          "flr_nm": "세기상사",
+          "rcept_dt": "20260623",
+          "rcept_no": "20260623000277",
+          "report_nm": "[기재정정]주요사항보고서(회사합병결정)",
+          "rm": "정",
+          "stock_code": "002420"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00133618",
+          "corp_name": "세기상사",
+          "flr_nm": "세기상사",
+          "rcept_dt": "20260617",
+          "rcept_no": "20260617000483",
+          "report_nm": "[기재정정]주요사항보고서(회사합병결정)",
+          "rm": "정",
+          "stock_code": "002420"
+        },
+        {
+          "corp_cls": "Y",
+          "corp_code": "00133618",
+          "corp_name": "세기상사",
+          "flr_nm": "세기상사",
+          "rcept_dt": "20260521",
+          "rcept_no": "20260521000642",
+          "report_nm": "주요사항보고서(회사합병결정)",
+          "rm": "정",
+          "stock_code": "002420"
+        }
+      ],
+      "N_receipts": [
+        "20260713000345",
+        "20260623000277",
+        "20260617000483",
+        "20260521000642"
+      ],
+      "Y_chain_rows": [
+        {
+          "corp_cls": "Y",
+          "corp_code": "00133618",
+          "corp_name": "세기상사",
+          "flr_nm": "세기상사",
+          "rcept_dt": "20260713",
+          "rcept_no": "20260713000345",
+          "report_nm": "[기재정정]주요사항보고서(회사합병결정)",
+          "rm": "",
+          "stock_code": "002420"
+        }
+      ],
+      "Y_receipts": [
+        "20260713000345"
+      ],
+      "bgn_de": "20260521",
+      "chain": [
+        "20260521000642",
+        "20260617000483",
+        "20260623000277",
+        "20260713000345"
+      ],
+      "chain_passed": true,
+      "corp_code": "00133618",
+      "corp_name": "세기상사",
+      "end_de": "20260713",
+      "final_receipt": "20260713000345",
+      "intermediate_receipts": [
+        "20260617000483",
+        "20260623000277"
+      ],
+      "name": "합병",
+      "normalized": "주요사항보고서(회사합병결정)",
+      "original_receipt": "20260521000642",
+      "raw_fixtures": [
+        "opendart/amendment/합병_N.json",
+        "opendart/amendment/합병_Y.json"
+      ]
+    },
+    {
+      "N_chain_rows": [
+        {
+          "corp_cls": "K",
+          "corp_code": "00406037",
+          "corp_name": "CSA 코스믹",
+          "flr_nm": "CSA 코스믹",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000496",
+          "report_nm": "[기재정정]주요사항보고서(전환사채권발행결정)",
+          "rm": "",
+          "stock_code": "083660"
+        },
+        {
+          "corp_cls": "K",
+          "corp_code": "00406037",
+          "corp_name": "CSA 코스믹",
+          "flr_nm": "CSA 코스믹",
+          "rcept_dt": "20260710",
+          "rcept_no": "20260710000465",
+          "report_nm": "[기재정정]주요사항보고서(전환사채권발행결정)",
+          "rm": "정",
+          "stock_code": "083660"
+        },
+        {
+          "corp_cls": "K",
+          "corp_code": "00406037",
+          "corp_name": "CSA 코스믹",
+          "flr_nm": "CSA 코스믹",
+          "rcept_dt": "20260611",
+          "rcept_no": "20260611000640",
+          "report_nm": "주요사항보고서(전환사채권발행결정)",
+          "rm": "정",
+          "stock_code": "083660"
+        }
+      ],
+      "N_receipts": [
+        "20260715000496",
+        "20260710000465",
+        "20260611000640"
+      ],
+      "Y_chain_rows": [
+        {
+          "corp_cls": "K",
+          "corp_code": "00406037",
+          "corp_name": "CSA 코스믹",
+          "flr_nm": "CSA 코스믹",
+          "rcept_dt": "20260715",
+          "rcept_no": "20260715000496",
+          "report_nm": "[기재정정]주요사항보고서(전환사채권발행결정)",
+          "rm": "",
+          "stock_code": "083660"
+        }
+      ],
+      "Y_receipts": [
+        "20260715000496"
+      ],
+      "bgn_de": "20260611",
+      "chain": [
+        "20260611000640",
+        "20260710000465",
+        "20260715000496"
+      ],
+      "chain_passed": true,
+      "corp_code": "00406037",
+      "corp_name": "CSA 코스믹",
+      "end_de": "20260715",
+      "final_receipt": "20260715000496",
+      "intermediate_receipts": [
+        "20260710000465"
+      ],
+      "name": "전환사채",
+      "normalized": "주요사항보고서(전환사채권발행결정)",
+      "original_receipt": "20260611000640",
+      "raw_fixtures": [
+        "opendart/amendment/전환사채_N.json",
+        "opendart/amendment/전환사채_Y.json"
+      ]
+    }
+  ]
+}

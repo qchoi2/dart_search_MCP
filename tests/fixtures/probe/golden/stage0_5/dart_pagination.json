@@ -1,0 +1,106 @@
+{
+  "cases": [
+    {
+      "calculated_last_page": 5087,
+      "effective_page_size": 10,
+      "empty_page_classification": "normal_zero",
+      "empty_page_number": 5088,
+      "empty_page_row_count": 0,
+      "label": "wide",
+      "last_page_classification": "results",
+      "last_page_row_count": 4,
+      "overflow_page_classification": "normal_zero",
+      "overflow_page_number": 5187,
+      "overflow_page_row_count": 0,
+      "page_1_2_nonoverlap": false,
+      "page_1_2_overlap": [
+        "20260716000702"
+      ],
+      "page_1_receipts": [
+        "20260716000830",
+        "20260716000830",
+        "20260716000830",
+        "20260716000839",
+        "20260716000787",
+        "20260716000768",
+        "20260716000751",
+        "20260716000751",
+        "20260716000719",
+        "20260716000702"
+      ],
+      "page_2_receipts": [
+        "20260716000702",
+        "20260716000688",
+        "20260716000687",
+        "20260716000687",
+        "20260716000687",
+        "20260716000687",
+        "20260716000687",
+        "20260716000687",
+        "20260716000682",
+        "20260716000682"
+      ],
+      "page_2_without_mode_post": true,
+      "query": "상계 납입",
+      "raw_fixtures": [
+        "dart\\pagination\\wide_상계_납입_page_002_direct.html",
+        "dart\\pagination\\wide_상계_납입_page_005087.html",
+        "dart\\pagination\\wide_상계_납입_page_005088_empty.html",
+        "dart\\pagination\\wide_상계_납입_page_005187_overflow.html"
+      ],
+      "requested_max_results": 100,
+      "result_count": 50864
+    },
+    {
+      "calculated_last_page": 5,
+      "effective_page_size": 10,
+      "empty_page_classification": "normal_zero",
+      "empty_page_number": 6,
+      "empty_page_row_count": 0,
+      "label": "narrow",
+      "last_page_classification": "results",
+      "last_page_row_count": 2,
+      "overflow_page_classification": "normal_zero",
+      "overflow_page_number": 105,
+      "overflow_page_row_count": 0,
+      "page_1_2_nonoverlap": true,
+      "page_1_2_overlap": [],
+      "page_1_receipts": [
+        "20260708000160",
+        "20260616000322",
+        "20260612000426",
+        "20260601000409",
+        "20260601000332",
+        "20260515003113",
+        "20260514000747",
+        "20260415000035",
+        "20260413002173",
+        "20260330001066"
+      ],
+      "page_2_receipts": [
+        "20260317000830",
+        "20260317000830",
+        "20260311800910",
+        "20260223002556",
+        "20260120000219",
+        "20251224000227",
+        "20251224000224",
+        "20251114000126",
+        "20251104000134",
+        "20251104000098"
+      ],
+      "page_2_without_mode_post": true,
+      "query": "상계납입",
+      "raw_fixtures": [
+        "dart\\pagination\\narrow_상계납입_page_002_direct.html",
+        "dart\\pagination\\narrow_상계납입_page_000005.html",
+        "dart\\pagination\\narrow_상계납입_page_000006_empty.html",
+        "dart\\pagination\\narrow_상계납입_page_000105_overflow.html"
+      ],
+      "requested_max_results": 100,
+      "result_count": 42
+    }
+  ],
+  "gate_status": "partially_passed",
+  "session_reuse_note": "page 2, last, empty, and overflow calls omitted the mode-setting POST in the same cookie session"
+}

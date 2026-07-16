@@ -1,0 +1,39 @@
+{
+  "files": [
+    {
+      "bytes": 13559,
+      "path": "golden\\stage0_5\\amendment_strata.json",
+      "sha256": "1b355a5267d5ace5137051e5f09ccd99b7c2b231d39a08591e95bf497193a2c2"
+    },
+    {
+      "bytes": 6139,
+      "path": "golden\\stage0_5\\d004_equal_filer.json",
+      "sha256": "ce9605b20164a243e1e83683a512b795a24e56f2ac4aae212a63b56eb6d81067"
+    },
+    {
+      "bytes": 3365,
+      "path": "golden\\stage0_5\\dart_pagination.json",
+      "sha256": "8b98a813aa358678c4738c1222204fd3b6f1980225d8fbb0e1bb30622e4a1c0c"
+    },
+    {
+      "bytes": 9720,
+      "path": "golden\\stage0_5\\flagship_terms.json",
+      "sha256": "7561070e81e53a43413f3bae4fa125b7f53a55500eb0a4a5669b2e90718d9a5d"
+    },
+    {
+      "bytes": 13408,
+      "path": "golden\\stage0_5\\rm_market.json",
+      "sha256": "c55b3e5a7d9bae0257d27b32b510b1c5cc58d201da037dd9faabc2bacf27658a"
+    },
+    {
+      "bytes": 49660,
+      "path": "golden\\stage0_5\\stage0_5_findings.json",
+      "sha256": "5edc32b0b67e86f32af7aa02d9a6c0a66d649f1853938d71f873735b6b06af5c"
+    }
+  ],
+  "generated_at": "2026-07-16T15:11:30.908+00:00",
+  "run_id": "stage0_5_20260716T150948Z",
+  "schema_version": 1,
+  "source_raw_manifest": "raw\\stage0_5_20260716T150948Z\\manifest.json",
+  "stage": "0.5"
+}

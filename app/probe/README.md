@@ -27,3 +27,17 @@ python -m unittest tests.test_probe
 The full run is also available with `python -m app.probe.run_stage0`. The probe
 generates `PROBE_RESULTS.md`, `DECISIONS.md`, `stage0_findings.json`, and an
 approval checklist. It does not implement or start the main program.
+
+## Stage 0.5
+
+Stage 0.5 has a separate runner with an execution-level request budget, deadline,
+PID lock, cancellation file, raw directory, and manifest:
+
+```powershell
+python -m app.probe.run_stage0_5 --max-requests 120 --deadline-seconds 1200
+```
+
+Raw responses are isolated below `tests/fixtures/probe/raw/<run_id>/` and are
+not committed by default. Curated, minimized evidence is written to
+`tests/fixtures/probe/golden/stage0_5/`. The runner only measures the five v16
+stage-0.5 gates and never starts stage 1.

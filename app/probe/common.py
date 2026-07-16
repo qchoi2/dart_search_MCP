@@ -115,10 +115,21 @@ class HttpResult:
 class RecordedHttpClient:
     """Sequential, rate-limited HTTP client that records masked request metadata."""
 
-    def __init__(self, fixture_root: Path, min_interval: float = 1.0) -> None:
+    def __init__(
+        self,
+        fixture_root: Path,
+        min_interval: float = 1.0,
+        *,
+        max_requests: int | None = None,
+        deadline_monotonic: float | None = None,
+        cancel_path: Path | None = None,
+    ) -> None:
         self.fixture_root = fixture_root
         self.fixture_root.mkdir(parents=True, exist_ok=True)
         self.min_interval = max(0.0, min_interval)
+        self.max_requests = max_requests
+        self.deadline_monotonic = deadline_monotonic
+        self.cancel_path = cancel_path
         self.cookie_jar = http.cookiejar.CookieJar()
         tls_context = ssl.create_default_context()
         self.tls_strict_flag_relaxed = False
@@ -148,6 +159,7 @@ class RecordedHttpClient:
         fixture: str | None = None,
         timeout: float = 60.0,
     ) -> HttpResult:
+        self._check_stop_conditions()
         query_pairs = _pairs(params)
         form_pairs = _pairs(form)
         if query_pairs:
@@ -162,6 +174,7 @@ class RecordedHttpClient:
             remaining = self.min_interval - (now_mono - self._last_started)
             if remaining > 0:
                 time.sleep(remaining)
+        self._check_stop_conditions()
         self._last_started = time.monotonic()
         started_at = utc_now()
         started_mono = time.monotonic()
@@ -235,6 +248,14 @@ class RecordedHttpClient:
             fixture=record["fixture"],
             record=record,
         )
+
+    def _check_stop_conditions(self) -> None:
+        if self.cancel_path is not None and self.cancel_path.exists():
+            raise RuntimeError("probe_cancel_requested")
+        if self.max_requests is not None and len(self.records) >= self.max_requests:
+            raise RuntimeError("probe_request_limit_reached")
+        if self.deadline_monotonic is not None and time.monotonic() >= self.deadline_monotonic:
+            raise RuntimeError("probe_deadline_reached")
 
 
 def _pairs(

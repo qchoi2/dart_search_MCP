@@ -1,0 +1,397 @@
+{
+  "confirmed_flags": [
+    "유",
+    "코",
+    "넥",
+    "공",
+    "연"
+  ],
+  "definitions": {
+    "공": {
+      "confidence": "confirmed",
+      "label": "공정거래위원회",
+      "label_observed_in_official_guide_response": true,
+      "sample_count": 5
+    },
+    "넥": {
+      "confidence": "confirmed",
+      "label": "코넥스시장",
+      "label_observed_in_official_guide_response": true,
+      "sample_count": 5
+    },
+    "연": {
+      "confidence": "confirmed",
+      "label": "연결",
+      "label_observed_in_official_guide_response": true,
+      "sample_count": 5
+    },
+    "유": {
+      "confidence": "confirmed",
+      "label": "유가증권시장",
+      "label_observed_in_official_guide_response": true,
+      "sample_count": 5
+    },
+    "채": {
+      "confidence": "provisional",
+      "label": "채권상장법인",
+      "label_observed_in_official_guide_response": true,
+      "sample_count": 0
+    },
+    "코": {
+      "confidence": "confirmed",
+      "label": "코스닥시장",
+      "label_observed_in_official_guide_response": true,
+      "sample_count": 5
+    }
+  },
+  "gate_status": "partially_passed",
+  "observed_rm_combinations": [
+    "공",
+    "공정",
+    "넥",
+    "넥정",
+    "연",
+    "유",
+    "유정",
+    "정",
+    "정연",
+    "코",
+    "코정"
+  ],
+  "official_guide_fixture": "opendart\\rm_market\\official_list_api_guide.html",
+  "official_guide_url": "https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS001&apiId=2019001",
+  "provisional_flags": [
+    "채"
+  ],
+  "raw_list_fixtures": [
+    "opendart/rm_market/I_20260416_20260716_page_001.json",
+    "opendart/rm_market/I_20260416_20260716_page_002.json",
+    "opendart/rm_market/I_20260416_20260716_page_003.json",
+    "opendart/rm_market/I_20260416_20260716_page_004.json",
+    "opendart/rm_market/I_20260416_20260716_page_005.json",
+    "opendart/rm_market/I_20260416_20260716_page_006.json",
+    "opendart/rm_market/I_20260416_20260716_page_007.json",
+    "opendart/rm_market/I_20260416_20260716_page_008.json",
+    "opendart/rm_market/I_20260416_20260716_page_009.json",
+    "opendart/rm_market/I_20260416_20260716_page_010.json",
+    "opendart/rm_market/I_20260416_20260716_page_011.json",
+    "opendart/rm_market/I_20260416_20260716_page_012.json",
+    "opendart/rm_market/A_20260416_20260716_page_001.json",
+    "opendart/rm_market/A_20260416_20260716_page_002.json",
+    "opendart/rm_market/A_20260416_20260716_page_003.json",
+    "opendart/rm_market/A_20260416_20260716_page_004.json",
+    "opendart/rm_market/A_20260416_20260716_page_005.json",
+    "opendart/rm_market/A_20260416_20260716_page_006.json",
+    "opendart/rm_market/A_20260416_20260716_page_007.json",
+    "opendart/rm_market/A_20260416_20260716_page_008.json",
+    "opendart/rm_market/B_20260416_20260716_page_001.json",
+    "opendart/rm_market/B_20260416_20260716_page_002.json",
+    "opendart/rm_market/B_20260416_20260716_page_003.json",
+    "opendart/rm_market/B_20260416_20260716_page_004.json",
+    "opendart/rm_market/B_20260416_20260716_page_005.json",
+    "opendart/rm_market/B_20260416_20260716_page_006.json",
+    "opendart/rm_market/B_20260416_20260716_page_007.json",
+    "opendart/rm_market/B_20260416_20260716_page_008.json",
+    "opendart/rm_market/I_20260101_20260331_page_001.json",
+    "opendart/rm_market/I_20260101_20260331_page_002.json",
+    "opendart/rm_market/I_20260101_20260331_page_003.json",
+    "opendart/rm_market/I_20260101_20260331_page_004.json",
+    "opendart/rm_market/I_20260101_20260331_page_005.json",
+    "opendart/rm_market/I_20260101_20260331_page_006.json",
+    "opendart/rm_market/I_20260101_20260331_page_007.json",
+    "opendart/rm_market/I_20260101_20260331_page_008.json",
+    "opendart/rm_market/bond_candidate_01_00382001.json",
+    "opendart/rm_market/bond_candidate_02_00311252.json",
+    "opendart/rm_market/bond_candidate_03_00783787.json",
+    "opendart/rm_market/bond_candidate_04_00104476.json",
+    "opendart/rm_market/bond_candidate_05_00137571.json"
+  ],
+  "samples": {
+    "공": [
+      {
+        "corp_cls": "E",
+        "corp_code": "02000891",
+        "corp_name": "에스피글로벌디벨롭먼트",
+        "flr_nm": "에스피글로벌디벨롭먼트",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716000817",
+        "report_nm": "유상증자결정",
+        "rm": "공",
+        "stock_code": ""
+      },
+      {
+        "corp_cls": "E",
+        "corp_code": "01627868",
+        "corp_name": "경산기업",
+        "flr_nm": "경산기업",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716000344",
+        "report_nm": "비유동자산취득결정",
+        "rm": "공",
+        "stock_code": ""
+      },
+      {
+        "corp_cls": "E",
+        "corp_code": "00653282",
+        "corp_name": "에이엠플러스자산개발",
+        "flr_nm": "에이엠플러스자산개발",
+        "rcept_dt": "20260715",
+        "rcept_no": "20260715000490",
+        "report_nm": "유상증자결정",
+        "rm": "공",
+        "stock_code": ""
+      },
+      {
+        "corp_cls": "E",
+        "corp_code": "02039370",
+        "corp_name": "에스지씨에이아이인프라",
+        "flr_nm": "에스지씨에이아이인프라",
+        "rcept_dt": "20260715",
+        "rcept_no": "20260715000468",
+        "report_nm": "비유동자산취득결정",
+        "rm": "공",
+        "stock_code": ""
+      },
+      {
+        "corp_cls": "E",
+        "corp_code": "00247522",
+        "corp_name": "글로벌세아",
+        "flr_nm": "글로벌세아",
+        "rcept_dt": "20260715",
+        "rcept_no": "20260715000446",
+        "report_nm": "타인을위한채무보증결정",
+        "rm": "공",
+        "stock_code": ""
+      }
+    ],
+    "넥": [
+      {
+        "corp_cls": "N",
+        "corp_code": "01579020",
+        "corp_name": "아이엠지티",
+        "flr_nm": "아이엠지티",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716600567",
+        "report_nm": "주주명부폐쇄기간또는기준일설정              ",
+        "rm": "넥",
+        "stock_code": "456570"
+      },
+      {
+        "corp_cls": "N",
+        "corp_code": "01579020",
+        "corp_name": "아이엠지티",
+        "flr_nm": "아이엠지티",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716600564",
+        "report_nm": "주주총회소집결의              ",
+        "rm": "넥",
+        "stock_code": "456570"
+      },
+      {
+        "corp_cls": "N",
+        "corp_code": "01156795",
+        "corp_name": "프로젠",
+        "flr_nm": "프로젠",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716600355",
+        "report_nm": "전환주식의전환가액조정              (제4회 전환우선주)",
+        "rm": "넥",
+        "stock_code": "296160"
+      },
+      {
+        "corp_cls": "N",
+        "corp_code": "01156795",
+        "corp_name": "프로젠",
+        "flr_nm": "프로젠",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716600350",
+        "report_nm": "전환주식의전환가액조정              (제3회 전환우선주)",
+        "rm": "넥",
+        "stock_code": "296160"
+      },
+      {
+        "corp_cls": "N",
+        "corp_code": "01396931",
+        "corp_name": "유엑스엔",
+        "flr_nm": "유엑스엔",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716600147",
+        "report_nm": "특허권취득(자율공시)              (하우징에 실장된 전자 부품을 구비한 연속식 분석물 측정기)",
+        "rm": "넥",
+        "stock_code": "337840"
+      }
+    ],
+    "연": [
+      {
+        "corp_cls": "E",
+        "corp_code": "00166546",
+        "corp_name": "환영철강공업",
+        "flr_nm": "환영철강공업",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716000688",
+        "report_nm": "[기재정정]사업보고서 (2025.12)",
+        "rm": "연",
+        "stock_code": ""
+      },
+      {
+        "corp_cls": "K",
+        "corp_code": "00396925",
+        "corp_name": "엠로",
+        "flr_nm": "엠로",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716000549",
+        "report_nm": "[기재정정]사업보고서 (2025.12)",
+        "rm": "연",
+        "stock_code": "058970"
+      },
+      {
+        "corp_cls": "K",
+        "corp_code": "00977641",
+        "corp_name": "하이로닉",
+        "flr_nm": "하이로닉",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716000527",
+        "report_nm": "[기재정정]사업보고서 (2025.12)",
+        "rm": "연",
+        "stock_code": "149980"
+      },
+      {
+        "corp_cls": "K",
+        "corp_code": "01423916",
+        "corp_name": "온코크로스",
+        "flr_nm": "온코크로스",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716000447",
+        "report_nm": "[기재정정]사업보고서 (2025.12)",
+        "rm": "연",
+        "stock_code": "382150"
+      },
+      {
+        "corp_cls": "E",
+        "corp_code": "00905583",
+        "corp_name": "대우산업개발",
+        "flr_nm": "대우산업개발",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716000315",
+        "report_nm": "[기재정정]사업보고서 (2025.12)",
+        "rm": "연",
+        "stock_code": ""
+      }
+    ],
+    "유": [
+      {
+        "corp_cls": "Y",
+        "corp_code": "00117577",
+        "corp_name": "오리온홀딩스",
+        "flr_nm": "오리온홀딩스",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716801118",
+        "report_nm": "[기재정정]주권관련사채권의취득결정(자율공시)(종속회사의주요경영사항)              ",
+        "rm": "유",
+        "stock_code": "001800"
+      },
+      {
+        "corp_cls": "Y",
+        "corp_code": "00113359",
+        "corp_name": "교보증권",
+        "flr_nm": "교보증권",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716801117",
+        "report_nm": "주주총회소집결의              ",
+        "rm": "유",
+        "stock_code": "030610"
+      },
+      {
+        "corp_cls": "Y",
+        "corp_code": "00111689",
+        "corp_name": "아진전자부품",
+        "flr_nm": "아진전자부품",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716801106",
+        "report_nm": "최대주주변경              ",
+        "rm": "유",
+        "stock_code": "009320"
+      },
+      {
+        "corp_cls": "Y",
+        "corp_code": "00120872",
+        "corp_name": "만호제강",
+        "flr_nm": "만호제강",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716801090",
+        "report_nm": "[기재정정]회계처리기준위반에따른임원의해임권고조치              ",
+        "rm": "유",
+        "stock_code": "001080"
+      },
+      {
+        "corp_cls": "Y",
+        "corp_code": "01238169",
+        "corp_name": "오리온",
+        "flr_nm": "오리온",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716801086",
+        "report_nm": "[기재정정]주권관련사채권의취득결정(자율공시)(종속회사의주요경영사항)              ",
+        "rm": "유",
+        "stock_code": "271560"
+      }
+    ],
+    "채": [],
+    "코": [
+      {
+        "corp_cls": "K",
+        "corp_code": "00356839",
+        "corp_name": "메디콕스",
+        "flr_nm": "메디콕스",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716901085",
+        "report_nm": "타인에대한채무보증결정              ",
+        "rm": "코",
+        "stock_code": "054180"
+      },
+      {
+        "corp_cls": "K",
+        "corp_code": "00356839",
+        "corp_name": "메디콕스",
+        "flr_nm": "메디콕스",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716901081",
+        "report_nm": "타인에대한담보제공결정              ",
+        "rm": "코",
+        "stock_code": "054180"
+      },
+      {
+        "corp_cls": "K",
+        "corp_code": "00454399",
+        "corp_name": "이상네트웍스",
+        "flr_nm": "코스닥시장본부",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716901089",
+        "report_nm": "불성실공시법인미지정              (지정유예)",
+        "rm": "코",
+        "stock_code": "080010"
+      },
+      {
+        "corp_cls": "K",
+        "corp_code": "00120906",
+        "corp_name": "에스아이리소스",
+        "flr_nm": "에스아이리소스",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716901042",
+        "report_nm": "[기재정정]주식병합결정              (주식병합결정(정정))",
+        "rm": "코",
+        "stock_code": "065420"
+      },
+      {
+        "corp_cls": "K",
+        "corp_code": "01307335",
+        "corp_name": "나인앤컴퍼니",
+        "flr_nm": "나인앤컴퍼니",
+        "rcept_dt": "20260716",
+        "rcept_no": "20260716900946",
+        "report_nm": "타법인주식및출자증권취득결정(자율공시)              ",
+        "rm": "코",
+        "stock_code": "366030"
+      }
+    ]
+  }
+}

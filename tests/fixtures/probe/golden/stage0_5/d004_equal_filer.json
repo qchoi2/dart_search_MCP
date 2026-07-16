@@ -1,0 +1,171 @@
+{
+  "document_verified_count": 8,
+  "documents": [
+    {
+      "corp_name_present_in_document": true,
+      "document_is_zip": true,
+      "list_row": {
+        "corp_cls": "Y",
+        "corp_code": "00138516",
+        "corp_name": "아남전자",
+        "flr_nm": "아남전자",
+        "rcept_dt": "20260407",
+        "rcept_no": "20260407001618",
+        "report_nm": "공개매수에관한의견표명서",
+        "rm": "",
+        "stock_code": "008700"
+      },
+      "raw_document_fixture": "opendart/d004_equal/documents/20260407001618.zip",
+      "raw_snippet_fixture": "opendart\\d004_equal\\snippets\\20260407001618.txt",
+      "role": "target_company_opinion",
+      "target_label_present": true
+    },
+    {
+      "corp_name_present_in_document": true,
+      "document_is_zip": true,
+      "list_row": {
+        "corp_cls": "Y",
+        "corp_code": "00138516",
+        "corp_name": "아남전자",
+        "flr_nm": "아남전자",
+        "rcept_dt": "20260414",
+        "rcept_no": "20260414002268",
+        "report_nm": "공개매수결과보고서",
+        "rm": "",
+        "stock_code": "008700"
+      },
+      "raw_document_fixture": "opendart/d004_equal/documents/20260414002268.zip",
+      "raw_snippet_fixture": "opendart\\d004_equal\\snippets\\20260414002268.txt",
+      "role": "tender_offer_result",
+      "target_label_present": true
+    },
+    {
+      "corp_name_present_in_document": true,
+      "document_is_zip": true,
+      "list_row": {
+        "corp_cls": "E",
+        "corp_code": "00172291",
+        "corp_name": "더존비즈온",
+        "flr_nm": "더존비즈온",
+        "rcept_dt": "20260415",
+        "rcept_no": "20260415000010",
+        "report_nm": "공개매수에관한의견표명서",
+        "rm": "",
+        "stock_code": "012510"
+      },
+      "raw_document_fixture": "opendart/d004_equal/documents/20260415000010.zip",
+      "raw_snippet_fixture": "opendart\\d004_equal\\snippets\\20260415000010.txt",
+      "role": "target_company_opinion",
+      "target_label_present": false
+    },
+    {
+      "corp_name_present_in_document": true,
+      "document_is_zip": true,
+      "list_row": {
+        "corp_cls": "K",
+        "corp_code": "00140061",
+        "corp_name": "티케이지애강",
+        "flr_nm": "티케이지애강",
+        "rcept_dt": "20260417",
+        "rcept_no": "20260417000639",
+        "report_nm": "공개매수에관한의견표명서",
+        "rm": "",
+        "stock_code": "022220"
+      },
+      "raw_document_fixture": "opendart/d004_equal/documents/20260417000639.zip",
+      "raw_snippet_fixture": "opendart\\d004_equal\\snippets\\20260417000639.txt",
+      "role": "target_company_opinion",
+      "target_label_present": true
+    },
+    {
+      "corp_name_present_in_document": true,
+      "document_is_zip": true,
+      "list_row": {
+        "corp_cls": "Y",
+        "corp_code": "00377610",
+        "corp_name": "세아홀딩스",
+        "flr_nm": "세아홀딩스",
+        "rcept_dt": "20260520",
+        "rcept_no": "20260520000001",
+        "report_nm": "공개매수신고서",
+        "rm": "",
+        "stock_code": "058650"
+      },
+      "raw_document_fixture": "opendart/d004_equal/documents/20260520000001.zip",
+      "raw_snippet_fixture": "opendart\\d004_equal\\snippets\\20260520000001.txt",
+      "role": "tender_offer_filing",
+      "target_label_present": true
+    },
+    {
+      "corp_name_present_in_document": true,
+      "document_is_zip": true,
+      "list_row": {
+        "corp_cls": "Y",
+        "corp_code": "00377610",
+        "corp_name": "세아홀딩스",
+        "flr_nm": "세아홀딩스",
+        "rcept_dt": "20260520",
+        "rcept_no": "20260520000002",
+        "report_nm": "공개매수설명서",
+        "rm": "",
+        "stock_code": "058650"
+      },
+      "raw_document_fixture": "opendart/d004_equal/documents/20260520000002.zip",
+      "raw_snippet_fixture": "opendart\\d004_equal\\snippets\\20260520000002.txt",
+      "role": "tender_offer_explanatory_statement",
+      "target_label_present": true
+    },
+    {
+      "corp_name_present_in_document": true,
+      "document_is_zip": true,
+      "list_row": {
+        "corp_cls": "Y",
+        "corp_code": "00377610",
+        "corp_name": "세아홀딩스",
+        "flr_nm": "세아홀딩스",
+        "rcept_dt": "20260520",
+        "rcept_no": "20260520000003",
+        "report_nm": "공개매수에관한의견표명서",
+        "rm": "",
+        "stock_code": "058650"
+      },
+      "raw_document_fixture": "opendart/d004_equal/documents/20260520000003.zip",
+      "raw_snippet_fixture": "opendart\\d004_equal\\snippets\\20260520000003.txt",
+      "role": "target_company_opinion",
+      "target_label_present": true
+    },
+    {
+      "corp_name_present_in_document": true,
+      "document_is_zip": true,
+      "list_row": {
+        "corp_cls": "Y",
+        "corp_code": "00377610",
+        "corp_name": "세아홀딩스",
+        "flr_nm": "세아홀딩스",
+        "rcept_dt": "20260610",
+        "rcept_no": "20260610000151",
+        "report_nm": "공개매수결과보고서",
+        "rm": "",
+        "stock_code": "058650"
+      },
+      "raw_document_fixture": "opendart/d004_equal/documents/20260610000151.zip",
+      "raw_snippet_fixture": "opendart\\d004_equal\\snippets\\20260610000151.txt",
+      "role": "tender_offer_result",
+      "target_label_present": true
+    }
+  ],
+  "equal_filer_list_count": 8,
+  "gate_status": "passed",
+  "raw_list_fixtures": [
+    "opendart/d004_equal/window_20260401_20260630.json",
+    "opendart/d004_equal/window_20260701_20260716.json"
+  ],
+  "roles_observed": [
+    "target_company_opinion",
+    "tender_offer_explanatory_statement",
+    "tender_offer_filing",
+    "tender_offer_result"
+  ],
+  "rule_can_be_finalized": true,
+  "target_company_rule": "report-role-first: opinion filings identify corp_name as the opinion-giving target; filing/explanatory/result documents require their explicit target-company field"
+}
