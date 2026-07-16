@@ -174,6 +174,63 @@ def _decisions(
                 "reason": "합성 fixture는 분류기 분기 검증일 뿐 실제 장애의 증거가 아님",
             }
         )
+        decisions.extend(
+            [
+                {
+                    "topic": "플래그십 S3 문구 단계 0.5 게이트",
+                    "actual_result": "정상 결과는 주식매수청구권 8,875건으로 확인했지만 상계납입·출자전환은 미실측",
+                    "change": "상계납입·주금납입채무와 상계·출자전환 변형어의 실제 검색과 원문 정답을 S3 활성화 전 필수 게이트로 추가",
+                    "reason": "플래그십 검색어의 형태소·동의어 동작을 다른 검색어 결과로 일반화할 수 없음",
+                },
+                {
+                    "topic": "DART 검색건수·페이지네이션 계약",
+                    "actual_result": "주식매수청구권 검색건수 8,875, 첫 페이지 결과행 10, 마지막 페이지 링크 888을 관찰했지만 2페이지 실제 호출은 미수행",
+                    "change": "currentPage·실효 페이지 크기·추가 페이지 요청수를 단계 0.5에서 확정하고 검색건수를 충분성·후보예산·배치판정에 사용",
+                    "reason": "수천 건 결과에서 페이지·원문 예산과 rate 하한을 계산해야 함",
+                },
+                {
+                    "topic": "DART 배치 시간 하한",
+                    "actual_result": "실측 초기 안전값은 동시성 1·요청 시작간격 최소 1,000ms",
+                    "change": "estimated_dart_requests와 dart_rate_floor_seconds를 배치 미리보기에 포함",
+                    "reason": "예상시간이 물리적인 요청 시작간격 하한보다 작아지지 않도록 함",
+                },
+            ]
+        )
+    if opendart:
+        decisions.extend(
+            [
+                {
+                    "topic": "S6·S7 정정유형 층화 게이트",
+                    "actual_result": "N/Y 3사건이 채무성 증권신고·주요사항보고에 편중",
+                    "change": "유상증자·합병·전환사채 N/Y 표본을 각각 확보하기 전 S6·S7 기본 활성화 금지",
+                    "reason": "대표 사용사례 유형으로 실측 규칙을 일반화하기 위한 근거가 부족함",
+                },
+                {
+                    "topic": "S8 시장 rm 플래그",
+                    "actual_result": "정·철 외 유·코·채·넥·공·연의 문서 의미는 검증하지 않음",
+                    "change": "I 유형 probe 전에는 진단정보로만 보존하고 하드 시장필터로 사용하지 않음",
+                    "reason": "미검증 플래그를 확정 필터로 사용하면 후보를 잘못 제외할 수 있음",
+                },
+                {
+                    "topic": "D004 동일회사 제출 분기",
+                    "actual_result": "로컬 목록에 corp_name == flr_nm 8건이 있으나 대상회사 원문 검증 표본에는 포함되지 않음",
+                    "change": "문서 역할별 원문 probe 전까지 target_company_confidence=provisional로 처리",
+                    "reason": "신고서·의견표명서·결과보고서에서 같은 회사 필드의 역할이 다를 수 있음",
+                },
+                {
+                    "topic": "소수표본 신뢰도 전파",
+                    "actual_result": "연장결정 1건·정정명령부과 1건·rm=철 검증 2건",
+                    "change": "sample_count < 3 규칙은 amendment_rules.yaml에서 confidence=provisional을 강제",
+                    "reason": "소수표본 규칙이 확정 규칙처럼 전파되는 것을 방지",
+                },
+                {
+                    "topic": "raw fixture 저장소 정리",
+                    "actual_result": "단계 0 raw fixture 1,946개·약 48.89MB가 이미 커밋 이력과 v0.0-probe 태그에 포함됨",
+                    "change": "추가 raw의 Git 유입을 중단하고 golden manifest·외부 압축보관으로 전환하며 이력 재작성은 별도 승인 대상으로 분리",
+                    "reason": "새 커밋에서 삭제·압축해도 기존 Git 이력 크기는 줄지 않으며 태그 재작성은 파괴적 변경임",
+                },
+            ]
+        )
     return decisions
 
 
@@ -368,15 +425,19 @@ def _probe_results_markdown(findings: dict[str, Any], checklist: dict[str, Any])
         structure = web["structure_failure_test"]
         lines.extend(
             [
+                f"- 정상 0건 실측 검색어: `{zero.get('query', UNCONFIRMED)}`",
                 f"- 정상 0건 분류: `{zero['classification']}`",
                 f"- 명시적 0건 마커: {', '.join(zero.get('zero_markers', [])) or UNCONFIRMED}",
+                f"- 정상 결과 실측 검색어: `{positive.get('query', UNCONFIRMED)}`",
+                f"- 응답 검색건수: {positive.get('result_count', UNCONFIRMED)}건",
                 f"- 정상 결과행 분류: `{positive['classification']}` / 결과행 {len(positive.get('rows', []))}건",
+                f"- 실측 fixture: `{zero.get('fixture', UNCONFIRMED)}`, `{positive.get('fixture', UNCONFIRMED)}`",
                 f"- 실제 구조장애 관찰: {UNCONFIRMED if not structure['actual_structure_failure_observed'] else '확인'}",
                 f"- 합성 구조장애 fixture 분류: `{structure['synthetic_classification']}` (실제 장애 근거로 사용하지 않음)",
                 f"- 동시성: {web['concurrency']}, 설정 요청간격: {web['configured_min_interval_seconds']}초, "
                 f"실측 최소 시작간격: {web.get('minimum_observed_start_interval_seconds', UNCONFIRMED)}초, "
                 f"전 요청 HTTP 200: {_ko(web['all_http_200'])}",
-            f"- robots의 `/dsab007` 명시 금지 관찰: {'있음' if web['robots']['fulltext_path_explicitly_disallowed'] else '없음'}",
+                f"- robots의 `/dsab007` 명시 금지 관찰: {'있음' if web['robots']['fulltext_path_explicitly_disallowed'] else '없음'}",
                 f"- 자동화 허용 빈도·명시적 허용정책: {UNCONFIRMED}",
                 "- 원본 HTML/robots/request log: `tests/fixtures/probe/dart_web/`, `tests/fixtures/probe/requests.jsonl`",
                 "",

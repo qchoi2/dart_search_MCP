@@ -8,6 +8,11 @@ _local_data/
 *.lock
 *.pid
 
+# Future probe runs: curate selected files into the golden fixture set explicitly.
+tests/fixtures/probe/runs/
+tests/fixtures/probe/raw/
+tests/fixtures/probe/archive/
+
 # Editor and OS metadata
 .DS_Store
 Thumbs.db

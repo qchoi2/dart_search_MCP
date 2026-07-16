@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-07-16",
+  "purpose": "Curated stage-0 golden fixtures; bulk raw probe responses are not all golden evidence.",
+  "raw_inventory_before_manifest": {
+    "file_count": 1946,
+    "bytes": 51269970,
+    "git_history_note": "Bulk raw fixtures already exist in v0.0-probe history; rewriting history requires explicit approval."
+  },
+  "fixtures": [
+    {
+      "path": "dart_web/fulltext_zero.html",
+      "sha256": "206cbff8194a754810004b1abbbe389cd6e205abc52977cb53ed15d6cc4b515a",
+      "evidence": "DART normal-zero marker and zero result count"
+    },
+    {
+      "path": "dart_web/fulltext_positive_1.html",
+      "sha256": "130eaf1ef9c9b48f8e31fa5f583bda1478e7c67ece9bb8c32e06ec7f4eb87843",
+      "evidence": "DART query 주식매수청구권, search count 8,875, first-page rows and pagination links"
+    },
+    {
+      "path": "dart_web/synthetic_structure_failure.html",
+      "sha256": "29f02e11f65aa3464f3fb69c5008451bd02c50d5132c512c2b1814304aa3ad5e",
+      "evidence": "Synthetic parser branch only; not evidence of an actual DART failure"
+    },
+    {
+      "path": "opendart/last_report/case_1_N_page_001.json",
+      "sha256": "ad308a84d270f67c38ac7fbbcb9db480f9c12de1217b5f0bed45451a95825dbe",
+      "evidence": "한진 last_reprt_at=N"
+    },
+    {
+      "path": "opendart/last_report/case_1_Y_page_001.json",
+      "sha256": "a3003ec95607d52fc9a06c00dc946f52a3bf17d3d92debd131ef41c4fa398382",
+      "evidence": "한진 last_reprt_at=Y"
+    },
+    {
+      "path": "opendart/last_report/case_2_N_page_001.json",
+      "sha256": "932eaf7587be158558800cd382128dd6a0fe0a8c30f2c9b5393f02ec190ea566",
+      "evidence": "아이엠증권 last_reprt_at=N"
+    },
+    {
+      "path": "opendart/last_report/case_2_Y_page_001.json",
+      "sha256": "ddd9c9ffb254555dfbdf23d222dfbe01dbdccdaf4b533a79413ad4f14b71a85f",
+      "evidence": "아이엠증권 last_reprt_at=Y including parallel receipt 20260709000043"
+    },
+    {
+      "path": "opendart/last_report/case_3_N_page_001.json",
+      "sha256": "93bc4c0111f73f497dbac9bbcfb97b3f0008c8f97092f635feefe397c50e18ec",
+      "evidence": "지에스엔텍 last_reprt_at=N"
+    },
+    {
+      "path": "opendart/last_report/case_3_Y_page_001.json",
+      "sha256": "c1f46b4db94c7bda76ac33c4cace3c23a321d7f9e8d18e605896e464a74cee92",
+      "evidence": "지에스엔텍 last_reprt_at=Y"
+    },
+    {
+      "path": "opendart/status/status_013_empty_window.json",
+      "sha256": "5b9f448765008cd323ab5b94081c873aa00d39974e7ed5aa1964b00a19e8242b",
+      "evidence": "OpenDART list status 013 normal no-data"
+    },
+    {
+      "path": "opendart/prefixes/target_연장결정_anchor_01_page_001.json",
+      "sha256": "fa5084434130557a1c597e40a70131de5a148f14810be4702addb4f21d235251",
+      "evidence": "연장결정 prefix in B-type major-event filing"
+    },
+    {
+      "path": "stage0_findings.json",
+      "sha256": "e5f06289cbd9a3acb6f7b0993c16b8adb85a0617ca1def62c7f74c4869b23d3b",
+      "evidence": "Structured stage-0 findings snapshot"
+    }
+  ]
+}
