@@ -1,0 +1,128 @@
+{
+  "prior_conservative_assumption": "검색어가 바뀌면 모드설정 POST 재실행",
+  "same_cookie_session": true,
+  "status": "passed",
+  "transition_count": 3,
+  "transitions": [
+    {
+      "control_with_mode_post": {
+        "classification": "results",
+        "fixture": "dart\\query_switch\\02_주금납입채무와_상계_control.html",
+        "receipt_rows": [
+          "20260714000499",
+          "20260529001247",
+          "20260529001010",
+          "20260529000886",
+          "20260515001601",
+          "20260513000552",
+          "20260407001596",
+          "20260403003019",
+          "20260331003558",
+          "20260331002160"
+        ],
+        "search_count": 54
+      },
+      "direct_without_mode_post": {
+        "classification": "results",
+        "fixture": "dart\\query_switch\\02_주금납입채무와_상계_direct.html",
+        "receipt_rows": [
+          "20260714000499",
+          "20260529001247",
+          "20260529001010",
+          "20260529000886",
+          "20260515001601",
+          "20260513000552",
+          "20260407001596",
+          "20260403003019",
+          "20260331003558",
+          "20260331002160"
+        ],
+        "search_count": 54
+      },
+      "exact_match": true,
+      "from_query": "상계납입",
+      "stale_previous_state_detected": false,
+      "to_query": "주금납입채무와 상계"
+    },
+    {
+      "control_with_mode_post": {
+        "classification": "results",
+        "fixture": "dart\\query_switch\\03_출자전환_control.html",
+        "receipt_rows": [
+          "20260716000830",
+          "20260716000830",
+          "20260716000830",
+          "20260716000784",
+          "20260716000773",
+          "20260716000751",
+          "20260716000751",
+          "20260716000751",
+          "20260716000730",
+          "20260716000719"
+        ],
+        "search_count": 13084
+      },
+      "direct_without_mode_post": {
+        "classification": "results",
+        "fixture": "dart\\query_switch\\03_출자전환_direct.html",
+        "receipt_rows": [
+          "20260716000830",
+          "20260716000830",
+          "20260716000830",
+          "20260716000784",
+          "20260716000773",
+          "20260716000751",
+          "20260716000751",
+          "20260716000751",
+          "20260716000730",
+          "20260716000719"
+        ],
+        "search_count": 13084
+      },
+      "exact_match": true,
+      "from_query": "주금납입채무와 상계",
+      "stale_previous_state_detected": false,
+      "to_query": "출자전환"
+    },
+    {
+      "control_with_mode_post": {
+        "classification": "results",
+        "fixture": "dart\\query_switch\\04_상계납입_control.html",
+        "receipt_rows": [
+          "20260708000160",
+          "20260616000322",
+          "20260612000426",
+          "20260601000409",
+          "20260601000332",
+          "20260515003113",
+          "20260514000747",
+          "20260415000035",
+          "20260413002173",
+          "20260330001066"
+        ],
+        "search_count": 42
+      },
+      "direct_without_mode_post": {
+        "classification": "results",
+        "fixture": "dart\\query_switch\\04_상계납입_direct.html",
+        "receipt_rows": [
+          "20260708000160",
+          "20260616000322",
+          "20260612000426",
+          "20260601000409",
+          "20260601000332",
+          "20260515003113",
+          "20260514000747",
+          "20260415000035",
+          "20260413002173",
+          "20260330001066"
+        ],
+        "search_count": 42
+      },
+      "exact_match": true,
+      "from_query": "출자전환",
+      "stale_previous_state_detected": false,
+      "to_query": "상계납입"
+    }
+  ]
+}

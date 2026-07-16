@@ -1,0 +1,322 @@
+{
+  "combination_parsing_status": "unconfirmed",
+  "combination_sample_count": 0,
+  "confidence": "confirmed",
+  "official_rm_meaning": "채권상장법인",
+  "other_flags_preserved": false,
+  "parser_preserved_raw_order": true,
+  "sample_count": 16,
+  "samples": [
+    {
+      "corp_cls": "E",
+      "corp_code": "00595012",
+      "corp_name": "애큐온캐피탈",
+      "flr_nm": "애큐온캐피탈",
+      "parsed_rm": {
+        "raw": "채",
+        "rm_flags": [
+          "채"
+        ],
+        "unknown_rm_flags": []
+      },
+      "rcept_dt": "20260630",
+      "rcept_no": "20260630701438",
+      "report_nm": "조회공시요구(풍문또는보도등)에대한답변(미확정)              ",
+      "rm": "채",
+      "stock_code": ""
+    },
+    {
+      "corp_cls": "E",
+      "corp_code": "00595012",
+      "corp_name": "애큐온캐피탈",
+      "flr_nm": "채권시장",
+      "parsed_rm": {
+        "raw": "채",
+        "rm_flags": [
+          "채"
+        ],
+        "unknown_rm_flags": []
+      },
+      "rcept_dt": "20260630",
+      "rcept_no": "20260630700217",
+      "report_nm": "조회공시요구(풍문또는보도등)              ",
+      "rm": "채",
+      "stock_code": ""
+    },
+    {
+      "corp_cls": "E",
+      "corp_code": "00149813",
+      "corp_name": "중앙일보",
+      "flr_nm": "중앙일보",
+      "parsed_rm": {
+        "raw": "채",
+        "rm_flags": [
+          "채"
+        ],
+        "unknown_rm_flags": []
+      },
+      "rcept_dt": "20260618",
+      "rcept_no": "20260618700918",
+      "report_nm": "상장채권관련기타주요사항              (부도발생)",
+      "rm": "채",
+      "stock_code": ""
+    },
+    {
+      "corp_cls": "E",
+      "corp_code": "00149813",
+      "corp_name": "중앙일보",
+      "flr_nm": "중앙일보",
+      "parsed_rm": {
+        "raw": "채",
+        "rm_flags": [
+          "채"
+        ],
+        "unknown_rm_flags": []
+      },
+      "rcept_dt": "20260616",
+      "rcept_no": "20260616700851",
+      "report_nm": "상장채권기한의이익상실              (제51회차)",
+      "rm": "채",
+      "stock_code": ""
+    },
+    {
+      "corp_cls": "E",
+      "corp_code": "00149813",
+      "corp_name": "중앙일보",
+      "flr_nm": "중앙일보",
+      "parsed_rm": {
+        "raw": "채",
+        "rm_flags": [
+          "채"
+        ],
+        "unknown_rm_flags": []
+      },
+      "rcept_dt": "20260616",
+      "rcept_no": "20260616700850",
+      "report_nm": "상장채권기한의이익상실              (제47회차)",
+      "rm": "채",
+      "stock_code": ""
+    },
+    {
+      "corp_cls": "E",
+      "corp_code": "00149813",
+      "corp_name": "중앙일보",
+      "flr_nm": "중앙일보",
+      "parsed_rm": {
+        "raw": "채",
+        "rm_flags": [
+          "채"
+        ],
+        "unknown_rm_flags": []
+      },
+      "rcept_dt": "20260616",
+      "rcept_no": "20260616700849",
+      "report_nm": "상장채권기한의이익상실              (제46회차)",
+      "rm": "채",
+      "stock_code": ""
+    },
+    {
+      "corp_cls": "E",
+      "corp_code": "00149813",
+      "corp_name": "중앙일보",
+      "flr_nm": "중앙일보",
+      "parsed_rm": {
+        "raw": "채",
+        "rm_flags": [
+          "채"
+        ],
+        "unknown_rm_flags": []
+      },
+      "rcept_dt": "20260616",
+      "rcept_no": "20260616700848",
+      "report_nm": "상장채권기한의이익상실              (제43-2회차)",
+      "rm": "채",
+      "stock_code": ""
+    },
+    {
+      "corp_cls": "E",
+      "corp_code": "00922702",
+      "corp_name": "제이티비씨",
+      "flr_nm": "제이티비씨",
+      "parsed_rm": {
+        "raw": "채",
+        "rm_flags": [
+          "채"
+        ],
+        "unknown_rm_flags": []
+      },
+      "rcept_dt": "20260615",
+      "rcept_no": "20260615700467",
+      "report_nm": "상장채권기한의이익상실              (제42회차)",
+      "rm": "채",
+      "stock_code": ""
+    },
+    {
+      "corp_cls": "E",
+      "corp_code": "00922702",
+      "corp_name": "제이티비씨",
+      "flr_nm": "제이티비씨",
+      "parsed_rm": {
+        "raw": "채",
+        "rm_flags": [
+          "채"
+        ],
+        "unknown_rm_flags": []
+      },
+      "rcept_dt": "20260615",
+      "rcept_no": "20260615700465",
+      "report_nm": "상장채권기한의이익상실              (제41회차)",
+      "rm": "채",
+      "stock_code": ""
+    },
+    {
+      "corp_cls": "E",
+      "corp_code": "00922702",
+      "corp_name": "제이티비씨",
+      "flr_nm": "제이티비씨",
+      "parsed_rm": {
+        "raw": "채",
+        "rm_flags": [
+          "채"
+        ],
+        "unknown_rm_flags": []
+      },
+      "rcept_dt": "20260615",
+      "rcept_no": "20260615700463",
+      "report_nm": "상장채권기한의이익상실              (제37-2회차)",
+      "rm": "채",
+      "stock_code": ""
+    },
+    {
+      "corp_cls": "E",
+      "corp_code": "00922702",
+      "corp_name": "제이티비씨",
+      "flr_nm": "제이티비씨",
+      "parsed_rm": {
+        "raw": "채",
+        "rm_flags": [
+          "채"
+        ],
+        "unknown_rm_flags": []
+      },
+      "rcept_dt": "20260615",
+      "rcept_no": "20260615700460",
+      "report_nm": "상장채권기한의이익상실              (제36-2회차)",
+      "rm": "채",
+      "stock_code": ""
+    },
+    {
+      "corp_cls": "Y",
+      "corp_code": "01415892",
+      "corp_name": "제이알글로벌리츠",
+      "flr_nm": "제이알글로벌리츠",
+      "parsed_rm": {
+        "raw": "채",
+        "rm_flags": [
+          "채"
+        ],
+        "unknown_rm_flags": []
+      },
+      "rcept_dt": "20260428",
+      "rcept_no": "20260428701295",
+      "report_nm": "상장채권기한의이익상실              ",
+      "rm": "채",
+      "stock_code": "348950"
+    },
+    {
+      "corp_cls": "Y",
+      "corp_code": "01415892",
+      "corp_name": "제이알글로벌리츠",
+      "flr_nm": "제이알글로벌리츠",
+      "parsed_rm": {
+        "raw": "채",
+        "rm_flags": [
+          "채"
+        ],
+        "unknown_rm_flags": []
+      },
+      "rcept_dt": "20260428",
+      "rcept_no": "20260428701289",
+      "report_nm": "상장채권기한의이익상실              ",
+      "rm": "채",
+      "stock_code": "348950"
+    },
+    {
+      "corp_cls": "Y",
+      "corp_code": "01415892",
+      "corp_name": "제이알글로벌리츠",
+      "flr_nm": "제이알글로벌리츠",
+      "parsed_rm": {
+        "raw": "채",
+        "rm_flags": [
+          "채"
+        ],
+        "unknown_rm_flags": []
+      },
+      "rcept_dt": "20260428",
+      "rcept_no": "20260428701287",
+      "report_nm": "상장채권기한의이익상실              ",
+      "rm": "채",
+      "stock_code": "348950"
+    },
+    {
+      "corp_cls": "Y",
+      "corp_code": "01415892",
+      "corp_name": "제이알글로벌리츠",
+      "flr_nm": "제이알글로벌리츠",
+      "parsed_rm": {
+        "raw": "채",
+        "rm_flags": [
+          "채"
+        ],
+        "unknown_rm_flags": []
+      },
+      "rcept_dt": "20260428",
+      "rcept_no": "20260428701283",
+      "report_nm": "상장채권기한의이익상실              ",
+      "rm": "채",
+      "stock_code": "348950"
+    },
+    {
+      "corp_cls": "E",
+      "corp_code": "00219051",
+      "corp_name": "롯데카드",
+      "flr_nm": "롯데카드",
+      "parsed_rm": {
+        "raw": "채",
+        "rm_flags": [
+          "채"
+        ],
+        "unknown_rm_flags": []
+      },
+      "rcept_dt": "20260410",
+      "rcept_no": "20260410700530",
+      "report_nm": "상장채권관련기타주요사항              ",
+      "rm": "채",
+      "stock_code": ""
+    }
+  ],
+  "status": "partially_passed",
+  "target_detail_type": "I006",
+  "target_detail_type_meaning": "채권공시",
+  "windows": [
+    {
+      "end_date": "20260717",
+      "fixture": "opendart/rm_bond/I006_20260701_20260717.json",
+      "returned_row_count": 0,
+      "rm_bond_row_count": 0,
+      "start_date": "20260701",
+      "status": "013",
+      "total_count": 0
+    },
+    {
+      "end_date": "20260630",
+      "fixture": "opendart/rm_bond/I006_20260401_20260630.json",
+      "returned_row_count": 16,
+      "rm_bond_row_count": 16,
+      "start_date": "20260401",
+      "status": "000",
+      "total_count": 16
+    }
+  ]
+}

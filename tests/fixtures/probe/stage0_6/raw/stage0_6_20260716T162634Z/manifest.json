@@ -1,0 +1,69 @@
+{
+  "api_key": "***MASKED***",
+  "api_key_source": null,
+  "child_processes_started": 0,
+  "concurrency": 1,
+  "configured_min_interval_seconds": 1.0,
+  "cookies_recorded": false,
+  "deadline_at": "2026-07-16T16:41:34+00:00",
+  "deadline_seconds": 900,
+  "elapsed_seconds": 29.464,
+  "execution_mode": "web_only",
+  "finished_at": "2026-07-16T16:27:03.868+00:00",
+  "gate_summary": {
+    "GATE-DART-DATE-WINDOW": "passed",
+    "GATE-DART-PAGESIZE": "failed",
+    "GATE-DART-QUERY-SWITCH": "passed",
+    "GATE-RM-BOND": "unconfirmed",
+    "GATE-RM-WITHDRAWAL": "unconfirmed"
+  },
+  "golden_files": [
+    {
+      "bytes": 2947,
+      "path": "tests/fixtures/probe/stage0_6/golden/date_window.json",
+      "sha256": "b386979980c380bb867c20aece89a83c21c7671e1e3e7c6ad1b6be95b45192cf"
+    },
+    {
+      "bytes": 3202,
+      "path": "tests/fixtures/probe/stage0_6/golden/page_size.json",
+      "sha256": "e0501dfbeb01678fe232698fc22c9743af02f7dfac6ce4b82782e489fd89627f"
+    },
+    {
+      "bytes": 3823,
+      "path": "tests/fixtures/probe/stage0_6/golden/query_switch.json",
+      "sha256": "7b996a8b631eb16d9ad34bd92a06041f052581d07a34ce0cf8277a826180ad02"
+    },
+    {
+      "bytes": 101,
+      "path": "tests/fixtures/probe/stage0_6/golden/rm_bond.json",
+      "sha256": "26b5a47bccefc39dc534997fe87e5bfadaafc65fee26386bc839eea8016b101c"
+    },
+    {
+      "bytes": 101,
+      "path": "tests/fixtures/probe/stage0_6/golden/rm_withdrawal.json",
+      "sha256": "26b5a47bccefc39dc534997fe87e5bfadaafc65fee26386bc839eea8016b101c"
+    },
+    {
+      "bytes": 11521,
+      "path": "tests/fixtures/probe/stage0_6/golden/stage0_6_findings.json",
+      "sha256": "63f503b04c83bd83b0480df5972566d4816b437368ee62159e12bf4642e25d8c"
+    }
+  ],
+  "golden_manifest": "tests/fixtures/probe/stage0_6/golden/manifest.json",
+  "golden_root": "tests/fixtures/probe/stage0_6/golden",
+  "main_development_started": false,
+  "pid": 16368,
+  "plan_version": "v18",
+  "raw_root": "tests/fixtures/probe/stage0_6/raw/stage0_6_20260716T162634Z",
+  "request_count": 30,
+  "request_limit": 60,
+  "request_limit_remaining": 30,
+  "run_id": "stage0_6_20260716T162634Z",
+  "schema_version": 1,
+  "stage": "0.6",
+  "stage_1_started": false,
+  "started_at": "2026-07-16T16:26:34.426+00:00",
+  "status": "completed",
+  "stop_reason": "completed_stage0_6_only",
+  "tls_certificate_verification": true
+}

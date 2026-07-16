@@ -41,3 +41,17 @@ Raw responses are isolated below `tests/fixtures/probe/raw/<run_id>/` and are
 not committed by default. Curated, minimized evidence is written to
 `tests/fixtures/probe/golden/stage0_5/`. The runner only measures the five v16
 stage-0.5 gates and never starts stage 1.
+
+## Stage 0.6
+
+The v18 residual mini-probe is isolated in `app/probe/stage0_6/`:
+
+```powershell
+python -m app.probe.stage0_6 --max-requests 60 --deadline-seconds 900
+```
+
+It enforces a hard 60-request cap, concurrency 1, a request-start interval of at
+least one second, strict TLS verification, atomic manifests, and separate
+`tests/fixtures/probe/stage0_6/raw/` and `golden/` trees. It measures only query
+switching, page size, date windows, and the two residual `rm` questions. It never
+starts stage 1.

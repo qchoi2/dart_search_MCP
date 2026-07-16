@@ -8,6 +8,7 @@ from pathlib import Path
 from app.probe.common import MASK, mask_pairs, masked_url
 from app.probe.dart_web import extract_prefixes, parse_search_html
 from app.probe.opendart import normalize_report_name, report_prefixes
+from app.probe.stage0_6.runner import parse_rm_flags
 
 
 class ProbeClassifierTests(unittest.TestCase):
@@ -142,6 +143,76 @@ class ProbeClassifierTests(unittest.TestCase):
         for item in manifest["files"]:
             path = fixture_root / Path(item["path"])
             self.assertEqual(item["sha256"], hashlib.sha256(path.read_bytes()).hexdigest())
+
+    def test_stage06_rm_parser_preserves_order_and_unknown_flags(self) -> None:
+        parsed = parse_rm_flags("\ucc44\uc815X")
+        self.assertEqual("\ucc44\uc815X", parsed["raw"])
+        self.assertEqual(["\ucc44", "\uc815"], parsed["rm_flags"])
+        self.assertEqual(["X"], parsed["unknown_rm_flags"])
+
+    def test_stage06_gate_findings(self) -> None:
+        fixture_root = Path(__file__).parent / "fixtures/probe/stage0_6/golden"
+        findings = json.loads(
+            (fixture_root / "stage0_6_findings.json").read_text(encoding="utf-8")
+        )
+
+        query_switch = findings["query_switch"]
+        self.assertEqual("passed", query_switch["status"])
+        self.assertEqual(3, query_switch["transition_count"])
+        self.assertTrue(
+            all(
+                item["exact_match"] and not item["stale_previous_state_detected"]
+                for item in query_switch["transitions"]
+            )
+        )
+
+        page_size = findings["page_size"]
+        self.assertEqual("failed", page_size["status"])
+        self.assertEqual(10, page_size["effective_page_size"])
+        self.assertTrue(
+            all(item["actual_receipt_row_count"] == 10 for item in page_size["cases"])
+        )
+
+        date_window = findings["date_window"]
+        self.assertEqual("passed", date_window["status"])
+        self.assertTrue(date_window["boundary_day_inclusive"])
+        self.assertEqual([], date_window["missing_from_windows"])
+        self.assertEqual([], date_window["extra_in_windows"])
+        self.assertEqual([], date_window["cross_window_duplicate_receipts"])
+
+        withdrawal = findings["rm_withdrawal"]
+        self.assertEqual("partially_passed", withdrawal["status"])
+        self.assertEqual("provisional", withdrawal["confidence"])
+        self.assertEqual(9, withdrawal["strict_explicit_link_count"])
+        counterexample = next(
+            item for item in withdrawal["cases"] if item["source"] == "20260618000391"
+        )
+        self.assertFalse(counterexample["explicitly_linked"])
+
+        bond = findings["rm_bond"]
+        self.assertEqual("partially_passed", bond["status"])
+        self.assertEqual("confirmed", bond["confidence"])
+        self.assertGreaterEqual(bond["sample_count"], 3)
+        self.assertTrue(bond["parser_preserved_raw_order"])
+        self.assertEqual(0, bond["combination_sample_count"])
+        self.assertEqual("unconfirmed", bond["combination_parsing_status"])
+        self.assertFalse(bond["other_flags_preserved"])
+
+        self.assertFalse(findings["stage_1_started"])
+        self.assertFalse(findings["main_development_started"])
+
+    def test_stage06_golden_manifest_hashes(self) -> None:
+        repo_root = Path(__file__).parent.parent
+        manifest = json.loads(
+            (repo_root / "tests/fixtures/probe/stage0_6/golden/manifest.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        for item in manifest["files"]:
+            path = repo_root / Path(item["path"])
+            self.assertEqual(
+                item["sha256"], hashlib.sha256(path.read_bytes()).hexdigest(), item["path"]
+            )
 
 
 if __name__ == "__main__":

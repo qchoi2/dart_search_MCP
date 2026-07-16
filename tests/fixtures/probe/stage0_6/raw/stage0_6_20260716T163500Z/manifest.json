@@ -1,0 +1,69 @@
+{
+  "api_key": "***MASKED***",
+  "api_key_source": "DART_API_KEY",
+  "child_processes_started": 0,
+  "concurrency": 1,
+  "configured_min_interval_seconds": 1.0,
+  "cookies_recorded": false,
+  "deadline_at": "2026-07-16T16:50:00+00:00",
+  "deadline_seconds": 900,
+  "elapsed_seconds": 50.988,
+  "execution_mode": "all",
+  "finished_at": "2026-07-16T16:35:51.582+00:00",
+  "gate_summary": {
+    "GATE-DART-DATE-WINDOW": "passed",
+    "GATE-DART-PAGESIZE": "failed",
+    "GATE-DART-QUERY-SWITCH": "passed",
+    "GATE-RM-BOND": "passed",
+    "GATE-RM-WITHDRAWAL": "partially_passed"
+  },
+  "golden_files": [
+    {
+      "bytes": 2947,
+      "path": "tests/fixtures/probe/stage0_6/golden/date_window.json",
+      "sha256": "b386979980c380bb867c20aece89a83c21c7671e1e3e7c6ad1b6be95b45192cf"
+    },
+    {
+      "bytes": 3202,
+      "path": "tests/fixtures/probe/stage0_6/golden/page_size.json",
+      "sha256": "e0501dfbeb01678fe232698fc22c9743af02f7dfac6ce4b82782e489fd89627f"
+    },
+    {
+      "bytes": 3823,
+      "path": "tests/fixtures/probe/stage0_6/golden/query_switch.json",
+      "sha256": "7b996a8b631eb16d9ad34bd92a06041f052581d07a34ce0cf8277a826180ad02"
+    },
+    {
+      "bytes": 8567,
+      "path": "tests/fixtures/probe/stage0_6/golden/rm_bond.json",
+      "sha256": "89b30a29c16f0c3c2d23c0199346d34ef64957650078d2704b8a4f94f370222e"
+    },
+    {
+      "bytes": 27147,
+      "path": "tests/fixtures/probe/stage0_6/golden/rm_withdrawal.json",
+      "sha256": "6370d3d43bc96d2cdac04e49f547b0e9c541563956e867148840824e4682d0a2"
+    },
+    {
+      "bytes": 48573,
+      "path": "tests/fixtures/probe/stage0_6/golden/stage0_6_findings.json",
+      "sha256": "f41b6006eb5412dda1b0d35b266b3dd835d4e52590d9249f39a826e56d625b0b"
+    }
+  ],
+  "golden_manifest": "tests/fixtures/probe/stage0_6/golden/manifest.json",
+  "golden_root": "tests/fixtures/probe/stage0_6/golden",
+  "main_development_started": false,
+  "pid": 38412,
+  "plan_version": "v18",
+  "raw_root": "tests/fixtures/probe/stage0_6/raw/stage0_6_20260716T163500Z",
+  "request_count": 51,
+  "request_limit": 60,
+  "request_limit_remaining": 9,
+  "run_id": "stage0_6_20260716T163500Z",
+  "schema_version": 1,
+  "stage": "0.6",
+  "stage_1_started": false,
+  "started_at": "2026-07-16T16:35:00.631+00:00",
+  "status": "completed",
+  "stop_reason": "completed_stage0_6_only",
+  "tls_certificate_verification": true
+}

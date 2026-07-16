@@ -2,6 +2,16 @@
 
 실측 결과와 후속 사용자 결정을 기록한다. 미확인 사실과 개인용 사용 결정을 구분한다.
 
+<!-- STAGE0_6_DECISIONS -->
+## 단계 0.6 미니 프로브 결정
+
+- `GATE-DART-QUERY-SWITCH`: `passed`. 동일 Cookie 세션과 동일 검색 모드에서는 검색어만 전환할 때 `detailSearchMain2.do` 모드설정 POST를 반복하지 않아도 된다. 세션 또는 모드가 바뀌면 재설정한다.
+- `GATE-DART-PAGESIZE`: `failed`. 허용값 15·30·50·100과 `maxResultsCb`를 실측했으나 실제 접수번호 결과행은 모두 10개였다. `effective_page_size=10`을 유지한다.
+- `GATE-DART-DATE-WINDOW`: `passed`. 시작일·종료일은 포함 경계이며, 겹치지 않는 연속 창과 전역 접수번호 중복 제거·완료 검증을 전제로 날짜창 분할을 사용할 수 있다.
+- `GATE-RM-WITHDRAWAL`: `partially_passed`. 명시 연결 표본 9건과 오병합 반례 1건을 확인했다. `철`은 provisional 후보 신호로 유지하며 회사명·보고서명·근접기간만으로 병합하거나 제외하지 않는다.
+- `GATE-RM-BOND`: `partially_passed`. 실제 `rm=채` 표본 16건으로 `채=채권상장법인` 의미는 confirmed로 승격한다. 다만 모두 단일문자여서 실제 조합문자의 순서·다른 플래그 보존은 unconfirmed로 유지한다.
+- 단계 0.6 종료 후 단계 1은 자동 시작하지 않는다.
+
 ## 1. DART 본문검색 개인용 조건부 사용
 
 - 실제 결과: robots.txt에서 /dsab007 금지는 확인되지 않았고 순차 요청은 성공했으나, 자동화 허용 빈도와 명시적 허용 문구는 확인하지 못함

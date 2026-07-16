@@ -1,0 +1,123 @@
+{
+  "boundary_day": "20260601",
+  "boundary_day_inclusive": true,
+  "cross_window_duplicate_receipts": [],
+  "extra_in_windows": [],
+  "full_period": {
+    "complete": true,
+    "end_date": "20260716",
+    "expected_pages": 1,
+    "fixtures": [
+      "dart\\date_window\\full_page_001.html"
+    ],
+    "label": "full",
+    "pages_fetched": 1,
+    "receipt_row_count": 9,
+    "receipts": [
+      "20260708000160",
+      "20260616000322",
+      "20260612000426",
+      "20260601000409",
+      "20260601000332",
+      "20260515003113",
+      "20260514000747",
+      "20260415000035",
+      "20260413002173"
+    ],
+    "row_dates": [
+      "20260708",
+      "20260616",
+      "20260612",
+      "20260601",
+      "20260601",
+      "20260515",
+      "20260514",
+      "20260415",
+      "20260413"
+    ],
+    "search_count": 9,
+    "start_date": "20260401",
+    "unique_receipt_count": 9
+  },
+  "full_unique_count": 9,
+  "missing_from_windows": [],
+  "non_overlapping_windows": [
+    {
+      "complete": true,
+      "end_date": "20260531",
+      "expected_pages": 1,
+      "fixtures": [
+        "dart\\date_window\\before_boundary_page_001.html"
+      ],
+      "label": "before_boundary",
+      "pages_fetched": 1,
+      "receipt_row_count": 4,
+      "receipts": [
+        "20260515003113",
+        "20260514000747",
+        "20260415000035",
+        "20260413002173"
+      ],
+      "row_dates": [
+        "20260515",
+        "20260514",
+        "20260415",
+        "20260413"
+      ],
+      "search_count": 4,
+      "start_date": "20260401",
+      "unique_receipt_count": 4
+    },
+    {
+      "complete": true,
+      "end_date": "20260601",
+      "expected_pages": 1,
+      "fixtures": [
+        "dart\\date_window\\boundary_day_page_001.html"
+      ],
+      "label": "boundary_day",
+      "pages_fetched": 1,
+      "receipt_row_count": 2,
+      "receipts": [
+        "20260601000409",
+        "20260601000332"
+      ],
+      "row_dates": [
+        "20260601",
+        "20260601"
+      ],
+      "search_count": 2,
+      "start_date": "20260601",
+      "unique_receipt_count": 2
+    },
+    {
+      "complete": true,
+      "end_date": "20260716",
+      "expected_pages": 1,
+      "fixtures": [
+        "dart\\date_window\\after_boundary_page_001.html"
+      ],
+      "label": "after_boundary",
+      "pages_fetched": 1,
+      "receipt_row_count": 3,
+      "receipts": [
+        "20260708000160",
+        "20260616000322",
+        "20260612000426"
+      ],
+      "row_dates": [
+        "20260708",
+        "20260616",
+        "20260612"
+      ],
+      "search_count": 3,
+      "start_date": "20260602",
+      "unique_receipt_count": 3
+    }
+  ],
+  "prior_conservative_assumption": "DART 날짜창 분할 비활성",
+  "query": "상계납입",
+  "search_count_additive": true,
+  "status": "passed",
+  "window_union_unique_count": 9
+}

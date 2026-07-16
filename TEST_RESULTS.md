@@ -1,5 +1,20 @@
 # 테스트 결과
 
+## 단계 0.6 검증
+
+- 검증일: 2026-07-17 KST
+- 최종 run_id: `stage0_6_20260716T163708Z`
+- 실제 네트워크 요청: 59 / 60
+- 실행시간: 58.753초, 동시성 1, 요청 시작 간격 최솟값 1,000ms
+- TLS 인증서 검증 활성화, `verify=False` 미사용
+- API 키 URL 29건 모두 `***MASKED***`; Cookie/Authorization 헤더 기록 0건
+- 판정: query switch `passed`, page size `failed`, date window `passed`, rm `철` `partially_passed`, rm `채` `partially_passed`
+- raw/golden manifest의 SHA-256 검증을 회귀 테스트에 포함했다.
+- `python -m compileall -q app tests`: 통과
+- `python -m unittest tests.test_probe -v`: 16개 테스트 통과
+- `git diff --check -- . ':(exclude)tests/fixtures/probe/stage0_6/raw/**'`: 통과. 외부 원문 그대로인 raw HTML의 공백은 변형하지 않음.
+- `stage_1_started=false`, `main_development_started=false`
+
 ## 단계 0.5 검증
 
 - 검증일: 2026-07-17 KST

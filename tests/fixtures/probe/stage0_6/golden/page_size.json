@@ -1,0 +1,115 @@
+{
+  "actual_form_contract": {
+    "js_copies_maxResultsCb_to_maxResults": true,
+    "maxResultsCb": {
+      "form": "",
+      "selected": "15",
+      "values": [
+        "15",
+        "30",
+        "50",
+        "100"
+      ]
+    },
+    "relevant_inputs": {
+      "currentPage": {
+        "form": "searchForm",
+        "name": "currentPage",
+        "type": "hidden",
+        "value": "1"
+      },
+      "endDate": {
+        "form": "searchForm",
+        "name": "endDate",
+        "type": "text",
+        "value": ""
+      },
+      "maxLinks": {
+        "form": "searchForm",
+        "name": "maxLinks",
+        "type": "hidden",
+        "value": "10"
+      },
+      "maxResults": {
+        "form": "searchForm",
+        "name": "maxResults",
+        "type": "hidden",
+        "value": "15"
+      },
+      "startDate": {
+        "form": "searchForm",
+        "name": "startDate",
+        "type": "text",
+        "value": ""
+      }
+    }
+  },
+  "actual_row_metric": "search.ax의 접수번호가 있는 결과행 수",
+  "allowed_dropdown_values": [
+    "15",
+    "30",
+    "50",
+    "100"
+  ],
+  "cases": [
+    {
+      "actual_receipt_row_count": 10,
+      "classification": "results",
+      "maxResults": 15,
+      "maxResultsCb_sent": false,
+      "mode_fixture": "dart\\page_size\\max_015_mode.html",
+      "mode_response_maxResults": "15",
+      "result_fixture": "dart\\page_size\\max_015.html",
+      "search_count": 13084,
+      "unique_receipt_count": 6
+    },
+    {
+      "actual_receipt_row_count": 10,
+      "classification": "results",
+      "maxResults": 30,
+      "maxResultsCb_sent": false,
+      "mode_fixture": "dart\\page_size\\max_030_mode.html",
+      "mode_response_maxResults": "15",
+      "result_fixture": "dart\\page_size\\max_030.html",
+      "search_count": 13084,
+      "unique_receipt_count": 6
+    },
+    {
+      "actual_receipt_row_count": 10,
+      "classification": "results",
+      "maxResults": 50,
+      "maxResultsCb_sent": false,
+      "mode_fixture": "dart\\page_size\\max_050_mode.html",
+      "mode_response_maxResults": "15",
+      "result_fixture": "dart\\page_size\\max_050.html",
+      "search_count": 13084,
+      "unique_receipt_count": 6
+    },
+    {
+      "actual_receipt_row_count": 10,
+      "classification": "results",
+      "maxResults": 100,
+      "maxResultsCb_sent": false,
+      "mode_fixture": "dart\\page_size\\max_100_mode.html",
+      "mode_response_maxResults": "15",
+      "result_fixture": "dart\\page_size\\max_100.html",
+      "search_count": 13084,
+      "unique_receipt_count": 6
+    },
+    {
+      "actual_receipt_row_count": 10,
+      "classification": "results",
+      "maxResults": 100,
+      "maxResultsCb_sent": true,
+      "mode_fixture": "dart\\page_size\\max_100_with_cb_mode.html",
+      "mode_response_maxResults": "15",
+      "result_fixture": "dart\\page_size\\max_100_with_cb.html",
+      "search_count": 13084,
+      "unique_receipt_count": 6
+    }
+  ],
+  "effective_page_size": 10,
+  "prior_conservative_effective_page_size": 10,
+  "screen_search_count_field": "검색건수",
+  "status": "failed"
+}

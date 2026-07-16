@@ -1,0 +1,1301 @@
+
+ 
+
+
+
+
+
+
+
+
+
+<!-- <link href="/css/ds_search.css" rel="stylesheet" type="text/css"> -->
+<script type="text/javascript" language="javascript">
+var dfTextCrpNm;
+var textCrpCikCopy = "";
+var isTab = false;
+var isSort = false;
+var isCorpSearch = false;
+var useAjax = false;
+var checkUseAjaxTimer;
+var isDisp = true; // 상세검색 여부
+
+$j(document).ready(function(){
+	//자동완성 스크립트 호출
+	$j.getScript("/js/autocomplete/autocomplete_txt.js");
+	$j.getScript("/js/autocomplete/autocomplete_crp.js");
+	$j.getScript("/js/autocomplete/autocomplete_rpt.js");
+	$j.getScript("/js/autocomplete/autocomplete_prsentr.js");
+	
+	window.scrollTo(0,0);
+	$j('#hFrame, #SchSug').hide();
+	$j('#set_sugicnUP').hide();
+	$j('#keyword').val('상계납입');
+	initPage();
+	
+	var searchInfoJson = getSearchInfo();
+	if(searchInfoJson != null) {
+		makeLatestSelect(searchInfoJson, 'lateKeyword');
+	}
+	
+	
+		
+			
+				
+				
+					initSort();
+					findForm("searchForm").textCrpCik.value="";
+					
+				
+			
+		
+		
+	
+	
+	initSearchCorp('textCrpNm');	// 회사명 찾기 초기화
+	dfTextCrpNm = getRef("textCrpNm").value;
+	
+	$j("#startDate").on("input", function() {
+		var stYear = $j("#startDate").val().substring(0,4);
+		var stMonth = $j("#startDate").val().substring(4,6);
+		var stDay =  $j("#startDate").val().substring(6,8);
+		if(isCheckDate('startDate')) {
+			$j('#startCal').datepicker('setDate', new Date(stYear, stMonth-1, stDay))
+		}
+	});
+	
+	$j("#endDate").on("input", function() {
+		var stYear = $j("#endDate").val().substring(0,4);
+		var stMonth = $j("#endDate").val().substring(4,6);
+		var stDay =  $j("#endDate").val().substring(6,8);
+		
+		if(isCheckDate('endDate')) {
+			$j('#endCal').datepicker('setDate', new Date(stYear, stMonth-1, stDay))
+		}
+	});
+	
+	initLayerNew('winCikInfo');        // 제출인명 팝업 div 생성
+	initLayerNew('winFindReport');     // 보고서명 팝업 div 생성
+	initLayerNew('winCorpInfo');        // 회사명  팝업 div 생성
+	
+	$j(".rWrap .frmSelect").mouseleave(function() {
+		$j("#dropdownContent").hide();
+	});
+});
+
+function initPage() {
+	setDate(4);
+	var stYear = $j("#startDate").val().substring(0,4);
+	var stMonth = $j("#startDate").val().substring(4,6);
+	var stDay =  $j("#startDate").val().substring(6,8);
+	
+	$j("#startCal").datepicker({
+		language : "kr",
+		format : "yyyymmdd",
+		autoclose : true
+	}).datepicker('setDate', new Date(stYear, stMonth-1, stDay)).on("changeDate", function(selected){
+		var year = selected.date.getFullYear();
+		var month = (selected.date.getMonth()+1) >= 10?(selected.date.getMonth()+1):'0'+ (selected.date.getMonth()+1);
+		var day = selected.date.getDate()>= 10?selected.date.getDate():'0' + selected.date.getDate();
+		var selectedDate = String(year) + String(month) + String(day);
+		//$j(".datepicker").hide();
+		$j("#startDate").val(selectedDate);
+		
+		if( selectedDate > $j('#endDate').val() ){
+			$j('#endDate').val(selectedDate).trigger ('change');
+		}
+		
+		selected.stopPropagation();
+	});
+	
+	$j("#endCal").datepicker({
+		language : "kr",
+		format : "yyyymmdd",
+		autoclose : true
+	}).datepicker('setDate', new Date()).on("changeDate", function(selected){
+		var year = selected.date.getFullYear();
+		var month = (selected.date.getMonth()+1) >= 10?(selected.date.getMonth()+1):'0'+ (selected.date.getMonth()+1);
+		var day = selected.date.getDate()>= 10?selected.date.getDate():'0' + selected.date.getDate();
+		var selectedDate = String(year) + String(month) + String(day);
+		//$j(".datepicker").hide();
+		$j("#endDate").val(selectedDate);
+		
+		if( selectedDate < $j('#startDate').val() ){
+			$j('#startDate').val(selectedDate).trigger ('change');
+		}
+		
+		selected.stopPropagation();
+	});
+}
+
+
+function divRemove() {
+	$j('#winCikInfo').remove();
+	$j('#winFindReport').remove();
+	$j('#winCorpInfo').remove();
+	$j('#divSearchCorpWin').remove(); 
+}
+function fn_typeChange() {
+	var optionVal = $j('#option').val();
+	searchClear();
+	$j("#searchForm")[0].reset();
+	$j('#option').val(optionVal);
+	$j('#keyword').val('');
+	setInput(optionVal);
+}
+
+function setInput(optionVal) {
+	if (optionVal == 'corp' || optionVal == 'report' || optionVal == 'reportList') { //회사명
+		divRemove();
+		$j('#SchSug').remove();
+		xajax.blockUI = true;
+		xajax.blockTarget = "listContents";
+		xajax.timeout = 240000;
+		checkUseAjaxTimer = setTimeout("useAjax=false", xajax.timeout);
+		xajax.sendForm("searchForm", "/dsab007/detailSearchMain.do", function(html) {
+			$j('#page').html(html);
+			useAjax = false;
+		});
+	}else if (optionVal == 'high') { //고급검색
+		var frm = findForm("searchForm");
+		frm.currentPage.value = 1;
+		frm.action = "/dsab009/main.do";
+		frm.submit();
+	} else if(optionVal == '') {
+		divRemove();
+		xajax.blockUI = true;
+		xajax.blockTarget = "listContents";
+		xajax.timeout = 240000;
+		checkUseAjaxTimer = setTimeout("useAjax=false", xajax.timeout);
+		xajax.sendForm("searchForm", "/dsab007/detailSearchMain3.do", function(html) {
+			$j('#page').html(html);
+			useAjax = false;
+		});
+	}
+}
+
+function setLateKeyword(obj) {
+	var recentWord = [];
+	var jsonInfo = {};
+	var optionVal = $j('#option').val();
+	
+	jsonInfo.keyword = $j('#keyword').val();
+	jsonInfo.typeText = '본문내용';
+	jsonInfo.type = optionVal;
+	jsonInfo.obj  = obj;
+	
+	jsonInfo.dateIndex = $j('#selDate').val();
+	recentWord.push(jsonInfo);
+	
+	var searchInfoJson = getSearchInfo();
+	if(searchInfoJson != null) {
+		for(var i =0; i<searchInfoJson.length;i++ ) {
+			var exist = false;
+			for(var r=0;r<recentWord.length;r++){
+				if(recentWord[r].keyword == searchInfoJson[i].keyword &&
+						recentWord[r].typeText == searchInfoJson[i].typeText &&
+						recentWord[r].type == searchInfoJson[i].type){
+					exist = true;
+					break;
+				}
+			}
+			if(exist == false){
+				recentWord.push(searchInfoJson[i]);
+			}
+		}
+		if(recentWord.length >= 10) {
+			recentWord.splice(10,1);
+		}
+	}
+	fn_setLocalStorage('searchInfo',recentWord);
+	
+	searchInfoJson = JSON.parse(fn_getLocalStorage('searchInfo'));
+	makeLatestSelect(searchInfoJson, 'lateKeyword');
+}
+
+function fn_lateKeywordChange(index) {
+	fn_pTypeClear();
+	
+	var searchInfoJson = getSearchInfo();
+	if(searchInfoJson != null) {
+		var json = searchInfoJson[index];
+		$j('#searchForm input[name=lateKeyword]').val(index);
+		searchClear();
+		$j('#option').val(json.type);
+		$j("#lateKeyword").val(index).prop("selected", true);
+		if(json.type == '') {
+			$j('#keyword').val(json.keyword);
+			$j('#autoSearch').val('Y');
+			setInput(json.type);	
+		} else if(json.type == 'corp') {
+			$j('#textCrpNm').val(json.keyword);
+			$j('#autoSearch').val('Y');
+			setInput(json.type);	
+		} else if(json.type == 'report') {
+			$j('#reportName').val(json.keyword);
+			$j('#autoSearch').val('Y');
+			setInput(json.type);	
+		} else if(json.type == 'reportList') {
+			$j('#tocSrch').val(json.keyword);
+			$j('#autoSearch').val('Y');
+			setInput(json.type);
+		} else if(json.type == 'high') {
+			if(json.keyword.indexOf('/') != -1) {
+				var str = json.keyword.split('/');
+				$j('#searchWord').val(str[0]);				
+				$j('#contentWord').val(str[1]); 
+			}
+			else{
+				$j('#searchWord').val(json.keyword);
+			}
+			$j('#autoSearch').val('Y');
+			setInput(json.type);		
+		} else {
+			$j('#keyword').val(json.keyword);
+			//setParam(json);
+			search(1);
+		}
+		$j('#spanText').text(json.keyword);
+		fn_ulListToggle();
+	}
+}
+
+/**
+ * 검색어 초기화
+ * keyup : 엔터키 기능 설정
+ * blur : 탭 이동시 검색부분 숨기기
+ */
+function  initKeyword(){
+	$j("#keyword").attr("autocomplete","off");//검색어
+	$j('#keyword').keyup(function(event){
+		if (event.which == 13) {
+			var cookie = getCookie('suggest');
+			if(cookie == 'off') {
+				initSearch();
+				if(id != "textPresenterNm" && id != "textCrpNm"){
+					search(1);
+				}
+			}
+		}
+	});
+	// 검색버튼에 포커스가 오면 자동완성 리스트 없애기
+	$j('#keywordBtn').focus(function(){
+		$j('#hFrame, #SchSug').hide();
+	});
+
+}
+
+function gg1() {
+	for(var i=0; i < crpAutoCompleteList.length; i++) {
+		alert(crpAutoCompleteList[i]);
+	};
+}
+
+function changeCrpNm(){
+	getRef("textCrpCik").value = "";
+}
+
+function changeFlrNm(){
+	getRef("flrCik").value = "";
+}
+
+function preCheck(page){
+	if (document.getElementById("tat_table")) {
+		$j("#tat_table").remove();
+	}
+
+	var frm = findForm("searchForm");
+
+	// 포커스 처리
+	frm.textCrpNm.blur();
+
+	// 회사명을 지운다.
+	clearSearchCorpText();
+
+    // DB문자 검사
+   if (!checkQueryString(frm.textCrpNm.value)) {
+    	alert("회사명에 [! % = \" ' -- < > |] 문자를 입력할 수 없습니다.");
+    	return;
+    }
+
+    if (!checkQueryString(frm.textPresenterNm.value)) {
+    	alert("제출인명 [! % = \" ' -- < > |] 문자를 입력할 수 없습니다.");
+    	return;
+    }
+
+    if (!checkQueryString(frm.reportName.value)){
+    	alert("보고서명에 [! = \" ' -- < > |] 문자를 입력할 수 없습니다.");
+    	return;
+    }
+    
+    if (!checkHighString(frm.keyword.value)){
+		alert("본문내용에 [/ < >] 문자를 입력할 수 없습니다.");
+		return;
+	}
+    
+	//날짜  유효성 확인
+	if(!isDate(frm.startDate)||!isDate(frm.endDate)){
+		return;
+	}
+
+    // 페이지 번호 설정 (Hidden 객체에)
+    if (page == null || page == "" || page == "null") {
+    	page = 1;
+    }
+    if(page > 100){
+    	alert("100페이지 까지 조회 됩니다. \n\n정렬조건을 변경하시면 다른 다양한 데이터를 확인할 수 있습니다.!");
+    	page = 100;
+    }
+    frm.currentPage.value = page;
+
+    // 검색 유효성 검사
+    if(isTab == true || isSort == true){
+    	if (frm.b_keyword.value.trim() == "") {
+        	alert("검색어를 입력하셔야만 검색이 가능합니다");
+        	return;
+    	}
+    }else{
+		if (frm.keyword.value.trim() == "") {
+	    	alert("검색어를 입력하셔야만 검색이 가능합니다");
+	    	return;
+		}
+    }
+	
+ 	// 검색기간 최대 10년 체크 추가(nrseo)
+	var sd = getRef("startDate").value;
+   	var ed = getRef("endDate").value;
+   	var sdate = new Date(sd.substring(0,4), sd.substring(4,6)-1, sd.substring(6,8));
+   	var edate = new Date(ed.substring(0,4), ed.substring(4,6)-1, ed.substring(6,8));
+   	var tdate = new Date(edate.getFullYear()-10, ed.substring(4,6)-1, ed.substring(6,8));
+	if (sdate < tdate) {
+		alert("검색기간은 10년 이내로 설정하셔야 합니다!");
+		return;
+	}
+   	
+    // 회사명 팝업 띄우기 (회사명이 없거나 같은 회사명이 2개 이상인 경우)
+    if(getRef("textCrpNm").value != dfTextCrpNm){
+	    if (page == 1 && getRef("textCrpCik").value == "" && getRef("textCrpNm").value != "") {
+		    //한건이상인 경우 팝업 띄우기
+		    if (!getCorpExistAll(getRef("textCrpNm").value)) {
+			    isCorpSearch = true;
+		    	openSearchCorpWindow('searchForm', 'textCrpNm');
+				return;
+			//한건인 경우 팝업 띄우지 않고 바로 검색 실행
+		    }else{
+				initSearch();
+		    }
+	    }
+    }
+    
+ 	if(page ==1 && getRef("reportName").value != "" && $j('#reportNamePopYn').val() != 'N') { // 보고서찾기팝업에서 선택되지 않았으면  
+    	
+    	if (!getReportExistAll(getRef("reportName").value)) { // 보고서가 여러개이거나 없으면
+    		isReportSearch = true;
+    		openFindReport('searchForm','reportName');
+			return;
+		//한건인 경우 팝업 띄우지 않고 바로 검색 실행
+	    }
+    }
+
+    //isTab
+    frm.isTab.value = isTab;
+    //isSort
+    frm.isSort.value = isSort;
+
+    return true;
+}
+
+/**
+ * 검색
+ */
+function search(page, gubun) {
+	$j('#hFrame, #SchSug').hide();
+	if(!preCheck(page)) return;
+	//window.scrollTo(0,0);
+	var frm = findForm("searchForm");
+	if(window.event && window.event.target.id == 'reportName') {
+		frm.reportName.blur();
+	} else if(window.event && window.event.target.id == 'tocSrch') {
+		frm.tocSrch.blur();
+	}else if(window.event && window.event.target.id == 'textPresenterNm') {
+		frm.textPresenterNm.blur();
+	}
+	
+	if (useAjax) {
+		return;
+	}
+
+	//회사명 팝업에서 선택 후 자동 조회되는거 막음.
+	if(isCorpSearch){
+		isCorpSearch = false;
+		return;
+	}
+	
+	var frm = findForm("searchForm");
+
+	useAjax = true;
+	
+    // 검색조건 Ajax 호출
+	xajax.blockUI = true;
+    xajax.blockTarget = "listContents";
+    xajax.timeout = 240000;
+    checkUseAjaxTimer = setTimeout("useAjax=false", xajax.timeout);
+
+    if(gubun != undefined) {
+    	var obj = formObjCreate('searchForm');
+    	setLateKeyword(obj);
+    }
+	
+    xajax.sendForm("searchForm", "/dsab007/search.ax", function(html) {
+    	getRef("listContents").innerHTML = html;
+    	useAjax = false;
+    	$j('#searchCnt').html('검색건수 : ' + $j("#totalCnt").val());
+    });
+    
+}
+
+function setAutoCompletionText(text) {
+	getRef("searchForm").textCrpNm.value = text;
+	clearAutoCompletion();
+}
+
+function callSetOrder(obj){
+	getRef("textCrpCik").value=textCrpCikCopy;
+	setOrder(obj);
+}
+
+function clickDspTypeAllCheck(obj){
+	if ($j("input:checkbox[name=dspType]:checked").length == $j("input:checkbox[name=dspType]").length) {
+		$j("input:checkbox[name=dspType]").prop("checked", false);
+		$j(".subCheck li").removeClass("on");
+	} else {
+		$j("input:checkbox[name=dspType]").prop("checked", true);
+		$j(".subCheck li").addClass("on");
+	}	
+}
+
+function clickDspType(num, obj) {
+	if($j(obj).is(":checked")) {
+		$j('#li_' + num).addClass('on');
+	} else {
+		$j('#li_' + num).removeClass('on');
+	}
+	if ($j("input:checkbox[name=dspType]:checked").length == $j("input:checkbox[name=dspType]").length) {
+		$j("#li_all").addClass("on");
+		$j("#dspTypeAll").prop("checked", true);
+	} else {
+		$j("#li_all").removeClass("on");
+		$j("#dspTypeAll").prop("checked", false);
+	}
+}
+
+function setDate2() {
+	if (getRef(lstFixDate)) {
+		tmp = getRef(lstFixDate).value;
+	}
+
+	var startDT = "";
+	var endDT = "";
+
+	if (tmp == 0){
+		startDT = "";
+		endDt = "";
+
+		findForm(formSearch).startDate.value = startDT;
+		findForm(formSearch).endDate.value = endDT;
+	}
+}
+
+function clickSort(obj, sort){
+	var frm = findForm("searchForm");
+	var preSort = frm.sort.value;
+	
+	isSort = true;
+	var names=$j("a[name='sort']");
+	for(var i=0;i<names.length;i++){
+		if(names[i].id==obj.id){
+			if(frm.sortType.value == 'asc'){
+				frm.sortType.value = "desc";
+				$j(obj).removeClass();
+				$j(obj).addClass("downOn");
+			}else{
+				frm.sortType.value = "asc";
+				$j(obj).removeClass();
+				$j(obj).addClass("upOn");
+				if(preSort != "DATE" && sort == "DATE"){
+					frm.sortType.value = "desc";
+				}
+			}
+		} else {
+			$j(names[i]).removeClass();
+			$j(names[i]).addClass('upOff')
+		}
+	}
+	
+	frm.sort.value = sort;
+	search('1');
+}
+
+//정렬
+function setOrder(obj){
+	var series=document.searchForm.series;
+	var sort=document.searchForm.sort;
+	
+	var names=$j("a[name='sort']");
+	for(var i=0;i<names.length;i++){
+		if(names[i].id==obj.id){
+			sort.value=obj.id;
+			if(series.value=="asc"){
+				series.value="desc";
+				$j(obj).removeClass();
+				$j(obj).addClass("downOn");
+			} else{
+				series.value="asc";
+				$j(obj).removeClass();
+				$j(obj).addClass("upOn");
+			}
+		}else{
+			$j(names[i]).removeClass();
+			$j(names[i]).addClass('upOff')
+		}
+	}
+	search('');
+}
+
+function clickDescSearchBtn(){
+	//<![CDATA[
+	//var isDisp;
+	if(src.indexOf('open') > -1){
+		isDisp = true;
+		getRef("searchBtn").innerHTML = "<input type=\"image\" src=\"/images/btn/search_close.gif\" onclick=\"clickDescSearchBtn(this.src);\" alt=\"상세검색닫기\" />";
+	}else{
+		isDisp = false;
+		getRef("searchBtn").innerHTML = "<input type=\"image\" src=\"/images/btn/search_open.gif\" onclick=\"clickDescSearchBtn(this.src);\" alt=\"상세검색열기\" />";
+	}
+
+	displayDescSearch(isDisp);
+	//]]>
+}
+
+function clickDescBtn(){
+	var src = getRef("descBtn").src;
+	if(src.indexOf("open") > -1) {
+		isDisp = true;
+		getRef("descBtn").src = "/images/btn/search_close.gif";
+		getRef("descBtn").alt = "상세검색닫기";
+	}else{
+		isDisp = false;
+		getRef("descBtn").src = "/images/btn/search_open.gif";
+		getRef("descBtn").alt = "상세검색열기";
+	}
+	//displayDescSearch(isDisp);
+}
+
+/**
+ * 공시유형 탭  클릭이벤트
+ */
+function clickTab(dspType){
+	findForm("searchForm").dspTypeTab.value = dspType;
+	initSort();
+	isTab = true;
+	setEachDspTypeTab(dspType);
+	search(1);
+}
+
+/**
+ * 공시유형 탭 설정
+ */
+function setEachDspTypeTab(dspType){
+
+	//<![CDATA[
+	var frm = findForm("searchForm");
+	var tabObj = document.getElementById("tab");
+	var typesObj = document.getElementsByName("dspType");
+	var len = typesObj.length;
+	var str = "";
+	var type_arr = new Array();
+	var type_all_arr = new Array();
+	var checkCnt = 0;
+
+	//공시유형 체크박스에서 선택값 셋팅
+	for(var i=0; i < len; i++){
+		type_all_arr[i] = typesObj[i].value;
+		if(typesObj[i].checked == true){
+			type_arr[checkCnt] = typesObj[i].value;
+			checkCnt += 1;
+		};
+	}
+
+	if(isTab == true || isSort == true){
+		var b_dspType = frm.b_dspType.value;
+		if(b_dspType != ""){
+			type_arr = b_dspType.split(",");
+			checkCnt = type_arr.length;
+		}else{
+			checkCnt = 0;
+		};
+	}
+
+
+	if(dspType == ""){
+		str += "<li class='on'><a onclick=\"clickTab('');\">전체</a></li>";
+	}else{
+		str += "<li><a onclick=\"clickTab('');\">전체</a></li>";
+	}
+	
+	//공시유형체크유무 : N
+	if(checkCnt == 0){
+		for(var i=0; i < len; i++){
+			var titl = getTitl(type_all_arr[i]);
+			
+			if(type_all_arr[i] == dspType){
+				str += "<li class='on'><a onclick=\"clickTab('"+type_all_arr[i]+"');\" href='#none'>" + titl + "</a></li>";
+			}else{
+				str += "<li ><a onclick=\"clickTab('"+type_all_arr[i]+"');\" href='#none'>" + titl + "</a></li>";
+			};
+		};
+	//공시유형체크유무 : Y
+	}else if(checkCnt > 0){
+		for(var i=0; i < checkCnt; i++){
+			var titl = getTitl(type_arr[i]);
+			if(type_arr[i] == dspType){
+				str += "<li class='on'><a onclick=\"clickTab('"+type_arr[i]+"');\" href='#none'>" + titl + "</a></li>";
+			} else {
+				str += "<li ><a onclick=\"clickTab('"+type_arr[i]+"');\" href='#none'>" + titl + "</a></li>";
+			}
+
+		};
+	}
+
+	tabObj.innerHTML = str;
+	//$j("#tab li:last").addClass("end");
+
+	//]]>
+}
+
+function getTitl(type) {
+	if(type == 'A') {
+		titl = '정기공시';
+	} else if(type == 'B') {
+		titl = '주요사항보고';
+	} else if(type == 'C') {
+		titl = '발행공시';
+	} else if(type == 'D') {
+		titl = '지분공시';
+	} else if(type == 'E') {
+		titl = '기타공시';
+	} else if(type == 'F') {
+		titl = '외부감사관련';
+	} else if(type == 'G') {
+		titl = '펀드공시';
+	} else if(type == 'H') {
+		titl = '자산유동화';
+	} else if(type == 'I') {
+		titl = '거래소공시';
+	} else if(type == 'J') {
+		titl = '공정위공시';
+	}
+	return titl;
+}
+
+function initSort(){
+	findForm("searchForm").sort.value="DATE";
+	findForm("searchForm").sortType.value="desc";
+	inSort = false;
+}
+
+function initTab(){
+	var frm = findForm("searchForm");
+	setEachDspTypeTab('');
+	frm.dspTypeTab.value = "";
+}
+
+function initBakupCond() {
+	var frm = findForm("searchForm");
+	frm.b_textCrpCik.value = "";
+	frm.b_flrCik.value = "";
+	frm.b_keyword.value = "";
+	frm.b_docType.value = "";
+	frm.b_dspType.value = "";
+	frm.b_synonym.value = "";
+	frm.b_reSearch.value = "";
+	frm.b_textPresenterNm.value = "";
+	frm.b_reportName.value = "";
+	frm.b_startDate.value = "";
+	frm.b_endDate.value = "";
+}
+
+function setBakupCond() {
+	var frm = findForm("searchForm");
+	var targetObj;
+	frm.b_textCrpCik.value = frm.textCrpCik.value;
+	frm.b_flrCik.value = frm.flrCik.value;
+	frm.b_keyword.value = frm.keyword.value;
+	frm.b_docType.value = frm.docType.value;
+	frm.b_textPresenterNm.value = frm.textPresenterNm.value;
+	frm.b_reportName.value = frm.reportName.value;
+	frm.b_startDate.value = frm.startDate.value;
+	frm.b_endDate.value = frm.endDate.value;
+
+	targetObj = document.getElementsByName("dspType");
+	len = targetObj.length;
+
+	for(var i=0; i < len; i++){
+		if(targetObj[i].checked){
+			frm.b_dspType.value += targetObj[i].value + ",";
+		}
+	}
+
+	if(frm.b_dspType.value != ""){
+		var t_dspType = frm.b_dspType.value;
+		frm.b_dspType.value = t_dspType.substring(0, t_dspType.length-1);
+	}
+
+	targetObj = document.getElementsByName("synonym");
+	len = targetObj.length;
+	for(var i=0; i < len; i++){
+		if(targetObj[i].checked){
+			frm.b_synonym.value = "Y";
+		}
+	}
+
+	targetObj = document.getElementsByName("reSearch");
+	len = targetObj.length;
+	for(var i=0; i < len; i++){
+		if(targetObj[i].checked){
+			frm.b_reSearch.value = "Y";
+		}
+	}
+}
+
+function searchClear() {
+	$j("#searchForm")[0].reset();
+	$j('#subCheck').find('li').removeClass('on');
+	$j('#textCrpCik').val('');
+	$j('#flrCik').val('');
+	$j('#keyword').val('');
+	$j('#textCrpNm').val('');
+	$j('#textPresenterNm').val('');
+	$j('#reportName').val('');
+	$j('#docType').val('');
+	$j('#keyword').focus();
+	
+	initPage();
+	fn_pTypeClear();
+}
+
+/**
+ * 검색 초기화
+ */
+function initSearch(){
+	isTab = false;
+	isSort = false;
+
+	initSort();
+	initTab();
+	initBakupCond();
+	setBakupCond();
+	$j("#keyword").attr("autocomplete", "off");
+}
+
+function clearAllParam(){
+	var frm = findForm("searchForm");
+	var targetObj;
+	var len;
+
+	//회사명, 회사코드
+	frm.textCrpCik.value = "";
+	frm.flrCik.value = "";
+	frm.textCrpNm.value = dfTextCrpNm;
+	//제출인명
+	frm.textPresenterNm.value = "";
+	//기간
+	
+	frm.startDate.value = "";
+	frm.endDate.value = "";
+	initCalStartEndDate();	// 검색시작일,종료일 초기화
+	//문서구분
+	frm.docType.options.selectedIndex = 0;
+	//보고서명
+	frm.reportName.value = "";
+	//공시유형
+	targetObj = document.getElementsByName("dspType");
+	len = targetObj.length;
+	for(var i=0; i < len; i++){
+		targetObj[i].checked = false;
+	}
+	//공시유형전체선택
+	targetObj = document.getElementsByName("dspType");
+	len = targetObj.length;
+	for(var i=0; i < len; i++){
+		targetObj[i].checked = false;
+	}
+}
+
+/**
+ * 검색어 input[type=text] onkeyup 이벤트  Enter키 처리
+ * 키보드가 한글일때 이벤트가 발생되지 않는다
+ */
+function searchPressEnterKeyword(event, id) {
+	if (event.keyCode == 13) {
+		
+		initSearch();
+		if(id != "textPresenterNm" && id != "textCrpNm" && id != "reportName"){
+			search(1, 'btn');
+		}
+	}
+}
+
+/**
+ * 도움말  팝업호출용 브라우져 별 사이즈 조절
+ */
+function popOpen(){
+	var size = getOpenSize(515, 520);
+	return window.open('/jsp/help/help_keyword_search.jsp', '_blank', ''+size+', resizable=no, status=no, scrollbars=yes');
+}
+
+/**
+ * 통합검색 검색팁 팝업호출용 브라우져 별 사이즈 조절
+ */
+function tipOpen(){
+	$j('#helpKeywordSearchTip').toggle();
+}
+
+function setParam(json) {
+	jsonCheck("autoSearch", json);
+	jsonCheck("currentPage", json);
+	jsonCheck("docType", json);
+	
+	jsonCheck("dspTypeTab", json);
+	jsonCheck("endDate", json);
+	jsonCheck("finalReport", json);
+	jsonCheck("flrCik", json);
+	jsonCheck("isSort", json);
+	jsonCheck("isTab", json);
+	jsonCheck("maxLinks", json);
+	jsonCheck("maxResults", json);
+	jsonCheck("maxResults", json);
+	jsonCheck("reportName", json);
+	jsonCheck("sortType", json);
+	jsonCheck("sort", json);
+	jsonCheck("startDate", json);
+	jsonCheck("textCrpCik", json);
+	jsonCheck("textCrpNm", json);
+	jsonCheck("textPresenterNm", json);
+	
+	if(json.hasOwnProperty('dateIndex')) {
+		$j('.btnDate').removeClass('on');
+		$j('#date' + json.dateIndex).addClass('on');
+		$j('#selDate').val(json.dateIndex);
+	}
+	
+	var dspType;
+	
+	if(json.obj) {
+		if(json.obj.hasOwnProperty("dspType")) {
+			dspType = json.obj.dspType;
+			dspType = dspType.split(',');
+		}
+	}
+	
+	if(dspType) {
+		$j('input:checkbox[name=dspType]').each(function(data,key){
+			for(var i = 0; i<dspType.length;i++) {
+				if($j(this).val() == dspType[i]) {
+					$j(this).prop('checked', true);
+					$j(this).parent().addClass('on');
+				}
+			}
+		});
+	}
+	
+	
+}
+
+function fn_ulListToggle() {
+	if (!$j("#dropdownContent").is(":visible")) {
+		var searchInfoJson = getSearchInfo();
+		if (searchInfoJson != null) {
+			$j("#dropdownContent").show();
+			document.getElementById("dropdownContent").classList
+					.toggle("show");
+		}
+	} else {
+		$j("#dropdownContent").hide();
+	}
+}
+
+function fn_ulListRemover(index){		
+	//로컬스토리지 삭제
+	var searchInfoJson = getSearchInfo();
+	 var recentWord = [];
+	 var jsonInfo = {};
+	 
+	 fn_removeLocalStorage('searchInfo');
+	 
+	 if(searchInfoJson != null) {
+		 for(var i =0; i<searchInfoJson.length;i++ ) {
+			 if(i != index){
+				 recentWord.push(searchInfoJson[i]);
+				 fn_setLocalStorage('searchInfo',recentWord);
+			 }
+		 }
+		 
+	 }
+	 
+	 var resultSearchInfoJson = getSearchInfo();
+		if(resultSearchInfoJson != null){
+			makeMainLatestSelect(resultSearchInfoJson, 'lateKeyword');	
+		}else{
+			$j('#lateKeyword_0').remove();
+			$j('#spanText').text("선택");
+			document.getElementById("dropdownContent").classList
+			.toggle("show");
+		}
+}
+
+</script>
+
+<div id="autoCompletion"
+	style="display: none; position: absolute; left: 312px; top: 251px; z-index: 50; border: 1px solid #C3C3C3; width: 312px; height: 108px; background-color: #FFFFFF;"></div>
+<div class="helpWrap flex" onload="detailSearchInit()">
+	<div class="infoWrap tL"><span class="txtCR bold">※ [↓검색구분]을 조정하면 본문내용 등 다양한 조건으로 검색이 가능합니다.</span></div>
+	<div class="btnWrap tR">
+		<a class="btn" title="검색팁" onclick="tipOpen();" href="javascript:void(0);"><i class="iconTip"></i>검색팁</a>
+		<a class="btn" title="도움말" onclick="openHelp(122);" href="javascript:void(0);"><i class="iconHelp" ></i>도움말</a>
+	</div>
+</div>
+<input type="hidden" name="selDate" id="selDate" value="3"/>
+<form id="searchForm" name="searchForm" method="post" onsubmit="return false;">
+	<input id="currentPage" name="currentPage" type="hidden" value="1" />
+	<input id="maxResults" name="maxResults" type="hidden" value="15" />
+	<input id="maxLinks" name="maxLinks" type="hidden" value="10" />
+	<input id="sort" name="sort" type="hidden" value="DATE" /><!-- 정렬대상필드 -->
+	<input id="sortType" name="sortType" type="hidden" value="desc" /><!-- 정렬타입(오름,내림) -->
+	<input id="textCrpCik" name="textCrpCik" type="hidden" value="" /><!-- 공시대상회사 -->
+	<input name="lateKeyword" type="hidden" value="" />
+	<input id="flrCik" name="flrCik" type="hidden" value="" /><!-- 제출인 -->
+	<input id="dspTypeTab" name="dspTypeTab" type="hidden" value="" /><!-- 공시유형탭 -->
+	<input id="isSort" name="isSort" type="hidden" value="false" />
+	<input id="isTab" name="isTab" type="hidden" value="false" />
+	<input id="tocSrch" name="tocSrch" type="hidden" value="" />
+
+	<input id="b_textCrpCik" name="b_textCrpCik" type="hidden" value="" />
+	<input id="b_flrCik" name="b_flrCik" type="hidden" value="" />
+	<input id="b_keyword" name="b_keyword" type="hidden" value="상계납입" />
+	<input id="b_docType" name="b_docType" type="hidden" value="" />
+	<input id="b_textPresenterNm" name="b_textPresenterNm" type="hidden" value="" />
+	<input id="b_reportName" name="b_reportName" type="hidden" value="" />
+	<input id="b_startDate" name="b_startDate" type="hidden" value="20250716" />
+	<input id="b_endDate" name="b_endDate" type="hidden" value="20260716" />
+	<input id="b_dspType" name="b_dspType" type="hidden" value="" />
+	<input id="b_synonym" name="b_synonym" type="hidden" value="" />
+	<input id="b_reSearch" name="b_reSearch" type="hidden" value="" />
+	<input id="reportNamePopYn" name="reportNamePopYn" type="hidden" value="">
+	<input id="autoSearch" name="autoSearch" type="hidden" value="N">
+	<input type="submit" style="display:none" name="goAction" />
+	<div class="totalSearchWrap">
+	<!-- totalSearch -->
+		<div class="totalSearch">
+			<ul>	
+				<li class="totalSearchLi">
+					<div class="lWrap">
+						<span class="frmSelect w01"> 
+							<select id="option" name="option" onChange="fn_typeChange();" title="선택">
+								
+									
+									
+										<option value="">전체</option>
+									
+								
+								
+									
+									
+										<option value="corp">회사명</option>
+									
+								
+								
+									
+									
+										<option value="report">보고서명</option>
+									
+								
+								
+									
+									
+										<option value="reportList">보고서 목차명</option>
+									
+								
+								
+									
+										<option value="contents" selected>본문내용</option>
+									
+									
+								
+							</select>
+						</span> 
+					</div>
+					<div class="mainTextAutoWrap">
+						<span id="searchArea_txt" class="frmInput">
+							<div class="ui-widget">
+								<a class="btnDown" id="set_sugicn" href="javascript:void(0);"></a>
+								<input class="p10" id="keyword" name="keyword" type="text" value="상계납입" title="본문내용 입력" placeholder="본문내용 입력" onkeypress="if(event.keyCode==13){initSearch();search(1, 'btn'); return false;}" />
+							</div>
+						</span>
+					</div>
+					<div class="btnWrap">
+						<a class="btnSearch" onclick="" href="javascript:initSearch();search(1, 'btn');">검색</a>
+					</div>
+					<div class="synonymWrap">
+						<input class="synonymInput" type="checkbox" id="synonym" name="synonym" value="Y" title="동의어적용" />
+					<label for="synonym" class="txt_normal txt_synonym">동의어</label>
+					</div>
+					
+					<div class="rWrap">
+						<span class="frmSelect w03">
+							<div class="dropdownDiv2" onclick="fn_ulListToggle()">
+								<span class="spanText" id="spanText">최근검색어 선택</span>
+								<span class="spanText mob" id="spanText">최근</span>
+							</div>
+							<div class="dropdown-content2" id="dropdownContent">
+								<ul class="dropdownUl2" id="lateKeyword">
+								</ul>
+							</div>
+						</span>
+					</div>
+
+				</li>
+			</ul>
+		</div>
+	</div>
+	
+	<!-- subSearchWrap -->
+	<div class="subSearchWrap">
+		<!-- subSearch -->
+		<div class="subSearch">
+			<ul>
+				<li>
+					<div class="lWrap">
+						<label for="selsample00">회사명</label>
+						<span id="searchArea_crp" class="frmInput w03">
+							<div class="ui-widget">
+								<input class="p10" id="textCrpNm" name="textCrpNm" type="text" value="" title="회사명/종목코드 입력" placeholder="회사명/종목코드 입력" onfocus="clearSearchCorpText('textCrpNm');clearSearchCorpCik();" onblur="blurSearchCorp('textCrpNm');" onchange="changeCrpNm()" onkeypress="if(event.keyCode==13){initSearch();search(1, 'btn'); return false;}" />
+								<a class="btnSB" id="btnCorp" onClick="openSearchCorpWindow('searchForm', 'textCrpNm');" href="javascript:void(0);">찾기</a>
+							</div>
+						</span>
+					</div>
+				</li>
+				<li>
+					<div class="lWrap">
+						<label for="selsample00">제출인명</label>
+						<span id="searchArea_prsentr" class="frmInput w03">
+							<div class="ui-widget">
+								<input type="text" class="p10" id="textPresenterNm" name="textPresenterNm" value="" placeholder="제출인명 입력" onkeypress="if(event.keyCode==13){initSearch();search(1, 'btn'); return false;}" />
+								<a class="btnSB" id="btnPresenter" onclick="openSearchCik();" href="javascript:void(0);">찾기</a>
+							</div>
+						</span>
+					</div>
+				</li>
+				<li class="w100">
+					<div class="lWrap">
+						<label for="selsample00">기간</label>
+						<span class="frmInput w01">
+							<input type="text" id="startDate" name="startDate" value="20250716" size="8" maxlength="8" title="검색시작일" alt="검색시작일" />
+						</span>
+						<a class="calDate" id="startCal" onclick="calendarView('searchForm', 'startDate')" href="javascript:void(0);">달력버튼</a>
+						-
+						<span class="frmInput w01">
+							<input type="text" id="endDate" name="endDate" value="20260716" size="8" maxlength="8" title="검색종료일" alt="검색종료일" />
+						</span>
+						<a class="calDate" id="endCal" onclick="calendarView('searchForm', 'endDate')" href="javascript:void(0);">달력버튼</a>
+					</div>
+					<div class="rWrap">
+						<div class="dateSelect">
+							<!-- <a class="btnDate" id="date1" onclick="setDate(1);" href="javascript:void(0);">1주일</a> -->
+							<a class="btnDate" id="date2" onclick="setDate(2);" href="javascript:void(0);">1개월</a>
+							<a class="btnDate" id="date3" onclick="setDate(3);" href="javascript:void(0);">6개월</a>
+							<a class="btnDate" id="date4" onclick="setDate(4);" href="javascript:void(0);">1년</a>
+							<a class="btnDate" id="date5" onclick="setDate(5);" href="javascript:void(0);">3년</a>
+							<a class="btnDate" id="date6" onclick="setDate(6);" href="javascript:void(0);">5년</a>
+							<a class="btnDate" id="date7" onclick="setDate(7);" href="javascript:void(0);">10년</a>
+							<!-- 
+							<span class="frmSelect sub w04">
+								<select id="decadeType" name="decadeType" onchange="changeDecade(this);" >
+									<option value="" selected="selected">-연대선택-</option>
+									<option value="19990101_19991231">1999년</option>
+									<option value="20000101_20091231">2000년대</option>
+									<option value="20100101_20191231">2010년대</option>
+									<option value="20200101_20291231">2020년대</option>
+								</select>
+							</span>
+							 -->
+							<span class="frmSelect sub w04">
+								<select id="decadeType" name="decadeType" onchange="changeDecade(this);">
+									<option value="" selected="selected">기간더보기</option>
+									<option value="20">20년전~10년전</option>
+									<option value="30">DART개시~20년전</option>
+								</select>
+							</span>
+						</div>
+					</div>
+				</li>
+				<li>
+					<div class="lWrap">
+						<label for="docType">문서유형</label>
+						<span class="frmSelect w02">
+							<select id="docType" name="docType">
+								<option value="">전체</option>
+								<option value="N">본문</option>
+								<option value="Y">첨부문서</option>
+							</select>
+						</span>
+					</div>
+				</li>
+				<li>
+					<div class="lWrap">
+						<label for="selsample00">보고서명</label>
+						<span id="searchArea_rpt" class="frmInput w03">
+							<div class="ui-widget">
+								<input type="text" class="p10" id="reportName" name="reportName" value="" placeholder="보고서명 입력" onkeypress="if(event.keyCode==13){initSearch();search(1, 'btn'); return false;}" onfocus="clearReportPopYn();" />
+								<a class="btnSB" id="btnReport" onclick="openFindReport('searchForm', 'reportName');" href="javascript:void(0);">찾기</a>
+							</div>
+						</span>
+					</div>
+				</li>
+				<li class="w100">
+					<div class="subCheck2" id="subCheck">
+						<label for="selsample00">공시유형</label>
+						<span>
+							<ul>
+								<li id="li_01" class="chk">
+									<input type="checkbox" id="dspType1" name="dspType" value="A" title="정기공시" onclick="clickDspType('01', this);" />
+									<label for="dspType1"><span class="name">정기공시</span></label>
+								</li>
+								<li id="li_02" class="chk">
+									<input type="checkbox" id="dspType2" name="dspType" value="B" title="주요사항보고" onclick="clickDspType('02', this);"/>
+									<label for="dspType2"><span class="name">주요사항보고</span></label>
+								</li>
+								<li id="li_03" class="chk">
+									<input type="checkbox" id="dspType3" name="dspType" value="C" title="발행공시" onclick="clickDspType('03', this);"/>
+									<label for="dspType3"><span class="name">발행공시</span></label>
+								</li>
+								<li id="li_04" class="chk">
+									<input type="checkbox" id="dspType4" name="dspType" value="D" title="지분공시" onclick="clickDspType('04', this);"/>
+									<label for="dspType4"><span class="name">지분공시</span></label>
+								</li>
+								<li id="li_05" class="chk">
+									<input type="checkbox" id="dspType5" name="dspType" value="E" title="기타공시" onclick="clickDspType('05', this);"/>
+									<label for="dspType5"><span class="name">기타공시</span></label>
+								</li>
+								<li id="li_06" class="chk">
+									<input type="checkbox" id="dspType6" name="dspType" value="F" title="외부감사관련" onclick="clickDspType('06', this);"/>
+									<label for="dspType6"><span class="name">외부감사관련</span></label>
+								</li>
+								<li id="li_07" class="chk">
+									<input type="checkbox" id="dspType7" name="dspType" value="G" title="펀드공시" onclick="clickDspType('07', this);"/>
+									<label for="dspType7"><span class="name">펀드공시</span></label>
+								</li>
+								<li id="li_08" class="chk">
+									<input type="checkbox" id="dspType8" name="dspType" value="H" title="자산유동화"  onclick="clickDspType('08', this);"/>
+									<label for="dspType8"><span class="name">자산유동화</span></label>
+								</li>
+								<li id="li_09" class="chk" title="한국거래소 소관 공시사항입니다.">
+									<input type="checkbox" id="dspType9" name="dspType" value="I" title="거래소공시" onclick="clickDspType('09', this);"/>
+									<label for="dspType9"><span class="name">거래소공시</span></label>
+								</li>
+								<li id="li_10" class="chk" title="공정거래위원회 소관 공시사항입니다.">
+									<input type="checkbox" id="dspType10" name="dspType" value="J" title="공정위공시" onclick="clickDspType('10', this);"/>
+									<label for="dspType10"><span class="name">공정위공시</span></label>
+								</li>
+								<li id="li_all" class="chk">
+									<input type="checkbox" id="dspTypeAll" name="dspTypeAll" onclick="clickDspTypeAllCheck(this);" />
+									<label for="dspTypeAll"><span class="name">전체선택</span></label>
+								</li>
+							</ul>
+						</span>
+					</div>
+				</li>
+			</ul>
+		</div>
+		<!-- btnArea -->
+		<div class="btnArea">
+			<a class="btnSearch" id="keywordBtn" href="javascript:initSearch();search(1, 'btn');">검색</a>
+			<a class="btnReset" onclick="searchClear();" href="javascript:void(0);">초기화</a>
+		</div>
+				
+	</div>
+	<!-- subSearchWrap -->
+</form>
+
+
+<!-- tabWrap -->
+<div class="tab11">
+	<div class="tabWrap">
+		<ul id="tab">
+			<li class="on"><a onclick="clickTab('');" href="javascript:void(0);">전체</a></li>
+			<li><a onclick="clickTab('A');" href="javascript:void(0);">정기공시</a></li>
+			<li><a onclick="clickTab('B');" href="javascript:void(0);">주요사항보고</a></li>
+			<li><a onclick="clickTab('C');" href="javascript:void(0);">발행공시</a></li>
+			<li><a onclick="clickTab('D');" href="javascript:void(0);">지분공시</a></li>
+			<li><a onclick="clickTab('E');" href="javascript:void(0);">기타공시</a></li>
+			<li><a onclick="clickTab('F');" href="javascript:void(0);">외부감사관련</a></li>
+			<li><a onclick="clickTab('G');" href="javascript:void(0);">펀드공시</a></li>
+			<li><a onclick="clickTab('H');" href="javascript:void(0);">자산유동화</a></li>
+			<li><a onclick="clickTab('I');" href="javascript:void(0);">거래소공시</a></li>
+			<li><a onclick="clickTab('J');" href="javascript:void(0);">공정위공시</a></li>
+		</ul>
+	</div>
+</div> 
+
+<!-- lsit -->
+<div id="listContents" class="bWideListWrap">
+	<div id="searchStopMsg" style="position: absolute; left: -1000px; top: -1000px; visibility: hidden;"></div>
+</div>
+<!-- messageBox -->
+<div class="messageBoxBottom">
+	<div class="messageBox">
+		<ul>
+			<i class="iconInfoO"></i>
+			<li>동의어 체크를 해제하신후 검색하시면 공백을 제외한 검색어 그 자체를 고유단어로 인식하여 검색하게 됩니다.</li>
+			<li>
+				<div class="innerWrap">
+					<dt>ex) 비즈니스 =></dt>
+					<dd>체크시 : '비즈니스', '비지니스', 'business' 가 포함된 내용 검색</dd>
+					<dd>해제시 : '비즈니스'가 포함된 내용 검색</dd>
+				</div>
+			</li>
+			<li><span class="txtCB bold">※ 최근공시의 경우 최대 5분의 시간차가 발생할 수 있습니다.</span></li>
+		</ul>
+	</div>
+</div>
+
+<iframe id="tFrame" name="tFrame" src="" title="tailFrame" scrolling="no" frameborder="0" width="0" height="0"></iframe>
+<div id="helpKeywordSearchTip" style="display:none">
+	<!-- layer popup -->
+	<div class="mask" style="display:block"></div>
+	<div class="layerPop layerPopM" style="display:block">
+		<!-- title -->
+		<div class="title">
+			<h2>검색팁</h2>
+			<a class="btnClose" onclick="tipOpen();" href="javascript:void(0);">닫기</a>
+		</div>
+
+
+		<!-- cont -->
+		<div class="cont">
+			<!-- split -->
+			<div class="infoCont">
+				<dt class="txtCB">[AND 조건 ( 공백, space ) ] </dt>
+				<dd>사과 포도 : '사과'와 '포도'가 모두 존재하는 문서를 검색합니다. </dd>
+				<dt class="txtCB">[OR 조건 ( | ) ] </dt>
+				<dd> 사과|포도 : '사과'가 존재하거나, '포도'가 존재하는 문서를 검색합니다. </dd>
+				<dt class="txtCB">[NOT 조건 ( ! ) ] </dt>
+				<dd>사과!포도 : '사과'로 검색된 결과 중, '포도'가 존재하는 문서를 제외시킵니다. </dd>
+				<dt class="txtCB">[EXACT 조건 ( " " ) ]  </dt>
+				<dd>"사과 포도" : 반드시 '사과', '포도' 순서대로 정확히 '사과포도' 또는 '사과 포도'로 이루어진 단어가 존재하는 문서를 검색하며, '사과'와 '포도' 사이에 다른 단어나 구절이 포함될 수 없습니다.</dd>
+			</div>	
+			<!-- //split -->
+		</div>
+		<!-- //cont -->
+	</div>
+</div>
