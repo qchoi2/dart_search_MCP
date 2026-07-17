@@ -1,5 +1,17 @@
 # 개발 진행 현황
 
+## 단계 3 대화형 MCP 완료 (2026-07-17)
+
+- v20의 다음 순서인 단계 3을 `454e405` 기준으로 대조했다. `search_disclosure_cases`와 `get_disclosure_evidence`, 기본 검색기간 확인, 세션 캐시, 결과·원문 예산은 단계 1에서 선행 구현돼 있었고 MCP 경계·continuation·구조 경고의 잔여 계약을 보강했다.
+- `search_disclosure_cases` 도구 스키마를 실제 `SearchRequest`와 일치시켜 `cache_mode`, `amendment_comparison`, `sequence_required`, `output_mode`, `schema_version`을 포함했다. 런타임에서도 bool/int 혼동, 날짜 형식, 선택 힌트 타입, 스키마 버전과 비활성 TTL 캐시 모드를 검증한다.
+- 대화형 도구는 최종 20건·원문 확인 40건 상한을 유지한다. `output_mode=batch`, `exhaustive=true`는 네트워크 전에 `batch_confirmation_required`, 정정비교·사건순서 연결은 `INTERACTIVE_SCOPE_UNAVAILABLE`로 중단한다.
+- continuation token은 30분 TTL의 프로세스 메모리 상태를 가리키며 최대 1,000개로 제한한다. 검색계보·기간·페이지·처리 접수번호 해시·실행 검색어 변형을 저장하고, 다른 검색계보에서 잘못 제시해도 원래 토큰을 소실하지 않는다.
+- 예산소진 continuation은 `SEARCH_BUDGET_PARTIAL`, DART 최신순 일부 범위는 `LATEST_FIRST_BIAS` 구조 경고로 반환한다. 검색 미실행 상태는 `coverage.complete=false`, `completeness_grade=unconfirmed`로 표시한다.
+- `get_disclosure_evidence`는 키워드 1~20개를 검증하고 최대 8개·각 500자 근거만 반환한다. 전체 원문 미반환을 유지하고 `status`, `schema_version`, `evidence_count`, `source_text_untrusted`를 추가했다.
+- 결과는 기계적 사실과 `legal_assessment`를 분리하고 접수번호 단위 case를 최대 20개 반환한다. 서로 다른 접수번호를 같은 사건으로 추정 병합하지 않으며 명시 사건 연결·정정 diff는 S6·S7 범위로 유지한다.
+- 단계 3 전용 회귀 11개를 포함한 전체 자동 테스트 120개와 고정 평가 24/24가 통과했다. 라이브 네트워크 요청은 추가하지 않았다.
+- 다음 계획 단계는 단계 4 승인형 배치 리서치지만 이번 단계에서는 구현하거나 자동 실행하지 않았다.
+
 ## 단계 2 DART 어댑터·폴백 잔여 계약 보강 완료 (2026-07-17)
 
 - `DEVELOPMENT_PLAN.md` v20의 단계 2 완료기준을 `v0.1.1-reliability` 코드와 다시 대조했다. 본문검색·상태진단·구조장애 재진단·OpenDART 폴백의 큰 흐름은 구현돼 있었고, HTTP 접근오류 분류, 회로 진단 필드, 페이지 계약 변화 감지가 잔여 항목이었다.

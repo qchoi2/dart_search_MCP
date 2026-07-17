@@ -75,10 +75,19 @@ class SearchEngine:
                 warnings=["검색기간이 지정되지 않았습니다. 네트워크 검색 전에 시작일과 종료일을 확인해 주세요."],
                 error={"code": ErrorCode.DATE_RANGE_REQUIRED.value, "message": "date_from과 date_to가 필요합니다."},
             )
-        if request.exhaustive:
+        if request.exhaustive or request.output_mode == "batch":
             return self._base_response(
                 "batch_confirmation_required", lineage,
-                warnings=["전수검색은 1단계 Fast Path에서 자동 실행하지 않습니다. 범위를 줄이거나 후속 배치 미리보기가 필요합니다."],
+                warnings=["전수·배치 검색은 대화형 MCP에서 자동 실행하지 않습니다. 범위를 줄이거나 후속 배치 미리보기가 필요합니다."],
+            )
+        if request.amendment_comparison or request.sequence_required:
+            return self._base_response(
+                "clarification_required", lineage,
+                warnings=["정정 비교와 사건 순서 연결은 현재 대화형 Fast Path 범위가 아닙니다. 일반 사례검색으로 범위를 조정해 주세요."],
+                error={
+                    "code": "INTERACTIVE_SCOPE_UNAVAILABLE",
+                    "message": "amendment_comparison과 sequence_required는 후속 S6·S7에서 활성화됩니다.",
+                },
             )
         start = self.clock()
         plan = build_search_plan(request)
@@ -94,9 +103,15 @@ class SearchEngine:
         to_date = date.fromisoformat(request.date_to)
         continuation_state = None
         if request.continuation_token:
-            continuation_state = self.continuations.consume(request.continuation_token, delete=True)
+            continuation_state = self.continuations.consume(request.continuation_token)
             if continuation_state.get("lineage") != lineage:
                 raise SearchError(ErrorCode.INVALID_CONTINUATION_TOKEN, "다른 검색의 continuation token입니다.")
+            if continuation_state.get("date_from") not in {None, request.date_from} or continuation_state.get("date_to") not in {None, request.date_to}:
+                raise SearchError(ErrorCode.INVALID_CONTINUATION_TOKEN, "continuation token의 검색기간이 현재 요청과 다릅니다.")
+            stored_variants = continuation_state.get("query_variants")
+            if stored_variants is not None and tuple(stored_variants) != plan.query_variants:
+                raise SearchError(ErrorCode.INVALID_CONTINUATION_TOKEN, "continuation token의 검색어 변형 계약이 현재 계획과 다릅니다.")
+            self.continuations.discard(request.continuation_token)
 
         resolved_company_code = None
         if request.company:
@@ -158,7 +173,12 @@ class SearchEngine:
                     )
                 else:
                     raise
-        if not hard_timeout and (plan.primary_channel == "opendart" or fallback or not candidates or disclosure_type is not None):
+        if not hard_timeout and (
+            plan.primary_channel == "opendart"
+            or fallback
+            or len(candidates) < plan.result_budget
+            or disclosure_type is not None
+        ):
             if self.opendart is None:
                 if candidates:
                     warnings.append("OpenDART API 키가 없어 후보 원문을 검증하지 못했습니다.")
@@ -288,16 +308,29 @@ class SearchEngine:
         diagnostics.completed_elapsed_ms = int((self.clock() - start) * 1000)
         pending = hard_timeout or soft_timeout or not list_result.complete or len(candidates) > len(verified) + len(preliminary) or diagnostics.actual_document_requests >= plan.effective_document_budget and bool(preliminary)
         token = None
+        continuation_reason = None
+        continuation_base = {
+            "lineage": lineage,
+            "date_from": request.date_from,
+            "date_to": request.date_to,
+            "query_variants": list(plan.query_variants),
+            "processed_receipt_hashes": [*processed_hashes, *processed_this_run],
+        }
         if not list_result.complete:
+            continuation_reason = "list_request_budget"
             token = self.continuations.issue({
-                "lineage": lineage, "window": list_result.next_window_index, "page": list_result.next_page,
-                "processed_receipt_hashes": [*processed_hashes, *processed_this_run],
+                **continuation_base,
+                "window": list_result.next_window_index,
+                "page": list_result.next_page,
+                "reason": continuation_reason,
             })
         elif pending:
+            continuation_reason = "hard_timeout" if hard_timeout else "soft_timeout" if soft_timeout else "document_budget"
             token = self.continuations.issue({
-                "lineage": lineage, "window": 0, "page": 1,
-                "reason": "hard_timeout" if hard_timeout else "soft_timeout" if soft_timeout else "document_budget",
-                "processed_receipt_hashes": [*processed_hashes, *processed_this_run],
+                **continuation_base,
+                "window": 0,
+                "page": 1,
+                "reason": continuation_reason,
             })
         status = "partial" if token else "completed"
         response_error = None
@@ -317,6 +350,28 @@ class SearchEngine:
                 processed_receipts=diagnostics.processed_receipt_count,
                 unprocessed_candidates=diagnostics.unprocessed_candidate_count,
                 deadline_limited_timeout=diagnostics.deadline_limited_timeout,
+            )
+        if token and not hard_timeout:
+            message = "대화형 검색예산 안에서 완료하지 못한 범위를 continuation token으로 남겼습니다."
+            warnings.append(message)
+            self._add_warning(
+                warning_codes,
+                warning_details,
+                "SEARCH_BUDGET_PARTIAL",
+                message,
+                reason=continuation_reason,
+                processed_receipts=diagnostics.processed_receipt_count,
+                unprocessed_candidates=diagnostics.unprocessed_candidate_count,
+            )
+        if diagnostics.latest_first_bias:
+            message = "DART 최신순 상위 결과만 확인되어 오래된 사례가 포함되지 않았을 수 있습니다."
+            warnings.append(message)
+            self._add_warning(
+                warning_codes,
+                warning_details,
+                "LATEST_FIRST_BIAS",
+                message,
+                fully_pageable_by_query=diagnostics.fully_pageable_by_query,
             )
         if not verified and not preliminary and not token:
             warnings.append("지정한 범위에서 정상적으로 검색했지만 확인된 결과가 없습니다.")
@@ -462,18 +517,36 @@ class SearchEngine:
         return "complete"
 
     def get_evidence(self, receipt_no: str, keywords: list[str], *, include_full_preview: bool = False, include_amendment_context: bool = True) -> dict[str, Any]:
-        if not receipt_no.isdigit() or len(receipt_no) != defaults.RECEIPT_NO_LENGTH:
+        if not isinstance(receipt_no, str) or not receipt_no.isdigit() or len(receipt_no) != defaults.RECEIPT_NO_LENGTH:
             raise ValueError(f"receipt_no must contain {defaults.RECEIPT_NO_LENGTH} digits")
+        if not isinstance(keywords, list) or not keywords or len(keywords) > defaults.INTERACTIVE_TARGET_MAX:
+            raise ValueError(f"keywords must contain 1 to {defaults.INTERACTIVE_TARGET_MAX} strings")
+        if any(not isinstance(keyword, str) or not keyword.strip() or len(keyword) > defaults.QUERY_MAX_CHARS for keyword in keywords):
+            raise ValueError(f"each keyword must contain 1 to {defaults.QUERY_MAX_CHARS} characters")
+        normalized_keywords = [keyword.strip() for keyword in keywords]
+        if len(set(normalized_keywords)) != len(normalized_keywords):
+            raise ValueError("keywords must not contain duplicates")
+        if not isinstance(include_full_preview, bool) or not isinstance(include_amendment_context, bool):
+            raise ValueError("evidence include flags must be boolean")
         text = self.cache.get(receipt_no)
         if text is None:
             if self.opendart is None:
                 raise SearchError(ErrorCode.API_KEY_MISSING, "근거 원문을 받으려면 OpenDART API 키가 필요합니다.")
             text = self.opendart.download_document(receipt_no)
             self.cache.put(receipt_no, text)
-        evidence = extract_evidence(receipt_no, text, keywords)
+        evidence = extract_evidence(receipt_no, text, normalized_keywords)
+        evidence_payload = []
+        for item in evidence[: defaults.EVIDENCE_MAX_SNIPPETS]:
+            boundary = mark_untrusted(item.text)
+            boundary.pop("content", None)
+            evidence_payload.append(asdict(item) | {"content_boundary": boundary})
         return {
+            "status": "completed",
+            "schema_version": defaults.SCHEMA_VERSION,
             "receipt_no": receipt_no,
-            "evidence": [asdict(item) | {"content_boundary": mark_untrusted(item.text)} for item in evidence],
+            "evidence": evidence_payload,
+            "evidence_count": len(evidence_payload),
+            "source_text_untrusted": True,
             "include_full_preview": False,
             "full_preview_ignored": bool(include_full_preview),
             "amendment_context": "not_available_in_stage1_fast_path" if include_amendment_context else "not_requested",
@@ -556,19 +629,26 @@ class SearchEngine:
     def _base_response(status: str, lineage: str, **kwargs) -> dict[str, Any]:
         plan = kwargs.pop("plan", None)
         diagnostics = kwargs.pop("diagnostics", None)
+        non_executed_statuses = {
+            "failed",
+            "clarification_required",
+            "batch_confirmation_required",
+            "continuation_confirmation_required",
+            "api_key_action_required",
+        }
         return {
             "status": status,
             "search_lineage_id": lineage,
             "schema_version": "1.0",
             "plan": asdict(plan) if plan else None,
-            "coverage": kwargs.pop("coverage", {}),
+            "coverage": kwargs.pop("coverage", {"complete": status == "completed"}),
             "diagnostics": asdict(diagnostics) if diagnostics else {},
             "actual_document_verification_count": diagnostics.actual_document_requests if diagnostics else 0,
             "unprocessed_candidate_count": diagnostics.unprocessed_candidate_count if diagnostics else 0,
             "warnings": kwargs.pop("warnings", []),
             "warning_codes": kwargs.pop("warning_codes", []),
             "warning_details": kwargs.pop("warning_details", []),
-            "completeness_grade": kwargs.pop("completeness_grade", "unconfirmed" if status in {"failed", "api_key_action_required"} else "complete"),
+            "completeness_grade": kwargs.pop("completeness_grade", "unconfirmed" if status in non_executed_statuses else "complete"),
             "decision_summary": kwargs.pop("decision_summary", "검색 전 필수조건 확인"),
             "results": kwargs.pop("results", []),
             "preliminary_candidates": kwargs.pop("preliminary", []),

@@ -37,13 +37,42 @@ class SearchRequest:
     schema_version: str = SCHEMA_VERSION
 
     def __post_init__(self) -> None:
+        if not isinstance(self.query, str):
+            raise ValueError("query must be a string")
         if not defaults.MIN_TARGET_COUNT <= len(self.query.strip()) <= defaults.QUERY_MAX_CHARS:
             raise ValueError(f"query must contain {defaults.MIN_TARGET_COUNT} to {defaults.QUERY_MAX_CHARS} characters")
+        if self.company is not None and not isinstance(self.company, str):
+            raise ValueError("company must be a string or null")
+        if isinstance(self.target_count, bool) or not isinstance(self.target_count, int):
+            raise ValueError("target_count must be an integer")
+        if self.output_mode not in {"interactive", "batch"}:
+            raise ValueError("output_mode must be interactive or batch")
         limit = defaults.BATCH_TARGET_MAX if self.output_mode == "batch" else defaults.INTERACTIVE_TARGET_MAX
         if not defaults.MIN_TARGET_COUNT <= self.target_count <= limit:
             raise ValueError(f"target_count must be between {defaults.MIN_TARGET_COUNT} and {limit}")
+        if self.max_documents is not None and (isinstance(self.max_documents, bool) or not isinstance(self.max_documents, int)):
+            raise ValueError("max_documents must be an integer or null")
         if self.max_documents is not None and not defaults.MIN_TARGET_COUNT <= self.max_documents <= defaults.DOCUMENT_BUDGET_ABSOLUTE_MAX:
             raise ValueError(f"max_documents must be between {defaults.MIN_TARGET_COUNT} and {defaults.DOCUMENT_BUDGET_ABSOLUTE_MAX}")
+        if self.cache_mode not in {"auto", "session"}:
+            raise ValueError("cache_mode must be auto or session until TTL cache is enabled")
+        for name in ("exhaustive", "amendment_comparison", "sequence_required"):
+            value = getattr(self, name)
+            if value is not None and not isinstance(value, bool):
+                raise ValueError(f"{name} must be boolean or null")
+        if self.continuation_token is not None and not isinstance(self.continuation_token, str):
+            raise ValueError("continuation_token must be a string or null")
+        if self.schema_version != SCHEMA_VERSION:
+            raise ValueError(f"schema_version must be {SCHEMA_VERSION}")
+        for name in ("date_from", "date_to"):
+            value = getattr(self, name)
+            if value is not None and not isinstance(value, str):
+                raise ValueError(f"{name} must be an ISO date string or null")
+            if value is not None:
+                try:
+                    date.fromisoformat(value)
+                except ValueError as exc:
+                    raise ValueError(f"{name} must use YYYY-MM-DD format") from exc
         if self.date_from and self.date_to:
             if date.fromisoformat(self.date_from) > date.fromisoformat(self.date_to):
                 raise ValueError("date_from must be on or before date_to")

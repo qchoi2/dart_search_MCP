@@ -1840,7 +1840,7 @@ DART 본문검색이 없어도 핵심 기능이 작동하도록 OpenDART 폴백 
 * OpenDART 원문검색 자동 폴백
 * `DART_FULLTEXT_FALLBACK` 구조 경고와 완전성 강등은 단계 1.1에서 우선 보강
 
-## 단계 3. 대화형 MCP
+## 단계 3. 대화형 MCP — 완료
 
 * `search_disclosure_cases`
 * `get_disclosure_evidence`

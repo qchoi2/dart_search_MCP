@@ -1,5 +1,16 @@
 # Stage 0 Decisions
 
+## 35. 단계 3 대화형 MCP 경계
+
+- 결정: 공개 MCP 입력은 `SearchRequest` 단일 계약을 사용하되 단계 3 도구의 `output_mode`는 `interactive`만 노출한다. 공유 모델은 후속 배치 입력을 파싱할 수 있지만 대화형 엔진에서는 반드시 네트워크 전에 `batch_confirmation_required`로 중단한다.
+- 결정: `amendment_comparison=true`와 `sequence_required=true`는 현재 Fast Path에서 무시하지 않고 `INTERACTIVE_SCOPE_UNAVAILABLE`로 명시한다. 기능이 구현된 것처럼 보이거나 접수번호 간 추정 연결이 실행되는 것을 막는다.
+- 결정: `cache_mode=auto|session`만 허용한다. `temporary_ttl`은 단계 5 성능시험과 활성화 결정 전까지 MCP 계약에서 거절한다.
+- 결정: continuation은 opaque token과 프로세스 메모리 상태로 구성하고 기본 TTL 30분·최대 1,000개로 제한한다. 상태에는 lineage, 기간, 목록 창·페이지, 처리 접수번호 해시, 실제 검색어 변형을 저장한다.
+- 결정: lineage·기간·검색어 변형이 다른 continuation은 소비하지 않는다. 검증 성공 후에만 토큰을 폐기해 잘못된 후속 요청이 정상 토큰을 파괴하지 못하게 한다.
+- 결정: 예산소진과 최신순 편향은 각각 `SEARCH_BUDGET_PARTIAL`, `LATEST_FIRST_BIAS`로 구조화한다. 검색 전 확인·배치승인 상태는 완전한 검색결과가 아니므로 완전성은 `unconfirmed`다.
+- 결정: 단계 3의 사건 단위는 접수번호 기반 case 컨테이너다. 서로 다른 접수번호의 사건 병합은 수행하지 않으며 S6·S7의 명시 관계 검증 뒤에만 확장한다.
+- 이유: 대화형 MCP는 짧고 예측 가능한 실행, 기계 판독 가능한 부분범위 표시, 사용자 승인 없는 범위확장 방지가 우선이기 때문이다.
+
 ## 34. 단계 2 DART 장애 분류·페이지 계약
 
 - 결정: DART HTTP 실패는 공통 HTTP 오류코드를 새 공개 오류코드로 복제하지 않고 어댑터 경계에서 채널 의미로 변환한다. 408·425·429·5xx·연결오류는 `network`, 그 밖의 실제 4xx 거절은 `structure_or_access`다.

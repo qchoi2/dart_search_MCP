@@ -1,5 +1,18 @@
 # 테스트 결과
 
+## 단계 3 대화형 MCP 검증 (2026-07-17 KST)
+
+- 기준: `454e405` + `DEVELOPMENT_PLAN.md` v20 단계 3
+- `python -m unittest discover -s tests -p "test_*.py"`: 120개 통과, 실패 0개
+- 단계 3 전용 회귀 11개: 완전한 도구 스키마, 입력 타입·날짜·버전 검증, 대화형 40문서·20결과 상한, 배치·정정·순서연결 사전 차단, continuation TTL·1,000개 상한·검색계보 보존, 구조 경고, 근거 크기 제한, MCP 오류 응답
+- continuation fixture: 기간·페이지·처리 접수번호 해시·검색어 변형 저장, 다른 lineage 사용 시 토큰 비소비, 예산소진 시 `SEARCH_BUDGET_PARTIAL`
+- 최신순 일부범위 fixture: `LATEST_FIRST_BIAS`, 질의별 `fully_pageable=false`, `completeness_grade=reduced`
+- 결과 크기 fixture: 최종 case 20개, case당 접수번호 1개, 기계적 사실과 `legal_assessment=null` 분리
+- 근거 fixture: 최대 8개·각 500자, 전체 원문 미반환, `source_text_untrusted=true`, 중복·빈·과다 키워드 거절
+- 검색 미실행 경계: 배치·전수는 `batch_confirmation_required`, 정정비교·사건연결은 `clarification_required`, 모두 네트워크 호출 0건·완전성 `unconfirmed`
+- `python -m app.evaluation`: 24/24 통과
+- 라이브 네트워크 및 단계 4 배치 실행은 수행하지 않음
+
 ## 단계 2 DART 어댑터·폴백 잔여 계약 검증 (2026-07-17 KST)
 
 - 기준: `v0.1.1-reliability` + `DEVELOPMENT_PLAN.md` v20 단계 2
