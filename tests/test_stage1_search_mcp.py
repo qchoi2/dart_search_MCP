@@ -257,6 +257,8 @@ class SearchExecutionTests(unittest.TestCase):
         )
         self.assertEqual(result["status"], "api_key_action_required")
         self.assertEqual(result["results"], [])
+        self.assertEqual(len(result["preliminary_candidates"]), 1)
+        self.assertTrue(result["preliminary_candidates"][0]["original_document_url"].endswith(candidate.receipt_no))
 
     def test_filtered_estimate_recommends_batch_once_per_lineage(self):
         candidate = replace(candidate_from_list_row(row()), source_channels=("dart_fulltext",), matched_terms=("상계납입",))
@@ -275,6 +277,10 @@ class SearchExecutionTests(unittest.TestCase):
         first = engine.execute(request)
         second = engine.execute(request)
         self.assertTrue(first["batch_research_recommended"])
+        self.assertTrue(first["deep_search_recommended"])
+        self.assertEqual(first["search_experience_label"], "공시 MCP의 속도우선 기능")
+        self.assertIn("심화 검색기능", first["deep_search_guidance"])
+        self.assertIn("물어봐 주세요", first["deep_search_help"])
         self.assertEqual(first["batch_preview_tool"], "preview_batch_research")
         self.assertGreater(first["batch_estimate"]["filtered_estimated_documents"], 80)
         self.assertFalse(second["batch_research_recommended"])
@@ -286,6 +292,10 @@ class SearchExecutionTests(unittest.TestCase):
         )
         self.assertEqual(result["status"], "batch_confirmation_required")
         self.assertTrue(result["batch_research_recommended"])
+        self.assertTrue(result["deep_search_recommended"])
+        self.assertNotIn("대화형 검색예산", " ".join(result["warnings"]))
+        self.assertIn("속도우선 기능", " ".join(result["warnings"]))
+        self.assertIn("심화 검색기능", " ".join(result["warnings"]))
         self.assertEqual(result["batch_preview_tool"], "preview_batch_research")
 
     def test_evidence_tool_limits_and_never_returns_full_document(self):

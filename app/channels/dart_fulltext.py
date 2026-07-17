@@ -33,6 +33,12 @@ from .health import CircuitBreaker
 DART_BASE = "https://dart.fss.or.kr"
 MODE_ENDPOINTS = {"contents": "detailSearchMain2.do", "report": "detailSearchMain.do"}
 
+# HTML void elements emit no end tag, so they must not affect depth counters.
+_VOID_TAGS = frozenset({
+    "area", "base", "br", "col", "embed", "hr", "img", "input",
+    "link", "meta", "param", "source", "track", "wbr",
+})
+
 
 def _clean(value: str) -> str:
     return re.sub(r"\s+", " ", html.unescape(value)).strip()
@@ -95,7 +101,7 @@ class _DartParser(HTMLParser):
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         values = dict(attrs)
         classes = set((values.get("class") or "").split())
-        if self._result_table_depth:
+        if self._result_table_depth and tag not in _VOID_TAGS:
             self._result_table_depth += 1
         elif tag == "table" and "tbWideList" in classes:
             self._result_table_depth = 1
@@ -130,7 +136,7 @@ class _DartParser(HTMLParser):
         if self.in_count and tag in {"h4", "div", "span"}:
             self.in_count = False
         if not self.in_tr:
-            if self._result_table_depth:
+            if self._result_table_depth and tag not in _VOID_TAGS:
                 self._result_table_depth -= 1
             return
         if tag == "a":
@@ -145,7 +151,7 @@ class _DartParser(HTMLParser):
         if tag == "tr":
             self._finish_row()
             self.in_tr = False
-        if self._result_table_depth:
+        if self._result_table_depth and tag not in _VOID_TAGS:
             self._result_table_depth -= 1
 
     def handle_data(self, data: str) -> None:

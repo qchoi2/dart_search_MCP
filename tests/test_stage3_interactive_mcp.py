@@ -188,6 +188,15 @@ class Stage3ExecutionTests(unittest.TestCase):
         self.assertTrue(all(len(item["filings"]) == 1 for item in result["results"]))
         self.assertTrue(all(item["mechanical_findings"] for item in result["results"]))
         self.assertTrue(all(item["legal_assessment"] is None for item in result["results"]))
+        self.assertTrue(result["source_link_policy"]["required_for_every_presented_result"])
+        self.assertTrue(all(item["original_document_url"].startswith("https://dart.fss.or.kr/") for item in result["results"]))
+        self.assertTrue(all(item["original_document_links"] for item in result["results"]))
+        self.assertTrue(all(item["original_document_markdown"].startswith("[DART 공시 원문 보기](https://") for item in result["results"]))
+        self.assertTrue(all(
+            link["url"].endswith(link["receipt_no"])
+            for item in result["results"]
+            for link in item["original_document_links"]
+        ))
 
     def test_evidence_response_is_bounded_structured_and_untrusted(self):
         receipt = "20260101000001"

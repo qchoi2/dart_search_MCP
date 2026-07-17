@@ -16,3 +16,8 @@ tests/fixtures/probe/archive/
 # Editor and OS metadata
 .DS_Store
 Thumbs.db
+
+# Reproducible local release artifacts
+dist/
+build/
+.npm-cache/

@@ -1,5 +1,24 @@
 # 개발 진행 현황
 
+## 단계 7·8 배포 패키징 및 영구 인덱스 게이트 완료 (2026-07-18)
+
+- 사용자 표시 문구를 “공시 MCP의 속도우선 기능”과 “공시 MCP의 심화 검색기능”으로 정리했다. 속도우선 기능에서 범위를 모두 확인하지 못하면 심화 검색기능으로 범위와 예상시간을 먼저 확인하도록 안내하고, 심화 검색기능 설명을 물어볼 수 있다는 문구를 포함한다.
+- Claude Desktop 배포 방식을 MCPB 패키지로 확정했다. `installer.build_release`는 allow-list 기반으로 `app/`, `settings.json`, 아이콘, `server.py`, `pyproject.toml`, `manifest.json`만 묶고 `_local_data`, `.env`, 로그, 테스트 fixture, git 메타데이터는 제외한다.
+- MCPB manifest는 v0.4, `server.type=uv`, `user_config.dart_api_key.sensitive=true`, Windows 플랫폼, 6개 MCP 도구 설명을 포함한다. OpenDART API 키는 배포물·감사로그·fixture에 저장하지 않는다.
+- 사용자용 `사용설명서.html`과 앱 아이콘 PNG/ICO를 추가했다. 아이콘은 투명 PNG와 Windows ICO 7개 크기(16~256)를 포함한다.
+- 기존 수동 Claude 설정 병합은 개발용 진단·복구 경로로만 유지한다. MSIX Claude 설정 경로 탐색, 기존 설정 보존, 백업, 원자적 쓰기, idempotent 등록·해제를 fixture로 검증했다.
+- 단계 8 영구 인덱스는 기본 비활성으로 닫았다. 반복 수요와 실측 recall/cost 개선이 모두 확인될 때만 별도 승인 대상으로 전환하며 자동 활성화하지 않는다.
+- 공식 MCPB CLI로 `info`와 manifest schema validation을 통과했다. 패키지는 아직 서명하지 않았으므로 공식 도구가 `Not signed` 경고를 표시한다.
+- 전체 자동시험 `164 passed, 20 subtests passed`, 고정 평가 `24/24`, `compileall`을 통과했다.
+
+## 검색결과 원문 링크 의무계약 (2026-07-18)
+
+- 확정 사례마다 대표 `original_document_url`, 클릭용 `original_document_link`, 모든 구성 공시의 `original_document_links`를 반환한다.
+- 예비 후보와 배치 결과에도 `original_document_url`을 추가하고 기존 URL 필드는 호환 목적으로 유지한다.
+- 정정 체인은 원공시·중간정정·최종정정 링크를 모두 보존하며 대표 링크는 유효본 또는 마지막 공시를 우선한다.
+- MCP 도구 설명과 응답 `source_link_policy`에 각 사용자 표시 결과마다 원문 링크를 함께 보여야 한다는 지시를 추가했다.
+- 자동시험 154개와 20 subtests를 통과했다.
+
 ## 단계 6 온디맨드 정정·사건 연결 및 회귀시험 (2026-07-17)
 
 - `amendment_comparison=true`는 S6, 최종 유효본·철회 질의는 S7, `sequence_required=true`는 S5 온디맨드 경로로 라우팅한다. 일반 Fast Path는 계속 접수번호 단위이며 관계 엔진을 호출하지 않는다.

@@ -1,5 +1,25 @@
 # 테스트 결과
 
+## 단계 7·8 배포 및 최종 회귀 (2026-07-18 KST)
+
+- `python -m pytest -q`: 164 passed, 20 subtests passed, 실패 0개
+- `python -m app.evaluation`: 24/24 통과
+- `python -m compileall -q app installer tests`: 통과
+- `python -m installer.build_release --output dist`: `dist/공시검색-MCP-0.3.0.mcpb` 생성, SHA-256 `93f9d0f27c3e0fd014be697ace0900e10d382e5e06e486dc790b4503cfc73064`
+- 공식 MCPB CLI `info`: 패키지 읽기 성공, `Not signed` 경고만 표시
+- 공식 MCPB CLI `validate build/mcpb-root/manifest.json`: Manifest schema validation 통과, icon validation 통과
+- 단계 7 fixture: MSIX Claude 설정 탐색, 기존 설정 보존, 백업, 원자적 등록·해제, corrupt config 미덮어쓰기, MCPB deterministic build, secret 미포함, bundled stdio initialize, PNG/ICO 아이콘, 사용자 안내서 문구 통과
+- 단계 8 fixture: 영구 인덱스 기본 비활성, 반복 수요만으로는 미추천, 반복 시장 전체 검색과 실측 개선이 모두 있을 때만 별도 승인 후보 통과
+- 외부 수동 확인 필요: 실제 Claude Desktop 확장 설치 UI에서 `.mcpb` 설치, OpenDART API 키 입력, 재시작 후 도구 노출 확인, 서명 필요 여부 결정
+
+## 검색결과 원문 링크 회귀 (2026-07-18)
+
+- 자동시험: 154개 통과, 20 subtests 통과, 실패 0개
+- 확정 사례: 대표 URL 및 구성 공시 링크 목록 존재 확인
+- 예비 후보: OpenDART 검증 전에도 접수번호 기반 원문 URL 존재 확인
+- 배치 저장결과: `original_document_url` 존재 확인
+- 링크 형식: `https://dart.fss.or.kr/dsaf001/main.do?rcpNo=<14자리 접수번호>` 확인
+
 ## 단계 5·6 최종 검증 (2026-07-17)
 
 - 자동 회귀: 154개 통과, 실패 0개

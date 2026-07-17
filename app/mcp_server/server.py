@@ -30,7 +30,16 @@ from .tool_contracts import (
     EVIDENCE_TOOL,
     EXPORT_RESULTS_TOOL,
     SEARCH_TOOL,
+    TOOLS,
 )
+
+
+DEEP_SEARCH_TOOLS = {
+    "preview_batch_research",
+    "run_batch_research",
+    "continue_batch_research",
+    "export_search_results",
+}
 
 
 def build_engine() -> SearchEngine:
@@ -104,6 +113,10 @@ class McpApplication:
                 result = self.batch.export(**arguments)
             else:
                 raise ValueError(f"unknown tool: {name}")
+            if name in DEEP_SEARCH_TOOLS:
+                result.setdefault("feature", "deep_search")
+                result.setdefault("feature_label", "공시 MCP의 심화 검색기능")
+                result.setdefault("help", "심화 검색기능이 무엇인지 궁금하면 물어봐 주세요.")
             result.setdefault("schema_version", SCHEMA_VERSION)
             return result
         except (SearchError, ValueError, TypeError) as exc:
@@ -121,7 +134,7 @@ class McpApplication:
         if method == "initialize":
             result = {"protocolVersion": "2025-03-26", "capabilities": {"tools": {}}, "serverInfo": {"name": "dart-disclosure-search", "version": PRODUCT_VERSION}}
         elif method == "tools/list":
-            result = {"tools": [SEARCH_TOOL, EVIDENCE_TOOL, BATCH_PREVIEW_TOOL, BATCH_RUN_TOOL, BATCH_CONTINUE_TOOL, EXPORT_RESULTS_TOOL]}
+            result = {"tools": TOOLS}
         elif method == "tools/call":
             params = request.get("params") or {}
             payload = self.call_tool(params.get("name", ""), params.get("arguments") or {})
@@ -132,17 +145,35 @@ class McpApplication:
 
 
 def main() -> int:
+    # MCP stdio framing is UTF-8 JSON-RPC regardless of the OS locale.
+    # Without this, Korean Windows opens the pipes as cp949 and the first
+    # non-cp949 byte in a Korean query kills the process with
+    # UnicodeDecodeError before the request reaches the try block below.
+    for stream in (sys.stdin, sys.stdout):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            reconfigure(encoding="utf-8", errors="replace")
     app = McpApplication()
+
+    def emit(payload: dict[str, Any]) -> None:
+        sys.stdout.write(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n")
+        sys.stdout.flush()
+
     for line in sys.stdin:
+        if not line.strip():
+            continue
         try:
             request = json.loads(line)
+        except json.JSONDecodeError:
+            emit({"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}})
+            continue
+        request_id = request.get("id") if isinstance(request, dict) else None
+        try:
             response = app.handle(request)
             if response is not None:
-                sys.stdout.write(json.dumps(response, ensure_ascii=False, separators=(",", ":")) + "\n")
-                sys.stdout.flush()
+                emit(response)
         except Exception as exc:
-            sys.stdout.write(json.dumps({"jsonrpc": "2.0", "id": None, "error": {"code": -32603, "message": type(exc).__name__}}, separators=(",", ":")) + "\n")
-            sys.stdout.flush()
+            emit({"jsonrpc": "2.0", "id": request_id, "error": {"code": -32603, "message": type(exc).__name__}})
     return 0
 
 

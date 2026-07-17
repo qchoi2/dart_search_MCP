@@ -28,6 +28,20 @@ from app.config import defaults
 from .plan_builder import build_search_plan
 
 
+SPEED_FIRST_FEATURE_LABEL = "공시 MCP의 속도우선 기능"
+DEEP_SEARCH_FEATURE_LABEL = "공시 MCP의 심화 검색기능"
+DEEP_SEARCH_HELP = "심화 검색기능이 무엇인지 궁금하면 물어봐 주세요."
+
+
+def _deep_search_guidance(*, continuation_available: bool = False) -> str:
+    next_action = (
+        "이어서 확인하거나 공시 MCP의 심화 검색기능을 사용해 주세요."
+        if continuation_available
+        else "공시 MCP의 심화 검색기능으로 범위와 예상시간을 먼저 확인해 주세요."
+    )
+    return f"공시 MCP의 속도우선 기능에서는 요청 범위를 모두 확인하지 못했습니다. {next_action} {DEEP_SEARCH_HELP}"
+
+
 def _lineage(request: SearchRequest) -> str:
     normalized = "|".join((" ".join(request.query.casefold().split()), (request.company or "").casefold(), request.date_from or "", request.date_to or ""))
     return "search_" + hashlib.sha256(normalized.encode("utf-8")).hexdigest()[: defaults.LINEAGE_HASH_CHARS]
@@ -36,11 +50,42 @@ def _lineage(request: SearchRequest) -> str:
 def _candidate_dict(candidate: DisclosureCandidate) -> dict[str, Any]:
     result = asdict(candidate)
     result["evidence"] = [asdict(item) for item in candidate.evidence]
+    url = candidate.dart_viewer_url or dart_viewer_url(candidate.receipt_no)
+    result["original_document_url"] = url
+    result["original_document_link"] = {
+        "label": "DART 공시 원문 보기",
+        "url": url,
+    }
+    result["original_document_markdown"] = f"[DART 공시 원문 보기]({url})"
     return result
 
 
 def _case_dict(case: VerifiedCase) -> dict[str, Any]:
-    return asdict(case)
+    result = asdict(case)
+    links = [
+        {
+            "receipt_no": filing.receipt_no,
+            "report_name": filing.report_name,
+            "label": "DART 공시 원문 보기",
+            "url": filing.dart_viewer_url or dart_viewer_url(filing.receipt_no),
+        }
+        for filing in case.filings
+    ]
+    preferred_receipt = case.effective_receipt_no or (case.filings[-1].receipt_no if case.filings else None)
+    preferred = next((link for link in reversed(links) if link["receipt_no"] == preferred_receipt), None)
+    if preferred is None and links:
+        preferred = links[-1]
+    result["original_document_url"] = preferred["url"] if preferred else None
+    result["original_document_link"] = preferred
+    result["original_document_links"] = links
+    result["original_document_markdown"] = (
+        f"[DART 공시 원문 보기]({preferred['url']})" if preferred else None
+    )
+    result["original_document_links_markdown"] = [
+        f"[{link['report_name']} · {link['receipt_no']}]({link['url']})"
+        for link in links
+    ]
+    return result
 
 
 class SearchEngine:
@@ -85,7 +130,13 @@ class SearchEngine:
         if request.exhaustive or request.output_mode == "batch":
             return self._base_response(
                 "batch_confirmation_required", lineage,
-                warnings=["전수·배치 검색은 대화형 MCP에서 자동 실행하지 않습니다. 범위를 줄이거나 후속 배치 미리보기가 필요합니다."],
+                warnings=[_deep_search_guidance()],
+                search_experience="speed_first",
+                search_experience_label=SPEED_FIRST_FEATURE_LABEL,
+                deep_search_recommended=True,
+                deep_search_feature_label=DEEP_SEARCH_FEATURE_LABEL,
+                deep_search_guidance=_deep_search_guidance(),
+                deep_search_help=DEEP_SEARCH_HELP,
                 batch_research_recommended=True,
                 batch_recommendation_reason="exhaustive_or_batch_requested",
                 batch_preview_tool="preview_batch_research",
@@ -387,7 +438,7 @@ class SearchEngine:
                 deadline_limited_timeout=diagnostics.deadline_limited_timeout,
             )
         if token and not hard_timeout:
-            message = "대화형 검색예산 안에서 완료하지 못한 범위를 continuation token으로 남겼습니다."
+            message = _deep_search_guidance(continuation_available=True)
             warnings.append(message)
             self._add_warning(
                 warning_codes,
@@ -573,6 +624,9 @@ class SearchEngine:
             reason = "fallback_estimate_increased"
         if reason is None:
             return {
+                "search_experience": "speed_first",
+                "search_experience_label": SPEED_FIRST_FEATURE_LABEL,
+                "deep_search_recommended": False,
                 "batch_research_recommended": False,
                 "batch_recommendation_reason": None,
                 "batch_estimate": {
@@ -590,6 +644,9 @@ class SearchEngine:
             )
             if not materially_larger:
                 return {
+                    "search_experience": "speed_first",
+                    "search_experience_label": SPEED_FIRST_FEATURE_LABEL,
+                    "deep_search_recommended": False,
                     "batch_research_recommended": False,
                     "batch_recommendation_suppressed": True,
                     "batch_recommendation_reason": reason,
@@ -600,6 +657,12 @@ class SearchEngine:
                 }
         self._batch_recommendations[lineage] = (now, filtered_documents, estimated_seconds)
         return {
+            "search_experience": "speed_first",
+            "search_experience_label": SPEED_FIRST_FEATURE_LABEL,
+            "deep_search_recommended": True,
+            "deep_search_feature_label": DEEP_SEARCH_FEATURE_LABEL,
+            "deep_search_guidance": _deep_search_guidance(),
+            "deep_search_help": DEEP_SEARCH_HELP,
             "batch_research_recommended": True,
             "batch_recommendation_suppressed": False,
             "batch_recommendation_reason": reason,
@@ -851,6 +914,13 @@ class SearchEngine:
             "warning_details": kwargs.pop("warning_details", []),
             "completeness_grade": kwargs.pop("completeness_grade", "unconfirmed" if status in non_executed_statuses else "complete"),
             "decision_summary": kwargs.pop("decision_summary", "검색 전 필수조건 확인"),
+            "source_link_policy": {
+                "required_for_every_presented_result": True,
+                "primary_field": "original_document_url",
+                "all_filings_field": "original_document_links",
+                "ready_to_render_field": "original_document_markdown",
+                "instruction": "사용자에게 각 검색 결과를 제시할 때 DART 공시 원문 링크를 항상 함께 표시합니다.",
+            },
             "results": kwargs.pop("results", []),
             "preliminary_candidates": kwargs.pop("preliminary", []),
             "continuation_token": kwargs.pop("continuation_token", None),

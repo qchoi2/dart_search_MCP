@@ -7,7 +7,7 @@ describe behaviour, but do not duplicate these operational limits.
 from __future__ import annotations
 
 SCHEMA_VERSION = "1.0"
-PRODUCT_VERSION = "0.2.0"
+PRODUCT_VERSION = "0.3.0"
 # Stage 0/0.6 measurement used this explicitly identifying, non-browser UA.
 USER_AGENT = "dart-search-mcp-stage0-probe/0.1 (local measurement; concurrency=1)"
 
@@ -116,5 +116,10 @@ DEFAULT_SETTINGS = {
         "checkpoint_retention_days": CHECKPOINT_RETENTION_DAYS,
     },
     "audit": {"enabled": True, "retention_days": AUDIT_RETENTION_DAYS, "audit_query_text": "off"},
-    "features": {"dart_fulltext": True, "kind_search": False, "orchestrator": True},
+    "features": {
+        "dart_fulltext": True,
+        "kind_search": False,
+        "orchestrator": True,
+        "permanent_index": False,
+    },
 }

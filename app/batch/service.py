@@ -21,6 +21,7 @@ from app.http_client import DeadlineBudget
 from app.contracts import ChannelStatus, SearchExecutionDiagnostics, SearchRequest
 from app.orchestrator.plan_builder import query_variants
 from app.research.evidence import extract_evidence
+from app.research.normalization import dart_viewer_url
 from app.security.csv_guard import escape_csv_cell, has_formula_prefix
 from app.storage.atomic import atomic_write_bytes
 from app.storage.batch_store import BatchCheckpointStore, BatchPlanStore, BatchResultStore
@@ -126,6 +127,10 @@ class BatchResearchService:
         estimate = self._estimate(request, variants, windows, disclosure_scope, resolved_company_code)
         payload = {
             "status": "confirmation_required",
+            "feature": "deep_search",
+            "feature_label": "공시 MCP의 심화 검색기능",
+            "guidance": "예상 범위와 시간을 확인한 뒤 심화 검색을 시작할 수 있습니다.",
+            "help": "심화 검색기능이 무엇인지 궁금하면 물어봐 주세요.",
             "scope": scope,
             "scope_signature": scope_signature,
             "scope_weight": scope_weight,
@@ -254,8 +259,10 @@ class BatchResearchService:
     ) -> dict[str, Any]:
         # Preview is deliberately metadata-only: no disclosure document is downloaded.
         type_scopes: list[str | None] = disclosure_types or [None]
-        estimated_list_requests = len(windows) * len(type_scopes)
-        estimated_dart_requests = len(windows) * max(1, len(variants))
+        opendart_available = self.opendart is not None and hasattr(self.opendart, "list_page")
+        dart_available = self.dart is not None and hasattr(self.dart, "search_page")
+        estimated_list_requests = len(windows) * len(type_scopes) if opendart_available else 0
+        estimated_dart_requests = len(windows) * max(1, len(variants)) if dart_available else 0
         observed_list_rows = 0
         observed_dart_hits = 0
         observed_dart_pages = 0
@@ -270,7 +277,7 @@ class BatchResearchService:
             if deadline.remaining() <= 0:
                 diagnostics.append({"reason": "preview_deadline", "unmeasured_windows": len(windows)})
                 break
-            if self.opendart is not None and hasattr(self.opendart, "list_page"):
+            if opendart_available:
                 for disclosure_type in type_scopes:
                     try:
                         page = self.opendart.list_page(
@@ -286,7 +293,7 @@ class BatchResearchService:
                         observed = True
                     except (SearchError, TypeError, AttributeError):
                         diagnostics.append({"channel": "opendart", "reason": "preview_unconfirmed"})
-            if self.dart is not None and hasattr(self.dart, "search_page") and deadline.remaining() > 0:
+            if dart_available and deadline.remaining() > 0:
                 try:
                     page = self.dart.search_page(
                         variants[0],
@@ -512,13 +519,15 @@ class BatchResearchService:
                             request.get("exhaustive")
                             or len(state["results"]) < int(request["target_count"])
                         ):
+                            source_url = candidate.dart_viewer_url or dart_viewer_url(candidate.receipt_no)
                             state["results"].append(
                                 {
                                     "receipt_no": candidate.receipt_no,
                                     "corp_name": candidate.corp_name,
                                     "report_name": candidate.report_name,
                                     "receipt_date": candidate.receipt_date,
-                                    "viewer_url": candidate.dart_viewer_url,
+                                    "viewer_url": source_url,
+                                    "original_document_url": source_url,
                                     "evidence": [
                                         {**asdict(item), "csv_formula_risk": has_formula_prefix(item.text)}
                                         for item in evidence[:3]
@@ -589,9 +598,16 @@ class BatchResearchService:
             }
         record_id = self.records.new_id("search")
         for result in state["results"]:
+            source_url = (
+                result.get("original_document_url")
+                or result.get("viewer_url")
+                or dart_viewer_url(str(result["receipt_no"]))
+            )
+            result["viewer_url"] = source_url
+            result["original_document_url"] = source_url
             result["csv_formula_risk_fields"] = [
                 key
-                for key in ("receipt_no", "corp_name", "report_name", "receipt_date", "viewer_url")
+                for key in ("receipt_no", "corp_name", "report_name", "receipt_date", "viewer_url", "original_document_url")
                 if has_formula_prefix(result.get(key, ""))
             ]
         record = {
@@ -836,7 +852,7 @@ class BatchResearchService:
     @staticmethod
     def _csv_bytes(results: list[dict[str, Any]]) -> bytes:
         stream = io.StringIO(newline="")
-        fields = ["receipt_no", "corp_name", "report_name", "receipt_date", "viewer_url", "evidence"]
+        fields = ["receipt_no", "corp_name", "report_name", "receipt_date", "viewer_url", "original_document_url", "evidence"]
         writer = csv.DictWriter(stream, fieldnames=fields)
         writer.writeheader()
         for result in results:

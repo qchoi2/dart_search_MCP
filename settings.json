@@ -21,5 +21,10 @@
     "checkpoint_retention_days": 7
   },
   "audit": {"enabled": true, "retention_days": 30, "audit_query_text": "off"},
-  "features": {"dart_fulltext": true, "kind_search": false, "orchestrator": true}
+  "features": {
+    "dart_fulltext": true,
+    "kind_search": false,
+    "orchestrator": true,
+    "permanent_index": false
+  }
 }

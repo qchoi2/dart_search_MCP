@@ -4,7 +4,7 @@ from app.config import defaults
 
 SEARCH_TOOL = {
     "name": "search_disclosure_cases",
-    "description": "기간이 명확한 한국 DART 공시에서 원문 근거가 있는 사례를 검색합니다. amendment_comparison 또는 sequence_required를 켜면 S6/S7 온디맨드 관계분석을 수행합니다. 전수·배치·파일생성은 자동 실행하지 않습니다.",
+    "description": "공시 MCP의 속도우선 기능으로 기간이 명확한 한국 DART 공시에서 원문 근거가 있는 사례를 검색합니다. 사용자에게 검색 결과를 제시할 때 각 결과의 original_document_url 또는 original_document_links에 있는 DART 공시 원문 링크를 항상 함께 표시해야 합니다. amendment_comparison 또는 sequence_required를 켜면 S6/S7 온디맨드 관계분석을 수행합니다. 더 넓은 범위가 필요하면 공시 MCP의 심화 검색기능을 안내합니다.",
     "inputSchema": {
         "type": "object",
         "required": ["query"],
@@ -52,7 +52,7 @@ EVIDENCE_TOOL = {
 
 BATCH_PREVIEW_TOOL = {
     "name": "preview_batch_research",
-    "description": "배치 검색의 요청 수·시간·저장량을 추정하고 승인용 plan_id를 발급합니다. 원문은 다운로드하지 않습니다.",
+    "description": "공시 MCP의 심화 검색기능을 시작하기 전에 예상 요청 수·시간·저장량을 보여주고 확인용 plan_id를 발급합니다. 이 단계에서는 원문을 다운로드하지 않습니다.",
     "inputSchema": {
         "type": "object",
         "required": ["query", "date_from", "date_to"],
@@ -71,7 +71,7 @@ BATCH_PREVIEW_TOOL = {
 
 BATCH_RUN_TOOL = {
     "name": "run_batch_research",
-    "description": "유효한 plan_id와 명시 승인, 5/10/15/30분 실행구간을 받아 배치를 시작합니다.",
+    "description": "유효한 plan_id와 명시 승인, 5/10/15/30분 실행구간을 받아 공시 MCP의 심화 검색기능을 시작합니다.",
     "inputSchema": {
         "type": "object",
         "required": ["plan_id", "approved"],
@@ -86,7 +86,7 @@ BATCH_RUN_TOOL = {
 
 BATCH_CONTINUE_TOOL = {
     "name": "continue_batch_research",
-    "description": "체크포인트의 배치 작업을 새 승인구간 동안 재개합니다.",
+    "description": "체크포인트에 저장된 공시 MCP 심화 검색을 새 승인구간 동안 이어서 실행합니다.",
     "inputSchema": {
         "type": "object",
         "required": ["job_id", "approved"],
@@ -101,7 +101,7 @@ BATCH_CONTINUE_TOOL = {
 
 EXPORT_RESULTS_TOOL = {
     "name": "export_search_results",
-    "description": "완료된 배치 결과를 사용자가 지정한 폴더에 CSV/JSON으로 원자적으로 저장합니다.",
+    "description": "완료된 공시 MCP 심화 검색결과를 사용자가 지정한 폴더에 CSV/JSON으로 안전하게 저장합니다.",
     "inputSchema": {
         "type": "object",
         "required": ["search_record_id", "formats"],
@@ -113,3 +113,13 @@ EXPORT_RESULTS_TOOL = {
         "additionalProperties": False,
     },
 }
+
+
+TOOLS = [
+    SEARCH_TOOL,
+    EVIDENCE_TOOL,
+    BATCH_PREVIEW_TOOL,
+    BATCH_RUN_TOOL,
+    BATCH_CONTINUE_TOOL,
+    EXPORT_RESULTS_TOOL,
+]

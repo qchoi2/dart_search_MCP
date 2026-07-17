@@ -240,6 +240,9 @@ class Stage4BatchTests(unittest.TestCase):
                 {"query": "상계", "date_from": "2026-01-01", "date_to": "2026-03-31"},
             )
             self.assertEqual(result["schema_version"], "1.0")
+            self.assertEqual(result["feature"], "deep_search")
+            self.assertEqual(result["feature_label"], "공시 MCP의 심화 검색기능")
+            self.assertIn("물어봐 주세요", result["help"])
 
     def test_invalid_plan_never_starts_network(self):
         with tempfile.TemporaryDirectory() as raw:
@@ -262,6 +265,7 @@ class Stage4BatchTests(unittest.TestCase):
             self.assertIsNone(record["request"]["query"])
             self.assertTrue(record["request"]["normalized_query_hash"])
             self.assertEqual(result["result_count"], 1)
+            self.assertTrue(record["results"][0]["original_document_url"].endswith("20260716000001"))
 
     def test_interval_checkpoint_and_explicit_continuation(self):
         with tempfile.TemporaryDirectory() as raw:
