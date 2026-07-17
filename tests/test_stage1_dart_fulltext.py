@@ -13,7 +13,7 @@ from app.channels.dart_fulltext import (
     row_to_candidate,
 )
 from app.channels.health import CircuitBreaker
-from app.config.defaults import DART_EFFECTIVE_PAGE_SIZE, NETWORK_CIRCUIT_SECONDS, USER_AGENT
+from app.config.defaults import DART_EFFECTIVE_PAGE_SIZE, DART_FORM_MAX_RESULTS, NETWORK_CIRCUIT_SECONDS, USER_AGENT
 from app.contracts import ChannelStatus, SearchExecutionDiagnostics
 from app.errors import ErrorCode, SearchError
 from app.http_client import HttpResponse
@@ -65,7 +65,7 @@ class FulltextTests(unittest.TestCase):
 
     def test_form_fixed_page_size_and_inclusive_dates(self):
         form = DartFulltextClient._form("상계납입", date(2026, 1, 2), date(2026, 2, 3), "contents", 1)
-        self.assertEqual(form["maxResults"], "10")
+        self.assertEqual(form["maxResults"], str(DART_FORM_MAX_RESULTS))
         self.assertNotIn("maxResultsCb", form)
         self.assertEqual(form["startDate"], "20260102")
         self.assertEqual(form["endDate"], "20260203")
@@ -75,6 +75,15 @@ class FulltextTests(unittest.TestCase):
         self.assertEqual(form["textCrpCik"], "00126380")
         self.assertEqual(form["b_textCrpCik"], "00126380")
         self.assertEqual(form["textCrpNm"], "")
+
+    def test_mode_change_repeats_mode_setup(self):
+        html = b'<h4 id="searchCnt">\xea\xb2\x80\xec\x83\x89\xea\xb1\xb4\xec\x88\x98 : 0</h4>'
+        http = FakeHttp([b"contents mode", html, b"report mode", html])
+        client = DartFulltextClient(http=http, clock=lambda: 0.0, sleeper=lambda _: None)  # type: ignore[arg-type]
+        diagnostics = SearchExecutionDiagnostics()
+        client.search_page("x", date(2026, 1, 1), date(2026, 1, 2), diagnostics, mode="contents")
+        client.search_page("y", date(2026, 1, 1), date(2026, 1, 2), diagnostics, mode="report")
+        self.assertEqual(diagnostics.mode_setup_requests, 2)
 
     def test_nonoverlap_date_windows_cover_entire_period(self):
         windows = dart_date_windows(date(2026, 1, 1), date(2026, 1, 10), 3)
@@ -105,7 +114,8 @@ class FulltextTests(unittest.TestCase):
         with self.assertRaises(SearchError) as caught:
             client.search_page("x", date(2026, 1, 1), date(2026, 1, 2), diagnostics)
         self.assertEqual(caught.exception.code, ErrorCode.DART_FULLTEXT_STRUCTURE_CHANGED)
-        self.assertEqual(diagnostics.health_check_requests, 1)
+        self.assertEqual(diagnostics.health_check_requests, 0)
+        self.assertEqual(diagnostics.structure_retry_requests, 1)
         self.assertEqual(diagnostics.dart_result_page_requests, 1)
         self.assertEqual(breaker.state.status, ChannelStatus.CIRCUIT_OPEN)
         self.assertEqual(breaker.state.blocked_until, 1900.0)
@@ -114,6 +124,29 @@ class FulltextTests(unittest.TestCase):
             client.search_page("y", date(2026, 1, 1), date(2026, 1, 2), diagnostics)
         self.assertEqual(second.exception.code, ErrorCode.DART_FULLTEXT_CIRCUIT_OPEN)
         self.assertEqual(len(http.requests), request_count)
+
+    def test_health_check_is_cached_and_marker_loss_is_structure_failure(self):
+        diagnostics = SearchExecutionDiagnostics()
+        client = DartFulltextClient(http=FakeHttp([b"detailSearch ready"]), clock=lambda: 0.0, sleeper=lambda _: None)  # type: ignore[arg-type]
+        self.assertTrue(client.health_check(diagnostics))
+        self.assertTrue(client.health_check(diagnostics))
+        self.assertEqual(diagnostics.health_check_requests, 1)
+
+        broken = DartFulltextClient(http=FakeHttp([b"unexpected login page"]), clock=lambda: 0.0, sleeper=lambda _: None)  # type: ignore[arg-type]
+        broken_diagnostics = SearchExecutionDiagnostics()
+        self.assertFalse(broken.health_check(broken_diagnostics))
+        self.assertEqual(broken.breaker.state.failure_class, "structure_or_access")
+
+    def test_unpageable_query_stops_after_first_page(self):
+        fixture = (FIXTURE / "query_switch" / "03_출자전환_direct.html").read_bytes()
+        http = FakeHttp([b"mode", fixture])
+        client = DartFulltextClient(http=http, clock=lambda: 0.0, sleeper=lambda _: None)  # type: ignore[arg-type]
+        diagnostics = SearchExecutionDiagnostics()
+        result = client.search_variants(["출자전환"], date(2025, 1, 1), date(2026, 1, 1), diagnostics, request_budget=3)
+        self.assertTrue(result)
+        self.assertFalse(diagnostics.fully_pageable_by_query["출자전환"])
+        self.assertTrue(diagnostics.latest_first_bias)
+        self.assertEqual(diagnostics.dart_result_page_requests, 1)
 
     def test_identifying_user_agent_is_not_browser(self):
         self.assertIn("dart-search-mcp", USER_AGENT)

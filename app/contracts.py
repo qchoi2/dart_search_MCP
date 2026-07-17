@@ -89,6 +89,7 @@ class SearchExecutionDiagnostics:
     actual_list_requests: int = 0
     actual_document_requests: int = 0
     dart_result_page_requests: int = 0
+    structure_retry_requests: int = 0
     health_check_requests: int = 0
     mode_setup_requests: int = 0
     cache_hits: int = 0
@@ -97,6 +98,9 @@ class SearchExecutionDiagnostics:
     channel_health_events: list[dict[str, Any]] = field(default_factory=list)
     latest_first_bias: bool = False
     fallback_used: bool = False
+    fully_pageable_by_query: dict[str, bool] = field(default_factory=dict)
+    soft_timeout_reached: bool = False
+    hard_timeout_reached: bool = False
     schema_version: str = SCHEMA_VERSION
 
 
@@ -145,6 +149,7 @@ class DisclosureCandidate:
     evidence: tuple[EvidenceSnippet, ...] = ()
     dart_viewer_url: str | None = None
     unknown_prefix_combination: bool = False
+    rm_combination_confidence: str = "not_applicable"
     schema_version: str = SCHEMA_VERSION
 
 

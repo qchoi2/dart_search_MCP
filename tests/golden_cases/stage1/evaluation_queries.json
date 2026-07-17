@@ -184,7 +184,7 @@
       "id": "E23_STRUCTURE_CIRCUIT",
       "category": "dart_structure_circuit",
       "request": {"query": "구조장애", "date_from": "2026-01-01", "date_to": "2026-01-02"},
-      "fixtures": [],
+      "fixtures": ["tests/fixtures/probe/dart_web/synthetic_structure_failure.html"],
       "expected_block_seconds": 900,
       "expected_fallback": "opendart_document_search"
     },

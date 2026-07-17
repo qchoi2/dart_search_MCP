@@ -141,7 +141,7 @@ class ProbeClassifierTests(unittest.TestCase):
             (fixture_root / "golden/stage0_5/manifest.json").read_text(encoding="utf-8")
         )
         for item in manifest["files"]:
-            path = fixture_root / Path(item["path"])
+            path = fixture_root / Path(item["path"].replace("\\", "/"))
             self.assertEqual(item["sha256"], hashlib.sha256(path.read_bytes()).hexdigest())
 
     def test_stage06_rm_parser_preserves_order_and_unknown_flags(self) -> None:

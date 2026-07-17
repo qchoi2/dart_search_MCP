@@ -5,6 +5,7 @@ import json
 import ssl
 import tempfile
 import unittest
+import urllib.error
 import zipfile
 from dataclasses import FrozenInstanceError
 from pathlib import Path
@@ -124,6 +125,7 @@ class BaseInfrastructureTests(unittest.TestCase):
         self.assertEqual(marked["trust"], "untrusted_disclosure_text")
 
     def test_shared_http_client_owns_cookie_session_and_verified_tls(self):
+        default_context = ssl.create_default_context()
         client = HttpClient()
         self.assertIsNotNone(client._cookie_jar)
         self.assertEqual(client._context.verify_mode.name, "CERT_REQUIRED")
@@ -131,7 +133,22 @@ class BaseInfrastructureTests(unittest.TestCase):
         strict_flag = getattr(ssl, "VERIFY_X509_STRICT", 0)
         if strict_flag:
             self.assertFalse(client._context.verify_flags & strict_flag)
-            self.assertTrue(client.tls_strict_flag_relaxed)
+            self.assertEqual(client.tls_strict_flag_relaxed, bool(default_context.verify_flags & strict_flag))
+
+    def test_http_429_retries_with_bounded_exponential_backoff(self):
+        attempts = []
+        sleeps = []
+
+        def opener(request, **kwargs):
+            attempts.append(request.full_url)
+            raise urllib.error.HTTPError(request.full_url, 429, "rate", {}, None)
+
+        client = HttpClient(opener=opener, sleeper=sleeps.append)
+        with self.assertRaises(SearchError) as caught:
+            client.request("GET", "https://example.invalid", max_retries=2)
+        self.assertEqual(caught.exception.code.value, "OPENDART_HTTP_RATE_LIMITED")
+        self.assertEqual(len(attempts), 3)
+        self.assertEqual(sleeps, [0.5, 1.0])
 
 
 if __name__ == "__main__":

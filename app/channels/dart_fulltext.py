@@ -17,6 +17,7 @@ from pathlib import Path
 
 from app.config.defaults import (
     DART_EFFECTIVE_PAGE_SIZE,
+    DART_FORM_MAX_RESULTS,
     DART_MAX_LINKS,
     DART_MIN_REQUEST_INTERVAL_SECONDS,
     STANDARD_DART_REQUEST_BUDGET,
@@ -300,6 +301,7 @@ class DartFulltextClient:
         self.sleeper = sleeper
         self._last_request_started: float | None = None
         self._active_mode: str | None = None
+        self._health_confirmed = False
         self._request_lock = threading.Lock()
 
     def _paced_request(self, method: str, url: str, **kwargs):
@@ -319,7 +321,7 @@ class DartFulltextClient:
         company_code = company if company and company.isdigit() and len(company) == 8 else ""
         company_name = "" if company_code else company or ""
         form = {
-            "currentPage": str(page), "maxResults": str(DART_EFFECTIVE_PAGE_SIZE), "maxLinks": str(DART_MAX_LINKS),
+            "currentPage": str(page), "maxResults": str(DART_FORM_MAX_RESULTS), "maxLinks": str(DART_MAX_LINKS),
             "sort": "DATE", "sortType": "desc", "option": mode,
             "keyword": query if mode == "contents" else "", "b_keyword": query if mode == "contents" else "",
             "reportName": query if mode == "report" else "", "b_reportName": query if mode == "report" else "",
@@ -346,18 +348,34 @@ class DartFulltextClient:
                 details={"blocked_seconds": blocked, "fallback_source": "opendart_document_search", **event},
             )
 
-    def health_check(self, diagnostics: SearchExecutionDiagnostics) -> bool:
+    @staticmethod
+    def _request_count(diagnostics: SearchExecutionDiagnostics) -> int:
+        return (
+            diagnostics.health_check_requests
+            + diagnostics.mode_setup_requests
+            + diagnostics.dart_result_page_requests
+            + diagnostics.structure_retry_requests
+        )
+
+    def health_check(self, diagnostics: SearchExecutionDiagnostics, *, force: bool = False) -> bool:
         self._ensure_available(diagnostics)
+        if self._health_confirmed and not force:
+            return True
+        failure_class = "network"
         try:
             diagnostics.health_check_requests += 1
             response = self._paced_request("GET", f"{DART_BASE}/dsab007/main.do")
             healthy = response.status == 200 and b"detailSearch" in response.body
+            if response.status == 200 and not healthy:
+                failure_class = "structure_or_access"
         except SearchError:
             healthy = False
         if healthy:
             self.breaker.success()
+            self._health_confirmed = True
         else:
-            self.breaker.failure("network")
+            self._health_confirmed = False
+            self.breaker.failure(failure_class)
         diagnostics.channel_health_events.append(self.breaker.event())
         return healthy
 
@@ -380,26 +398,25 @@ class DartFulltextClient:
         referer = {"Referer": f"{DART_BASE}/dsab007/main.do", "X-Requested-With": "XMLHttpRequest"}
         try:
             if self._active_mode != mode:
-                if diagnostics.health_check_requests + diagnostics.mode_setup_requests + diagnostics.dart_result_page_requests >= request_budget:
+                if self._request_count(diagnostics) >= request_budget:
                     raise SearchError(ErrorCode.DOCUMENT_BUDGET_EXCEEDED, "DART 요청예산이 소진되었습니다.")
                 diagnostics.mode_setup_requests += 1
                 self._paced_request("POST", f"{DART_BASE}/dsab007/{MODE_ENDPOINTS[mode]}", form=form, headers=referer)
                 self._active_mode = mode
-            if diagnostics.health_check_requests + diagnostics.mode_setup_requests + diagnostics.dart_result_page_requests >= request_budget:
+            if self._request_count(diagnostics) >= request_budget:
                 raise SearchError(ErrorCode.DOCUMENT_BUDGET_EXCEEDED, "DART 요청예산이 소진되었습니다.")
             diagnostics.dart_result_page_requests += 1
             response = self._paced_request("POST", f"{DART_BASE}/dsab007/search.ax", form=form, headers=referer)
             parsed = parse_search_html(response.body.decode("utf-8", errors="replace"), page)
             if parsed.classification == "structure_failure_candidate":
                 # One status-diagnostic replay is required before structure failure is confirmed.
-                if diagnostics.health_check_requests + diagnostics.mode_setup_requests + diagnostics.dart_result_page_requests < request_budget:
-                    # This replay is a structure-status diagnosis, not a new result page.
-                    diagnostics.health_check_requests += 1
+                if self._request_count(diagnostics) < request_budget:
+                    diagnostics.structure_retry_requests += 1
                     retry = self._paced_request("POST", f"{DART_BASE}/dsab007/search.ax", form=form, headers=referer)
                     parsed = parse_search_html(retry.body.decode("utf-8", errors="replace"), page)
                 if parsed.classification == "structure_failure_candidate":
-                    self.breaker.failure("structure_or_access")
-                    self.breaker.failure("structure_or_access")
+                    self._health_confirmed = False
+                    self.breaker.trip("structure_or_access")
                     diagnostics.channel_health_events.append(self.breaker.event())
                     diagnostics.fallback_used = True
                     raise SearchError(
@@ -440,15 +457,22 @@ class DartFulltextClient:
                 if max_unique and len({row.receipt_no for row in rows}) >= max_unique:
                     diagnostics.latest_first_bias = bool(result.estimated_pages and page < result.estimated_pages)
                     break
+                if page == 1 and result.estimated_pages:
+                    remaining_requests = max(0, request_budget - self._request_count(diagnostics))
+                    fully_pageable = result.estimated_pages - page <= remaining_requests
+                    diagnostics.fully_pageable_by_query[query] = fully_pageable
+                    if not fully_pageable:
+                        diagnostics.latest_first_bias = True
+                        break
                 if result.classification == "normal_zero" or not result.estimated_pages or page >= result.estimated_pages:
                     break
-                if diagnostics.health_check_requests + diagnostics.mode_setup_requests + diagnostics.dart_result_page_requests >= request_budget:
+                if self._request_count(diagnostics) >= request_budget:
                     diagnostics.latest_first_bias = True
                     break
                 page += 1
             if max_unique and len({row.receipt_no for row in rows}) >= max_unique:
                 break
-            if diagnostics.health_check_requests + diagnostics.mode_setup_requests + diagnostics.dart_result_page_requests >= request_budget:
+            if self._request_count(diagnostics) >= request_budget:
                 break
         merged = merge_duplicate_rows(rows)
         candidates = [row_to_candidate(row, query_by_receipt[row.receipt_no]) for row in merged]
@@ -474,7 +498,7 @@ class DartFulltextClient:
         coverage: list[dict[str, object]] = []
         complete = True
         for start, end in windows:
-            before = diagnostics.health_check_requests + diagnostics.mode_setup_requests + diagnostics.dart_result_page_requests
+            before = self._request_count(diagnostics)
             found = self.search_variants(
                 queries, start, end, diagnostics,
                 request_budget=request_budget,
@@ -483,7 +507,7 @@ class DartFulltextClient:
                 previous = by_receipt.get(candidate.receipt_no)
                 if previous is None or candidate.mechanical_score > previous.mechanical_score:
                     by_receipt[candidate.receipt_no] = candidate
-            after = diagnostics.health_check_requests + diagnostics.mode_setup_requests + diagnostics.dart_result_page_requests
+            after = self._request_count(diagnostics)
             window_complete = after < request_budget and not diagnostics.latest_first_bias
             coverage.append({
                 "date_from": start.isoformat(), "date_to": end.isoformat(),

@@ -11,5 +11,35 @@
   },
   "confirmed_rm_flags": ["유", "코", "넥", "공", "연", "채"],
   "candidate_only_rm_flags": ["정", "철"],
-  "withdrawal_verification_fields": ["original_receipt_no", "original_filing_date", "document_evidence"]
+  "withdrawal_verification_fields": ["original_receipt_no", "original_filing_date", "document_evidence"],
+  "rule_evidence": {
+    "official_report_name_prefixes": {
+      "evidence_fixture": "tests/fixtures/probe/golden/stage0_5/amendment_strata.json",
+      "sample_count": 1,
+      "sample_scope": "Stage 0/0.5 observed prefix fixtures; individual prefix coverage varies",
+      "confidence": "provisional",
+      "checked_at": "2026-07-17"
+    },
+    "rm_market_flags": {
+      "evidence_fixture": "tests/fixtures/probe/golden/stage0_5/rm_market.json",
+      "sample_count": 5,
+      "sample_scope": "유·코·넥·공·연 각 5건",
+      "confidence": "confirmed",
+      "checked_at": "2026-07-16"
+    },
+    "rm_bond_flag": {
+      "evidence_fixture": "tests/fixtures/probe/stage0_6/golden/rm_bond.json",
+      "sample_count": 16,
+      "sample_scope": "단일문자 채 실제 OpenDART 목록 응답; 조합문자 표본 0건",
+      "confidence": "confirmed",
+      "checked_at": "2026-07-16"
+    },
+    "rm_withdrawal_flag": {
+      "evidence_fixture": "tests/fixtures/probe/stage0_6/golden/rm_withdrawal.json",
+      "sample_count": 2,
+      "sample_scope": "명시 연결 엄격 검증 표본",
+      "confidence": "provisional",
+      "checked_at": "2026-07-16"
+    }
+  }
 }

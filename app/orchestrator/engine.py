@@ -14,6 +14,7 @@ from app.channels.opendart import ListCollection, OpenDartClient
 from app.contracts import DisclosureCandidate, EvidenceSnippet, SearchExecutionDiagnostics, SearchRequest, VerifiedCase
 from app.errors import ErrorCode, SearchError
 from app.research.evidence import extract_evidence
+from app.research.normalization import dart_viewer_url
 from app.security.untrusted_text import mark_untrusted
 from app.storage.audit_log import AuditLog
 from app.storage.continuation import ContinuationStore
@@ -148,7 +149,19 @@ class SearchEngine:
         processed_this_run: list[str] = []
         listing_strategy = plan.strategy == "S1_company_disclosure_list"
         terminal_error: SearchError | None = None
+        hard_timeout = False
+        soft_timeout = False
         for candidate in candidates:
+            elapsed = self.clock() - start
+            if elapsed >= plan.hard_timeout_seconds:
+                hard_timeout = True
+                diagnostics.hard_timeout_reached = True
+                break
+            if elapsed >= plan.soft_timeout_seconds:
+                diagnostics.soft_timeout_reached = True
+                if len(verified) >= request.target_count:
+                    soft_timeout = True
+                    break
             receipt_hash = hashlib.sha256(candidate.receipt_no.encode()).hexdigest()
             if receipt_hash in processed_hashes:
                 continue
@@ -209,7 +222,7 @@ class SearchEngine:
                 preliminary.append(replace(candidate, verification_status="excluded"))
 
         diagnostics.completed_elapsed_ms = int((self.clock() - start) * 1000)
-        pending = not list_result.complete or len(candidates) > len(verified) + len(preliminary) or diagnostics.actual_document_requests >= plan.effective_document_budget and bool(preliminary)
+        pending = hard_timeout or soft_timeout or not list_result.complete or len(candidates) > len(verified) + len(preliminary) or diagnostics.actual_document_requests >= plan.effective_document_budget and bool(preliminary)
         token = None
         if not list_result.complete:
             token = self.continuations.issue({
@@ -218,7 +231,8 @@ class SearchEngine:
             })
         elif pending:
             token = self.continuations.issue({
-                "lineage": lineage, "window": 0, "page": 1, "reason": "document_budget",
+                "lineage": lineage, "window": 0, "page": 1,
+                "reason": "hard_timeout" if hard_timeout else "soft_timeout" if soft_timeout else "document_budget",
                 "processed_receipt_hashes": [*processed_hashes, *processed_this_run],
             })
         status = "partial" if token else "completed"
@@ -230,6 +244,9 @@ class SearchEngine:
         elif self.opendart is None and candidates and not listing_strategy:
             status = "api_key_action_required"
             response_error = {"code": ErrorCode.API_KEY_MISSING.value, "message": "후보 원문 검증을 위해 DART_API_KEY를 설정해 주세요."}
+        elif hard_timeout:
+            response_error = {"code": ErrorCode.SEARCH_TIMEOUT_PARTIAL.value, "message": "하드 시간예산에 도달해 부분 결과와 continuation token을 반환합니다."}
+            warnings.append(response_error["message"])
         if not verified and not preliminary and not token:
             warnings.append("지정한 범위에서 정상적으로 검색했지만 확인된 결과가 없습니다.")
         coverage = {
@@ -298,7 +315,7 @@ class SearchEngine:
             "include_full_preview": False,
             "full_preview_ignored": bool(include_full_preview),
             "amendment_context": "not_available_in_stage1_fast_path" if include_amendment_context else "not_requested",
-            "dart_viewer_url": f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={receipt_no}",
+            "dart_viewer_url": dart_viewer_url(receipt_no),
         }
 
     def _resolve_company(self, company: str | None, warnings: list[str]) -> str | None:
@@ -403,7 +420,16 @@ class SearchEngine:
             "date_to": request.date_to,
             "company": request.company,
             "status": response["status"],
+            "query_variants": (response.get("plan") or {}).get("query_variants", []),
             "candidate_receipts": [item["case_id"] for item in response["results"]],
+            "preliminary_receipts": [item["receipt_no"] for item in response["preliminary_candidates"]],
+            "excluded": [
+                {"receipt_no": item["receipt_no"], "reason": item["verification_status"]}
+                for item in response["preliminary_candidates"]
+                if item["verification_status"] != "unverified"
+            ],
+            "retry_count": response["diagnostics"].get("structure_retry_requests", 0),
+            "completeness": "complete" if response["coverage"].get("complete") else "partial",
             "diagnostics": response["diagnostics"],
             "coverage": response["coverage"],
         })

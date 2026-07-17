@@ -131,6 +131,8 @@ class OpenDartTests(unittest.TestCase):
         self.assertEqual(candidate.rm_raw, "채X")
         self.assertEqual(candidate.rm_flags, ("채",))
         self.assertEqual(candidate.unknown_rm_flags, ("X",))
+        self.assertIsNone(candidate.market_jurisdiction)
+        self.assertEqual(candidate.rm_combination_confidence, "unconfirmed")
         self.assertIn("rcpNo=20260102000001", candidate.dart_viewer_url)
         self.assertEqual(dart_viewer_url("20260102000001"), candidate.dart_viewer_url)
 

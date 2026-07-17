@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import io
+import json
+import tempfile
 import unittest
 import zipfile
 from dataclasses import replace
 from datetime import date
+from pathlib import Path
 
 from app.channels.opendart import ListCollection, candidate_from_list_row
 from app.contracts import DisclosureCandidate, SearchRequest
@@ -12,6 +15,7 @@ from app.errors import ErrorCode, SearchError
 from app.mcp_server.server import McpApplication
 from app.orchestrator.engine import SearchEngine
 from app.orchestrator.plan_builder import build_search_plan, query_variants
+from app.storage.audit_log import AuditLog
 
 
 def document_zip(text: str) -> bytes:
@@ -124,6 +128,34 @@ class SearchExecutionTests(unittest.TestCase):
         result = engine.execute(SearchRequest("공시 목록", company="00123456", date_from="2026-01-01", date_to="2026-01-31"))
         self.assertEqual(result["status"], "partial")
         self.assertTrue(result["continuation_token"].startswith("cursor_"))
+
+    def test_hard_timeout_returns_partial_with_continuation(self):
+        ticks = iter([0.0, 100.0, 100.0])
+        opendart = FakeOpenDart([candidate_from_list_row(row())])
+        result = SearchEngine(opendart=opendart, dart=None, clock=lambda: next(ticks)).execute(
+            SearchRequest("공시 목록", company="00123456", date_from="2026-01-01", date_to="2026-01-31")
+        )
+        self.assertEqual(result["status"], "partial")
+        self.assertEqual(result["error"]["code"], ErrorCode.SEARCH_TIMEOUT_PARTIAL.value)
+        self.assertTrue(result["diagnostics"]["hard_timeout_reached"])
+        self.assertTrue(result["continuation_token"])
+
+    def test_audit_records_safe_reproduction_fields(self):
+        candidate = candidate_from_list_row(row())
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audit.jsonl"
+            engine = SearchEngine(
+                opendart=FakeOpenDart([candidate], {candidate.receipt_no: "관련 없는 본문"}),
+                dart=None,
+                audit=AuditLog(path),
+            )
+            engine.execute(SearchRequest("상계납입", date_from="2026-01-01", date_to="2026-01-31"))
+            saved = json.loads(path.read_text(encoding="utf-8"))
+            self.assertIn("상계납입", saved["query_variants"])
+            self.assertEqual(saved["preliminary_receipts"], [candidate.receipt_no])
+            self.assertEqual(saved["excluded"][0]["reason"], "excluded")
+            self.assertIn(saved["completeness"], {"complete", "partial"})
+            self.assertNotIn("query", saved)
 
     def test_company_name_is_resolved_before_opendart_list(self):
         seen = {}

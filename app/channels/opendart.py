@@ -176,7 +176,7 @@ def candidate_from_list_row(row: dict, *, source: str = "opendart") -> Disclosur
     prefixes, report_name, unknown_prefix_combination = parse_report_name(str(row.get("report_nm", "")))
     rm_raw = str(row.get("rm", "") or "")
     flags, unknown = parse_rm(rm_raw)
-    market = next((flag for flag in flags if flag in {"유", "코", "넥", "채"}), None)
+    market = next((flag for flag in flags if flag in {"유", "코", "넥"}), None)
     origin = "regulator_required" if any(prefix in {"[정정명령부과]", "[정정제출요구]"} for prefix in prefixes) else None
     return DisclosureCandidate(
         candidate_id=receipt,
@@ -208,6 +208,7 @@ def candidate_from_list_row(row: dict, *, source: str = "opendart") -> Disclosur
         verification_status="unverified",
         dart_viewer_url=dart_viewer_url(receipt),
         unknown_prefix_combination=unknown_prefix_combination,
+        rm_combination_confidence="unconfirmed" if "채" in flags and len(rm_raw) > 1 else "not_applicable",
     )
 
 

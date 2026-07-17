@@ -58,6 +58,16 @@ class CircuitBreaker:
             self.state.status = ChannelStatus.DEGRADED
         return self.state.status
 
+    def trip(self, failure_class: str) -> ChannelStatus:
+        """Open the circuit for one already-confirmed failure event."""
+        self.state.failure_class = failure_class
+        self.state.failure_count = 1
+        seconds = STRUCTURE_CIRCUIT_SECONDS if failure_class == "structure_or_access" else NETWORK_CIRCUIT_SECONDS
+        self.state.status = ChannelStatus.CIRCUIT_OPEN
+        self.state.blocked_until = self.clock() + seconds
+        self.state.opened_count += 1
+        return self.state.status
+
     def event(self) -> dict:
         return {
             "status": self.state.status.value,

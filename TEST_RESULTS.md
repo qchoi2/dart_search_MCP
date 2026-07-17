@@ -1,5 +1,16 @@
 # 테스트 결과
 
+## REVIEW_REPORT 해소 회귀검증 (2026-07-17 KST)
+
+- 기준: `DEVELOPMENT_PLAN.md` v19, 코드, 단계 0·0.5·0.6 fixture. 추가 라이브 네트워크 요청은 수행하지 않았다.
+- 신규 회귀: hard timeout 부분결과/continuation, `fully_pageable=false` 조기종료, form 15·실효 10 분리, 모드 변경 재설정, 세션 상태진단 재사용, 200+마커부재 구조장애 분류, 구조 재시도 통계, `채` 시장분리·조합 신뢰도, 감사 재현필드, HTTP 429 지수 백오프, POSIX manifest 경로, Python별 TLS strict 기본값.
+- 고정 평가세트는 24개를 유지하고 구조장애 질의를 기존 synthetic fixture에 연결해 fixture 연결 질의를 20개로 강화했다.
+- 단계 0·0.5·0.6 fixture 내용은 변경하지 않았다.
+- `python -m pytest tests -q`: 80 passed, 10 subtests passed, 실패 0개.
+- `python -m app.evaluation`: 24/24 통과. 계획 생성 p95 0.0186ms, DART fixture 파서 p95 4.4143ms, 캐시 40문서·7,680,000바이트, peak 5,447,992바이트.
+- `python -m compileall -q app tests`: 통과.
+- `git diff --check`(단계 0.6 raw 원문 제외): 통과.
+
 ## 단계 1 라이브 인수검증 (2026-07-17 KST)
 
 - Python 3.14 TLS 호환 설정 후 인증서 검증 `CERT_REQUIRED`, 호스트명 검증 활성 상태에서 DART `HEALTHY`와 OpenDART 정상 응답을 확인했다.

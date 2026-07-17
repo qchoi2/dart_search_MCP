@@ -16,6 +16,7 @@ class EvaluationTests(unittest.TestCase):
     def test_at_least_20_fixed_queries_and_required_categories(self):
         payload = json.loads(DEFAULT_CASES.read_text(encoding="utf-8"))
         self.assertGreaterEqual(len(payload["queries"]), MIN_FIXED_EVALUATION_QUERIES)
+        self.assertGreaterEqual(sum(bool(item.get("fixtures")) for item in payload["queries"]), MIN_FIXED_EVALUATION_QUERIES)
         categories = {item["category"] for item in payload["queries"]}
         required = {
             "specific_company_list", "specific_company_fulltext", "precise_setoff_payment",
@@ -54,6 +55,12 @@ class ConstantConsistencyTests(unittest.TestCase):
         self.assertEqual(terms["broad_only"], ["상계 납입", "주금 납입 채무와 상계", "채권의 출자전환"])
         amendments = json.loads((ROOT / "app" / "rules" / "amendment_rules.yaml").read_text(encoding="utf-8"))
         self.assertEqual(amendments["confirmed_rm_flags"], ["유", "코", "넥", "공", "연", "채"])
+        required = {"evidence_fixture", "sample_count", "sample_scope", "confidence", "checked_at"}
+        for evidence in amendments["rule_evidence"].values():
+            self.assertTrue(required <= evidence.keys())
+            self.assertTrue((ROOT / evidence["evidence_fixture"]).exists())
+            if evidence["sample_count"] < 3:
+                self.assertEqual(evidence["confidence"], "provisional")
 
     def test_mcp_numeric_contract_uses_defaults(self):
         properties = SEARCH_TOOL["inputSchema"]["properties"]
