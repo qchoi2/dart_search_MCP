@@ -19,6 +19,19 @@ def load_rule_file(path: Path, kind: str) -> dict[str, Any]:
         for key in ("precise", "concept", "broad_only"):
             if not isinstance(payload.get(key), list) or not all(isinstance(item, str) and item for item in payload[key]):
                 raise ValueError(f"{path.name}: {key} must be a non-empty string list")
+        for key in ("filler", "report_name_terms"):
+            value = payload.get(key, [])
+            if not isinstance(value, list) or not all(isinstance(item, str) and item for item in value):
+                raise ValueError(f"{path.name}: {key} must be a string list")
+        groups = payload.get("synonym_groups", {})
+        if not isinstance(groups, dict):
+            raise ValueError(f"{path.name}: synonym_groups must be an object")
+        for name, record in groups.items():
+            terms = record.get("terms") if isinstance(record, dict) else None
+            if not isinstance(record, dict) or not isinstance(record.get("searchable"), bool):
+                raise ValueError(f"{path.name}: synonym_groups.{name} needs a boolean 'searchable'")
+            if not isinstance(terms, list) or not terms or not all(isinstance(item, str) and item for item in terms):
+                raise ValueError(f"{path.name}: synonym_groups.{name}.terms must be a non-empty string list")
     elif kind == "ranking":
         weights = payload.get("weights")
         if not isinstance(weights, dict) or not weights or not all(isinstance(value, (int, float)) for value in weights.values()):

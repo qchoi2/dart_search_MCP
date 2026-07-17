@@ -2,5 +2,25 @@
   "schema_version": "1.0",
   "precise": ["상계납입", "주금납입채무와 상계"],
   "concept": ["출자전환"],
-  "broad_only": ["상계 납입", "주금 납입 채무와 상계", "채권의 출자전환"]
+  "broad_only": ["상계 납입", "주금 납입 채무와 상계", "채권의 출자전환"],
+  "synonym_groups": {
+    "stock_compensation": {
+      "searchable": true,
+      "terms": ["주식보상", "주식매수선택권", "스톡옵션", "양도제한조건부주식", "성과조건부주식", "주식기준보상"]
+    },
+    "former_officer": {
+      "searchable": false,
+      "terms": ["전직", "퇴직", "퇴임"]
+    },
+    "current_officer": {
+      "searchable": false,
+      "terms": ["현직", "재직", "재임"]
+    },
+    "officer_employee": {
+      "searchable": false,
+      "terms": ["임직원", "임원", "직원", "집행임원"]
+    }
+  },
+  "filler": ["함께", "기재", "사례", "선례", "여부", "관련", "및", "등", "케이스", "포함", "있는지", "확인", "공시", "경우", "대한", "대해"],
+  "report_name_terms": ["사업보고서", "반기보고서", "분기보고서", "감사보고서", "연결감사보고서", "증권신고서"]
 }

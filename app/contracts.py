@@ -104,6 +104,9 @@ class SearchPlan:
     max_escalations: int
     batch_threshold: tuple[tuple[str, int], ...]
     schema_version: str = SCHEMA_VERSION
+    # AND-of-OR concept groups for co-occurrence verification. Empty tuple keeps
+    # the legacy behaviour of verifying by any query_variant substring match.
+    verification_term_groups: tuple[tuple[str, ...], ...] = ()
 
 
 @dataclass(slots=True)

@@ -17,7 +17,7 @@ from app.channels.opendart import ListCollection, OpenDartClient
 from app.contracts import DisclosureCandidate, EvidenceSnippet, SearchExecutionDiagnostics, SearchRequest, VerifiedCase
 from app.errors import ErrorCode, SearchError
 from app.http_client import DeadlineBudget
-from app.research.evidence import extract_evidence
+from app.research.evidence import extract_cooccurrence_evidence, extract_evidence
 from app.research.normalization import dart_viewer_url
 from app.security.untrusted_text import mark_untrusted
 from app.storage.audit_log import AuditLog
@@ -370,7 +370,10 @@ class SearchEngine:
                 preliminary.append(candidate)
                 processed_this_run.append(receipt_hash)
                 continue
-            evidence = extract_evidence(candidate.receipt_no, text, plan.query_variants)
+            if plan.verification_term_groups:
+                evidence = extract_cooccurrence_evidence(candidate.receipt_no, text, plan.verification_term_groups)
+            else:
+                evidence = extract_evidence(candidate.receipt_no, text, plan.query_variants)
             if evidence:
                 matched = tuple(dict.fromkeys(term for item in evidence for term in item.matched_terms))
                 finalized = replace(

@@ -1,5 +1,12 @@
 # 테스트 결과
 
+## 문장형 질의 개선 회귀 (2026-07-18 KST, 세션 샌드박스)
+
+- `python -m pytest -q`: 168 passed, 20 subtests passed. 신규 `tests/test_stage8_query_decomposition.py` 6건 포함.
+- 실패 2건(`test_stage7_distribution`의 `test_bundled_server_starts_from_unpacked_package`, `test_mcpb_is_deterministic_allowlisted_and_sensitive`)은 샌드박스 마운트가 임시폴더의 `service.py` unlink를 `Operation not permitted`로 막아 `TemporaryDirectory` 정리 단계에서만 발생한다. 테스트 본문 로직은 통과하며 정상 빌드 환경에서는 재현되지 않는다.
+- MCPB 재빌드: `dist/공시검색-MCP-0.3.0.mcpb`, SHA-256 `b17f337477150ca2e42b6589687146bea26f11161ac243503eba4bb03856d270`. 패키지에 갱신된 `search_terms.yaml`(synonym_groups)과 `extract_cooccurrence_evidence`가 포함됨을 확인했다.
+
+
 ## 단계 7·8 배포 및 최종 회귀 (2026-07-18 KST)
 
 - `python -m pytest -q`: 164 passed, 20 subtests passed, 실패 0개

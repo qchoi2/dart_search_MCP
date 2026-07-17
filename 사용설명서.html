@@ -14,6 +14,10 @@
     .step { background:var(--soft); border-left:5px solid var(--teal); padding:16px 20px; margin:14px 0; border-radius:8px; }
     code { background:#e9eef2; padding:2px 6px; border-radius:5px; } a { color:#057286; }
     .note { color:#435064; } .danger { color:#8b1e2d; font-weight:600; }
+    table.strategy { border-collapse:collapse; width:100%; margin:14px 0; }
+    table.strategy th, table.strategy td { border:1px solid #dce7ec; padding:10px 12px; text-align:left; vertical-align:top; font-size:15px; }
+    table.strategy th { background:var(--soft); color:var(--navy); white-space:nowrap; }
+    footer { margin-top:34px; border-top:1px solid #dce7ec; padding-top:16px; color:#435064; font-size:14px; }
   </style>
 </head>
 <body><main>
@@ -36,6 +40,36 @@
   <h2>두 가지 검색기능</h2>
   <p><b>속도우선 기능</b>은 짧은 시간 안에 우선 확인할 결과를 보여줍니다. 범위가 넓어 모두 확인하지 못하면
     <b>심화 검색기능</b>을 안내합니다. 심화 검색은 시작 전에 예상 범위와 시간을 보여주고 사용자의 확인을 받습니다.</p>
+  <h2>질의 유형별 검색 전략</h2>
+  <p>질문의 형태에 따라 확장이 검색 방식과 검증 방식을 자동으로 다르게 적용합니다. 대표적인 유형은 다음과 같습니다.</p>
+  <table class="strategy">
+    <thead><tr><th>질의 유형</th><th>예시</th><th>검색·검증 전략</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>정형 개념어</td>
+        <td>상계납입, 출자전환</td>
+        <td>미리 정의된 정밀 문구로 본문을 검색하고, 해당 문구가 원문에 있으면 근거로 확정합니다.</td>
+      </tr>
+      <tr>
+        <td>문장형·복합 질의</td>
+        <td>전직·현직 임직원에게 함께 부여된 주식보상 사례</td>
+        <td>문장을 핵심 개념으로 분해하고 동의어(예: 전직→퇴직·퇴임, 주식보상→주식매수선택권·양도제한조건부주식)로 넓혀 검색합니다.
+            검증은 모든 핵심 개념이 <b>한 문서 안에 함께 나올 때</b>(동시출현)만 확정하므로, 일부 단어만 걸린 무관한 공시는 제외됩니다.</td>
+      </tr>
+      <tr>
+        <td>회사 지정</td>
+        <td>삼성전자 공시 목록을 보여줘</td>
+        <td>해당 회사의 공시 목록이나 본문을 대상으로 검색합니다.</td>
+      </tr>
+      <tr>
+        <td>관계·순서 분석</td>
+        <td>정정 전후 비교, 공개매수 후 주식교환, 최종 유효본·철회 여부</td>
+        <td>정정표·사건 관계를 구조적으로 대조하는 전용 분석으로 처리합니다.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="note">제목만으로 좁히는 조건(예: 제목이 "사업보고서"인 공시만)은 현재 측정·검증이 끝난 뒤 반영할 예정이며,
+    지금은 본문 핵심어의 동시출현으로 정확도를 확보합니다.</p>
   <h2>문제 해결</h2>
   <ul>
     <li>확장이 보이지 않으면 Claude Desktop을 완전히 종료한 뒤 다시 실행하세요.</li>
@@ -45,4 +79,5 @@
   </ul>
   <p class="danger">이 도구는 공시 검색·요약을 돕지만 법률 자문을 제공하지 않습니다.</p>
   <p class="note">지원 범위: Windows용 Claude Desktop. OpenDART 및 DART의 서비스 상태와 이용 제한에 따라 일부 결과가 부분 제공될 수 있습니다.</p>
+  <footer>작성: 최규진 · 공시검색 MCP v0.3.0</footer>
 </main></body></html>

@@ -1,5 +1,13 @@
 # Stage 0 Decisions
 
+## 42. 문장형 질의 분해와 동시출현 검증
+
+- 결정: 상계·출자전환 하드코딩에 걸리지 않는 자유문 질의는 `decompose_query`로 (선별적 검색어, 개념 그룹)으로 분해한다. 검색은 동의어로 넓히되 가장 선별적인 그룹 위주로 좁혀 DART 요청예산을 보호하고, 검증은 `verification_term_groups`(AND-of-OR)로 모든 개념이 한 문서에 동시출현할 때만 확정한다.
+- 결정: 개념·동의어·불용어·제목어는 코드가 아니라 `search_terms.yaml`(`synonym_groups`/`filler`/`report_name_terms`)에 데이터로 둔다. 기존 `precise`/`concept`/`broad_only` 키와 그 검증 경로는 하위호환으로 유지한다.
+- 적용: 본문검색 전략 S2/S3에만 그룹을 적용하고 S1·S5·S6·S7은 기존 검증을 유지한다.
+- 보류(측정 선행): reportName+keyword 동시 지정(제목 제약)과 DART keyword 필드의 AND/OR·구문검색 의미론은 measured-contract 원칙에 따라 `app/probe/dart_web.py` 실측 후에만 반영한다. 이번 세션은 DART 접근 차단으로 실측 불가.
+
+
 ## 39. 속도우선/심화 검색기능 사용자 표현
 
 - 결정: 사용자 메시지에서 “대화형 검색예산”, “배치 검색”처럼 내부 구현 중심 표현을 기본 노출하지 않는다.

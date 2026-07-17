@@ -40,6 +40,9 @@ STANDARD_SOFT_TIMEOUT_SECONDS = 60
 STANDARD_HARD_TIMEOUT_SECONDS = 90
 FIRST_CANDIDATE_TARGET_SECONDS = 8
 MAX_ESCALATIONS = 2
+# Upper bound on decomposed free-text search variants, so a broadened synonym
+# expansion cannot exhaust the small DART request budget.
+DECOMPOSED_SEARCH_VARIANT_MAX = 6
 
 LIST_CONCURRENCY = 2
 DOCUMENT_CONCURRENCY = 3
