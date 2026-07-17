@@ -6,12 +6,14 @@ import io
 import json
 import math
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
 from app.channels.dart_fulltext import dart_date_windows, row_to_candidate
+from app.channels.adaptive import AdaptiveConcurrency
 from app.channels.opendart import candidate_from_list_row, split_date_windows
 from app.config import Settings, defaults
 from app.errors import ErrorCode, SearchError
@@ -375,7 +377,8 @@ class BatchResearchService:
             "results": [],
             "diagnostics": [],
             "calls": 0,
-            "document_concurrency": 1,
+            "document_concurrency": int(self.settings.get("search.document_concurrency", defaults.DOCUMENT_CONCURRENCY)),
+            "document_concurrency_events": [],
             "created_at_epoch": self.wall_clock(),
             "updated_at_epoch": self.wall_clock(),
             "circuit_state": self._circuit_snapshot(),
@@ -460,7 +463,7 @@ class BatchResearchService:
                         state["next_row_offset"] = row_index
                         stop_reason = "confirmation_interval_ended"
                         break
-                    concurrency = 1
+                    concurrency = max(1, min(int(state.get("document_concurrency", 1)), defaults.DOCUMENT_CONCURRENCY))
                     batch: list[tuple[int, Any]] = []
                     while row_index < len(rows) and len(batch) < concurrency:
                         row = rows[row_index]
@@ -475,37 +478,54 @@ class BatchResearchService:
                     state["calls"] = int(state.get("calls", 0)) + len(batch)
                     failed_index: int | None = None
                     failed_error: SearchError | None = None
+                    outcomes: dict[int, tuple[Any, ...] | Exception] = {}
+                    with ThreadPoolExecutor(max_workers=concurrency) as pool:
+                        futures = {
+                            index: pool.submit(self._download_evidence, candidate.receipt_no, variants, hard_deadline)
+                            for index, candidate in batch
+                        }
+                        for index, future in futures.items():
+                            try:
+                                outcomes[index] = future.result()
+                            except Exception as exc:
+                                outcomes[index] = exc
                     for index, candidate in batch:
-                        try:
-                            evidence = self._download_evidence(candidate.receipt_no, variants, hard_deadline)
-                        except SearchError as exc:
+                        outcome = outcomes[index]
+                        if isinstance(outcome, SearchError):
+                            adaptive = AdaptiveConcurrency(
+                                defaults.DOCUMENT_CONCURRENCY,
+                                current=int(state.get("document_concurrency", defaults.DOCUMENT_CONCURRENCY)),
+                            )
+                            if adaptive.observe(outcome):
+                                state["document_concurrency"] = adaptive.current
+                                state.setdefault("document_concurrency_events", []).extend(adaptive.events)
                             if failed_index is None or index < failed_index:
-                                failed_index, failed_error = index, exc
+                                failed_index, failed_error = index, outcome
                             continue
-                        except Exception:
+                        if isinstance(outcome, Exception):
                             exc = SearchError(ErrorCode.DOCUMENT_PARSE_FAILED, "배치 원문 처리에 실패했습니다.")
                             if failed_index is None or index < failed_index:
                                 failed_index, failed_error = index, exc
                             continue
-                        else:
-                            if evidence and (
-                                request.get("exhaustive")
-                                or len(state["results"]) < int(request["target_count"])
-                            ):
-                                state["results"].append(
-                                    {
-                                        "receipt_no": candidate.receipt_no,
-                                        "corp_name": candidate.corp_name,
-                                        "report_name": candidate.report_name,
-                                        "receipt_date": candidate.receipt_date,
-                                        "viewer_url": candidate.dart_viewer_url,
-                                        "evidence": [
-                                            {**asdict(item), "csv_formula_risk": has_formula_prefix(item.text)}
-                                            for item in evidence[:3]
-                                        ],
-                                    }
-                                )
-                            processed.add(candidate.receipt_no)
+                        evidence = outcome
+                        if evidence and (
+                            request.get("exhaustive")
+                            or len(state["results"]) < int(request["target_count"])
+                        ):
+                            state["results"].append(
+                                {
+                                    "receipt_no": candidate.receipt_no,
+                                    "corp_name": candidate.corp_name,
+                                    "report_name": candidate.report_name,
+                                    "receipt_date": candidate.receipt_date,
+                                    "viewer_url": candidate.dart_viewer_url,
+                                    "evidence": [
+                                        {**asdict(item), "csv_formula_risk": has_formula_prefix(item.text)}
+                                        for item in evidence[:3]
+                                    ],
+                                }
+                            )
+                        processed.add(candidate.receipt_no)
                     state["processed_receipts"] = sorted(processed)
                     if failed_index is not None and failed_error is not None:
                         state["next_row_offset"] = failed_index

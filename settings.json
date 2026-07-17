@@ -2,9 +2,10 @@
   "schema_version": "1.0",
   "cache": {
     "session_enabled": true,
-    "ttl_disk_enabled": false,
+    "ttl_disk_enabled": true,
     "ttl_hours": 24,
-    "max_size_mb": 500
+    "max_size_mb": 500,
+    "compression": "gzip1"
   },
   "search": {
     "list_concurrency": 2,

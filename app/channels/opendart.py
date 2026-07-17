@@ -5,7 +5,9 @@ from __future__ import annotations
 import json
 import math
 import re
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from html.parser import HTMLParser
@@ -132,9 +134,33 @@ class _TextExtractor(HTMLParser):
     def __init__(self):
         super().__init__()
         self.parts: list[str] = []
+        self.table_rows: list[str] = []
+        self._row: list[str] | None = None
+        self._cell_parts: list[str] | None = None
+
+    def handle_starttag(self, tag: str, attrs) -> None:
+        del attrs
+        lowered = tag.casefold()
+        if lowered == "tr":
+            self._row = []
+        elif lowered in {"td", "th"} and self._row is not None:
+            self._cell_parts = []
+
+    def handle_endtag(self, tag: str) -> None:
+        lowered = tag.casefold()
+        if lowered in {"td", "th"} and self._row is not None and self._cell_parts is not None:
+            self._row.append(re.sub(r"\s+", " ", " ".join(self._cell_parts)).strip())
+            self._cell_parts = None
+        elif lowered == "tr" and self._row is not None:
+            if len(self._row) >= 2 and any(self._row):
+                self.table_rows.append("\t".join(self._row))
+            self._row = None
+            self._cell_parts = None
 
     def handle_data(self, data: str) -> None:
         self.parts.append(data)
+        if self._cell_parts is not None:
+            self._cell_parts.append(data)
 
 
 def _decode(payload: bytes) -> str:
@@ -144,6 +170,24 @@ def _decode(payload: bytes) -> str:
         except UnicodeDecodeError:
             continue
     return payload.decode("utf-8", errors="replace")
+
+
+def _xml_table_rows(root) -> list[str]:
+    """Preserve table cell boundaries needed by the on-demand S6 parser."""
+    rows: list[str] = []
+    for element in root.iter():
+        if str(element.tag).split("}")[-1].upper() != "TR":
+            continue
+        cells: list[str] = []
+        for child in list(element):
+            tag = str(child.tag).split("}")[-1].upper()
+            if tag not in {"TD", "TH"}:
+                continue
+            value = re.sub(r"\s+", " ", " ".join(part.strip() for part in child.itertext() if part.strip())).strip()
+            cells.append(value)
+        if len(cells) >= 2 and any(cells):
+            rows.append("\t".join(cells))
+    return rows
 
 
 def normalize_document_zip(payload: bytes) -> str:
@@ -156,16 +200,27 @@ def normalize_document_zip(payload: bytes) -> str:
         try:
             root = parse_xml_safely(text)
             extracted = " ".join(value.strip() for value in root.itertext() if value.strip())
+            table_rows = _xml_table_rows(root)
+            if table_rows:
+                extracted += "\n" + "\n".join(table_rows)
         except SearchError:
             parser = _TextExtractor()
             try:
                 parser.feed(text)
                 extracted = " ".join(value.strip() for value in parser.parts if value.strip())
+                if parser.table_rows:
+                    extracted += "\n" + "\n".join(parser.table_rows)
             except Exception as exc:
                 raise SearchError(ErrorCode.DOCUMENT_PARSE_FAILED, f"{name} 원문을 해석하지 못했습니다.") from exc
         if extracted:
             parts.append(extracted)
-    result = re.sub(r"\s+", " ", "\n".join(parts)).strip()
+    normalized_lines: list[str] = []
+    for line in "\n".join(parts).splitlines():
+        cells = [re.sub(r"\s+", " ", cell).strip() for cell in line.split("\t")]
+        normalized = "\t".join(cells).strip()
+        if normalized:
+            normalized_lines.append(normalized)
+    result = "\n".join(normalized_lines).strip()
     if len(result.encode("utf-8")) > DOCUMENT_MAX_TEXT_MB * 1024 * 1024:
         result = result.encode("utf-8")[: DOCUMENT_MAX_TEXT_MB * 1024 * 1024].decode("utf-8", errors="ignore")
     return result
@@ -219,11 +274,13 @@ class OpenDartClient:
         self._api_key = api_key
         self.http = http or HttpClient()
         self.requests_started = 0
+        self._request_counter_lock = threading.Lock()
 
     def _request(self, method: str, url: str, *, deadline: DeadlineBudget | None = None, **kwargs):
         if deadline is not None:
             deadline.require_remaining("opendart_request_start")
-        self.requests_started += 1
+        with self._request_counter_lock:
+            self.requests_started += 1
         return self.http.request(method, url, deadline=deadline, **kwargs)
 
     def _json(self, endpoint: str, params: dict, *, deadline: DeadlineBudget | None = None) -> dict:
@@ -266,27 +323,56 @@ class OpenDartClient:
         start_window: int = 0,
         start_page: int = 1,
         deadline: DeadlineBudget | None = None,
+        list_concurrency: int = 1,
     ) -> ListCollection:
         windows = list(reversed(split_date_windows(date_from, date_to)))
         seen: set[str] = set()
         result = ListCollection()
+        prefetched_first_pages: dict[int, dict] = {}
+        if start_page == 1 and list_concurrency > 1 and request_budget >= 2:
+            prefetch_count = min(list_concurrency, request_budget)
+            indexes = list(range(start_window, min(len(windows), start_window + prefetch_count)))
+            before_requests = self.requests_started
+            try:
+                with ThreadPoolExecutor(max_workers=list_concurrency) as pool:
+                    futures = {
+                        index: pool.submit(
+                            self.list_page,
+                            date_from=windows[index].date_from,
+                            date_to=windows[index].date_to,
+                            page_no=1,
+                            corp_code=corp_code,
+                            corp_cls=corp_cls,
+                            disclosure_type=disclosure_type,
+                            deadline=deadline,
+                        )
+                        for index in indexes
+                    }
+                    for index in indexes:
+                        prefetched_first_pages[index] = futures[index].result()
+            finally:
+                diagnostics.actual_list_requests += self.requests_started - before_requests
         for window_index, window in enumerate(windows[start_window:], start=start_window):
             page = start_page if window_index == start_window else 1
             while True:
-                if diagnostics.actual_list_requests >= request_budget:
+                has_prefetched = page == 1 and window_index in prefetched_first_pages
+                if not has_prefetched and diagnostics.actual_list_requests >= request_budget:
                     result.complete = False
                     result.next_window_index = window_index
                     result.next_page = page
                     return result
-                before_requests = self.requests_started
-                try:
-                    payload = self.list_page(
-                        date_from=window.date_from, date_to=window.date_to, page_no=page,
-                        corp_code=corp_code, corp_cls=corp_cls, disclosure_type=disclosure_type,
-                        deadline=deadline,
-                    )
-                finally:
-                    diagnostics.actual_list_requests += self.requests_started - before_requests
+                if has_prefetched:
+                    payload = prefetched_first_pages.pop(window_index)
+                else:
+                    before_requests = self.requests_started
+                    try:
+                        payload = self.list_page(
+                            date_from=window.date_from, date_to=window.date_to, page_no=page,
+                            corp_code=corp_code, corp_cls=corp_cls, disclosure_type=disclosure_type,
+                            deadline=deadline,
+                        )
+                    finally:
+                        diagnostics.actual_list_requests += self.requests_started - before_requests
                 diagnostics.measured_total_count_by_window[window.key] = int(payload.get("total_count", 0))
                 diagnostics.measured_total_pages_by_window[window.key] = int(payload.get("total_page", 0))
                 if str(payload.get("status")) == "013":

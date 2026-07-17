@@ -4,7 +4,7 @@ from app.config import defaults
 
 SEARCH_TOOL = {
     "name": "search_disclosure_cases",
-    "description": "기간이 명확한 한국 DART 공시에서 원문 근거가 있는 사례를 제한 예산으로 검색합니다. 기간이 없으면 검색하지 않고 확인을 요청합니다. 전수·배치·파일생성은 자동 실행하지 않습니다.",
+    "description": "기간이 명확한 한국 DART 공시에서 원문 근거가 있는 사례를 검색합니다. amendment_comparison 또는 sequence_required를 켜면 S6/S7 온디맨드 관계분석을 수행합니다. 전수·배치·파일생성은 자동 실행하지 않습니다.",
     "inputSchema": {
         "type": "object",
         "required": ["query"],
@@ -30,7 +30,7 @@ SEARCH_TOOL = {
 
 EVIDENCE_TOOL = {
     "name": "get_disclosure_evidence",
-    "description": "접수번호의 공시 원문에서 지정 검색어 주변 근거를 최대 8개·각 500자로 반환합니다. 원문 전체나 정정 diff는 반환하지 않습니다.",
+    "description": "접수번호의 공시 원문에서 지정 검색어 주변 근거를 최대 8개·각 500자로 반환하고, 요청 시 명시적 정정 관계·정정표 문맥을 구조화합니다. 원문 전체는 반환하지 않습니다.",
     "inputSchema": {
         "type": "object",
         "required": ["receipt_no", "keywords"],

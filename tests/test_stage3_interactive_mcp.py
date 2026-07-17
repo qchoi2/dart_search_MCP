@@ -105,7 +105,7 @@ class Stage3ContractTests(unittest.TestCase):
 
 
 class Stage3ExecutionTests(unittest.TestCase):
-    def test_batch_and_deferred_relation_hints_do_not_start_network(self):
+    def test_batch_does_not_start_and_stage6_relation_hint_routes_on_demand(self):
         opendart = FakeOpenDart()
         dart = NoNetworkDart()
         engine = SearchEngine(opendart=opendart, dart=dart)
@@ -116,14 +116,15 @@ class Stage3ExecutionTests(unittest.TestCase):
         self.assertEqual(batch["status"], "batch_confirmation_required")
         self.assertFalse(batch["coverage"]["complete"])
         self.assertEqual(batch["completeness_grade"], "unconfirmed")
-        deferred = engine.execute(SearchRequest(
+        relation = engine.execute(SearchRequest(
             "정정 비교", amendment_comparison=True,
             date_from="2026-01-01", date_to="2026-01-31",
         ))
-        self.assertEqual(deferred["status"], "clarification_required")
-        self.assertEqual(deferred["error"]["code"], "INTERACTIVE_SCOPE_UNAVAILABLE")
-        self.assertEqual(opendart.collects, 0)
-        self.assertEqual(dart.calls, 0)
+        self.assertEqual(relation["status"], "completed")
+        self.assertEqual(relation["plan"]["strategy"], "S6_amendment_comparison")
+        self.assertEqual(relation["relation_analysis"]["strategy"], "S6_amendment_comparison")
+        self.assertEqual(opendart.collects, 1)
+        self.assertEqual(dart.calls, 1)
 
     def test_continuation_records_period_variants_and_budget_warning(self):
         store = ContinuationStore()
@@ -201,6 +202,7 @@ class Stage3ExecutionTests(unittest.TestCase):
         self.assertTrue(all("content" not in item["content_boundary"] for item in result["evidence"]))
         self.assertFalse(result["include_full_preview"])
         self.assertTrue(result["full_preview_ignored"])
+        self.assertIsInstance(result["amendment_context"], dict)
         for keywords in ([], ["x", "x"], ["x"] * (defaults.INTERACTIVE_TARGET_MAX + 1)):
             with self.subTest(keywords=keywords), self.assertRaises(ValueError):
                 engine.get_evidence(receipt, keywords)

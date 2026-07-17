@@ -20,6 +20,8 @@ from app.contracts import SearchRequest
 from app.errors import SearchError
 from app.orchestrator.engine import SearchEngine
 from app.storage.audit_log import AuditLog
+from app.storage.session_cache import SessionTextCache
+from app.storage.ttl_cache import DiskTtlTextCache, TieredTextCache
 
 from .tool_contracts import (
     BATCH_CONTINUE_TOOL,
@@ -45,6 +47,16 @@ def build_engine() -> SearchEngine:
             paths.logs / "search_audit.jsonl",
             audit_query_text=settings.get("audit.audit_query_text", "off") == "on",
         )
+    disk_cache = None
+    if settings.get("cache.ttl_disk_enabled", False):
+        paths.ensure("cache")
+        disk_cache = DiskTtlTextCache(
+            paths.cache / "documents",
+            ttl_hours=int(settings.get("cache.ttl_hours", 24)),
+            max_size_mb=int(settings.get("cache.max_size_mb", 500)),
+            compression=str(settings.get("cache.compression", "gzip1")),
+        )
+    cache = TieredTextCache(SessionTextCache(), disk_cache)
     def resolve_company(name: str, *, deadline=None) -> str | None:
         if opendart is None:
             return None
@@ -52,7 +64,15 @@ def build_engine() -> SearchEngine:
         matches = opendart.load_company_directory(paths.cache / "corpCode.zip", deadline=deadline).lookup(name, limit=COMPANY_EXACT_MATCH_LIMIT)
         return matches[0].corp_code if len(matches) == 1 else None
 
-    return SearchEngine(opendart=opendart, dart=dart, audit=audit, company_resolver=resolve_company)
+    return SearchEngine(
+        opendart=opendart,
+        dart=dart,
+        cache=cache,
+        audit=audit,
+        company_resolver=resolve_company,
+        list_concurrency=int(settings.get("search.list_concurrency", 1)),
+        document_concurrency=int(settings.get("search.document_concurrency", 1)),
+    )
 
 
 class McpApplication:

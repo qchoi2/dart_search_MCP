@@ -7,7 +7,7 @@ describe behaviour, but do not duplicate these operational limits.
 from __future__ import annotations
 
 SCHEMA_VERSION = "1.0"
-PRODUCT_VERSION = "0.1.0"
+PRODUCT_VERSION = "0.2.0"
 # Stage 0/0.6 measurement used this explicitly identifying, non-browser UA.
 USER_AGENT = "dart-search-mcp-stage0-probe/0.1 (local measurement; concurrency=1)"
 
@@ -58,6 +58,7 @@ SESSION_CACHE_MAX_DOCUMENTS = 40
 SESSION_CACHE_MAX_TEXT_MB = 64
 TTL_DISK_HOURS = 24
 TTL_DISK_MAX_SIZE_MB = 500
+TTL_DISK_COMPRESSION = "gzip1"
 
 AMENDMENT_DOCUMENT_BUDGET = 80
 AMENDMENT_DOCUMENT_BUDGET_MAX = 120
@@ -96,9 +97,10 @@ DEFAULT_SETTINGS = {
     "schema_version": SCHEMA_VERSION,
     "cache": {
         "session_enabled": True,
-        "ttl_disk_enabled": False,
+        "ttl_disk_enabled": True,
         "ttl_hours": TTL_DISK_HOURS,
         "max_size_mb": TTL_DISK_MAX_SIZE_MB,
+        "compression": TTL_DISK_COMPRESSION,
     },
     "search": {
         "list_concurrency": LIST_CONCURRENCY,

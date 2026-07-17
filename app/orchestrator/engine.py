@@ -5,12 +5,14 @@ from __future__ import annotations
 import hashlib
 import inspect
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, replace
 from datetime import date, datetime, timezone
 from typing import Any
 from typing import Callable
 
 from app.channels.dart_fulltext import DartFulltextClient
+from app.channels.adaptive import AdaptiveConcurrency
 from app.channels.opendart import ListCollection, OpenDartClient
 from app.contracts import DisclosureCandidate, EvidenceSnippet, SearchExecutionDiagnostics, SearchRequest, VerifiedCase
 from app.errors import ErrorCode, SearchError
@@ -51,6 +53,8 @@ class SearchEngine:
         continuations: ContinuationStore | None = None,
         audit: AuditLog | None = None,
         company_resolver: Callable[[str], str | None] | None = None,
+        list_concurrency: int = 1,
+        document_concurrency: int = 1,
         clock=time.monotonic,
     ):
         self.opendart = opendart
@@ -59,6 +63,8 @@ class SearchEngine:
         self.continuations = continuations or ContinuationStore()
         self.audit = audit
         self.company_resolver = company_resolver
+        self.list_concurrency = max(1, min(list_concurrency, defaults.LIST_CONCURRENCY))
+        self.document_concurrency = max(1, min(document_concurrency, defaults.DOCUMENT_CONCURRENCY))
         self.clock = clock
         self._known_candidates: dict[str, DisclosureCandidate] = {}
         self._batch_recommendations: dict[str, tuple[float, int, int]] = {}
@@ -83,15 +89,6 @@ class SearchEngine:
                 batch_research_recommended=True,
                 batch_recommendation_reason="exhaustive_or_batch_requested",
                 batch_preview_tool="preview_batch_research",
-            )
-        if request.amendment_comparison or request.sequence_required:
-            return self._base_response(
-                "clarification_required", lineage,
-                warnings=["정정 비교와 사건 순서 연결은 현재 대화형 Fast Path 범위가 아닙니다. 일반 사례검색으로 범위를 조정해 주세요."],
-                error={
-                    "code": "INTERACTIVE_SCOPE_UNAVAILABLE",
-                    "message": "amendment_comparison과 sequence_required는 후속 S6·S7에서 활성화됩니다.",
-                },
             )
         start = self.clock()
         plan = build_search_plan(request)
@@ -204,6 +201,7 @@ class SearchEngine:
                         start_window=int((continuation_state or {}).get("window", 0)),
                         start_page=int((continuation_state or {}).get("page", 1)),
                         deadline=deadline,
+                        list_concurrency=self.list_concurrency,
                     )
                 except SearchError as exc:
                     if exc.code == ErrorCode.SEARCH_TIMEOUT_PARTIAL:
@@ -226,7 +224,10 @@ class SearchEngine:
         listing_strategy = plan.strategy == "S1_company_disclosure_list"
         terminal_error: SearchError | None = None
         soft_timeout = False
-        for candidate in candidates:
+        prefetch_errors: dict[str, SearchError] = {}
+        prefetched_receipts: set[str] = set()
+        adaptive_documents = AdaptiveConcurrency(self.document_concurrency)
+        for candidate_index, candidate in enumerate(candidates):
             elapsed = self.clock() - start
             if deadline.remaining() <= 0:
                 hard_timeout = True
@@ -234,13 +235,13 @@ class SearchEngine:
                 break
             if elapsed >= plan.soft_timeout_seconds:
                 diagnostics.soft_timeout_reached = True
-                if len(verified) >= request.target_count:
+                if len(verified) >= request.target_count and plan.strategy not in {"S5_event_sequence", "S6_amendment_comparison", "S7_effective_filing"}:
                     soft_timeout = True
                     break
             receipt_hash = hashlib.sha256(candidate.receipt_no.encode()).hexdigest()
             if receipt_hash in processed_hashes:
                 continue
-            if len(verified) >= plan.result_budget:
+            if len(verified) >= plan.result_budget and plan.strategy not in {"S5_event_sequence", "S6_amendment_comparison", "S7_effective_filing"}:
                 break
             if diagnostics.first_candidate_elapsed_ms is None:
                 diagnostics.first_candidate_elapsed_ms = int((self.clock() - start) * 1000)
@@ -255,14 +256,49 @@ class SearchEngine:
                 preliminary.append(candidate)
                 processed_this_run.append(receipt_hash)
                 continue
-            text = self.cache.get(candidate.receipt_no)
+            text = self._cache_get(candidate.receipt_no, request.cache_mode)
             if text is not None:
                 diagnostics.cache_hits += 1
             elif diagnostics.actual_document_requests < plan.effective_document_budget:
-                requests_before = getattr(self.opendart, "requests_started", None)
+                if candidate.receipt_no not in prefetched_receipts:
+                    remaining_budget = plan.effective_document_budget - diagnostics.actual_document_requests
+                    batch: list[DisclosureCandidate] = []
+                    for pending_candidate in candidates[candidate_index:]:
+                        if len(batch) >= min(int(adaptive_documents.current or 1), remaining_budget):
+                            break
+                        pending_hash = hashlib.sha256(pending_candidate.receipt_no.encode()).hexdigest()
+                        if pending_hash in processed_hashes or pending_candidate.receipt_no in prefetched_receipts:
+                            continue
+                        if self._cache_get(pending_candidate.receipt_no, request.cache_mode) is not None:
+                            continue
+                        batch.append(pending_candidate)
+                    requests_before = getattr(self.opendart, "requests_started", None)
+                    try:
+                        with ThreadPoolExecutor(max_workers=int(adaptive_documents.current or 1)) as pool:
+                            futures = {
+                                item.receipt_no: pool.submit(self.opendart.download_document, item.receipt_no, deadline=deadline)
+                                for item in batch
+                            }
+                            for receipt_no, future in futures.items():
+                                prefetched_receipts.add(receipt_no)
+                                try:
+                                    downloaded = future.result()
+                                except SearchError as exc:
+                                    prefetch_errors[receipt_no] = exc
+                                    adaptive_documents.observe(exc)
+                                else:
+                                    self._cache_put(receipt_no, downloaded, request.cache_mode)
+                    finally:
+                        if requests_before is None:
+                            diagnostics.actual_document_requests += len(batch)
+                        else:
+                            diagnostics.actual_document_requests += self.opendart.requests_started - requests_before
+                text = self._cache_get(candidate.receipt_no, request.cache_mode)
                 try:
-                    text = self.opendart.download_document(candidate.receipt_no, deadline=deadline)
-                    self.cache.put(candidate.receipt_no, text)
+                    if candidate.receipt_no in prefetch_errors:
+                        raise prefetch_errors[candidate.receipt_no]
+                    if text is None:
+                        raise SearchError(ErrorCode.DOCUMENT_PARSE_FAILED, "원문을 캐시에 적재하지 못했습니다.")
                 except SearchError as exc:
                     if exc.code == ErrorCode.SEARCH_TIMEOUT_PARTIAL:
                         hard_timeout = True
@@ -279,11 +315,6 @@ class SearchEngine:
                     preliminary.append(replace(candidate, verification_status=status))
                     processed_this_run.append(receipt_hash)
                     continue
-                finally:
-                    if requests_before is None:
-                        diagnostics.actual_document_requests += 1
-                    else:
-                        diagnostics.actual_document_requests += self.opendart.requests_started - requests_before
             else:
                 preliminary.append(candidate)
                 processed_this_run.append(receipt_hash)
@@ -416,16 +447,18 @@ class SearchEngine:
             if detail.get("code") == "DART_FULLTEXT_FALLBACK":
                 detail["actual_document_verification_count"] = diagnostics.actual_document_requests
                 detail["unprocessed_candidate_count"] = diagnostics.unprocessed_candidate_count
+        relation_analysis, grouped_verified = self._relation_analysis(plan.strategy, verified, candidates)
         response = self._base_response(
             status, lineage, plan=plan, diagnostics=diagnostics, warnings=warnings,
             warning_codes=warning_codes, warning_details=warning_details,
             completeness_grade=completeness_grade,
-            results=[_case_dict(case) for case in verified[: plan.result_budget]],
+            results=[_case_dict(case) for case in grouped_verified[: plan.result_budget]],
             preliminary=[_candidate_dict(candidate) for candidate in preliminary[: plan.preliminary_budget]],
             coverage=coverage,
             continuation_token=token,
             decision_summary=f"{plan.strategy}: {plan.primary_channel} 우선, 검증 원문 {diagnostics.actual_document_requests}건",
             error=response_error,
+            relation_analysis=relation_analysis,
         )
         response.update(
             self._batch_recommendation(
@@ -440,6 +473,76 @@ class SearchEngine:
         )
         self._audit(request, response)
         return response
+
+    def _relation_analysis(
+        self,
+        strategy: str,
+        verified: list[VerifiedCase],
+        relation_candidates: list[DisclosureCandidate] | None = None,
+    ) -> tuple[dict[str, Any] | None, list[VerifiedCase]]:
+        if strategy not in {"S5_event_sequence", "S6_amendment_comparison", "S7_effective_filing"}:
+            return None, verified
+        from app.research.amendments import build_amendment_chains, compare_amendment_chain, extract_amendment_context
+        from app.research.events import build_event_graph
+        verified_candidates = [case.filings[0] for case in verified if case.filings]
+        candidates = list({
+            candidate.receipt_no: candidate
+            for candidate in (relation_candidates or verified_candidates)
+            if self._cache_get(candidate.receipt_no, "auto") is not None
+        }.values())
+        texts = {
+            candidate.receipt_no: text
+            for candidate in candidates
+            if (text := self._cache_get(candidate.receipt_no, "auto")) is not None
+        }
+        if strategy == "S5_event_sequence":
+            return {"strategy": strategy, "event_graph": build_event_graph(candidates, texts)}, verified
+        contexts = {
+            candidate.receipt_no: extract_amendment_context(texts.get(candidate.receipt_no, ""), receipt_no=candidate.receipt_no)
+            for candidate in candidates
+        }
+        chains = build_amendment_chains(candidates, contexts)
+        comparisons = [compare_amendment_chain(chain, texts, contexts) for chain in chains]
+        case_by_receipt = {case.case_id: case for case in verified}
+        candidate_by_receipt = {candidate.receipt_no: candidate for candidate in candidates}
+        grouped: list[VerifiedCase] = []
+        consumed: set[str] = set()
+        for chain in chains:
+            receipts = chain["member_receipt_nos"]
+            if len(receipts) < 2:
+                continue
+            cases = [case_by_receipt[receipt] for receipt in receipts if receipt in case_by_receipt]
+            if not cases:
+                continue
+            consumed.update(receipts)
+            filings = tuple(candidate_by_receipt[receipt] for receipt in receipts if receipt in candidate_by_receipt)
+            evidence = tuple(item for case in cases for item in case.evidence)[: defaults.EVIDENCE_MAX_SNIPPETS]
+            grouped.append(VerifiedCase(
+                case_id=chain["amendment_chain_id"],
+                case_title=cases[-1].case_title,
+                companies=tuple(dict.fromkeys(company for case in cases for company in case.companies)),
+                filings=filings,
+                evidence=evidence,
+                mechanical_findings=(
+                    f"명시 관계 근거로 정정 체인 {len(filings)}건 연결",
+                    "원공시↔최종본 구조 비교 수행",
+                ),
+                legal_assessment=None,
+                assessment_confidence="not_assessed",
+                amendment_status="linked_confirmed" if chain["chain_confidence"] == "confirmed" else "linked_uncertain",
+                withdrawal_status=chain["withdrawal_status"],
+                effective_receipt_no=chain["effective_receipt_no"],
+                relevance_reason="S6/S7 온디맨드 정정 관계 분석",
+            ))
+        grouped.extend(case for case in verified if case.case_id not in consumed)
+        analysis = {
+            "strategy": strategy,
+            "amendment_chains": chains,
+            "comparisons": comparisons,
+            "uncertain_chain_count": sum(1 for chain in chains if chain["chain_confidence"] == "uncertain"),
+            "confirmed_chain_count": sum(1 for chain in chains if chain["chain_confidence"] == "confirmed"),
+        }
+        return analysis, grouped
 
     def _batch_recommendation(
         self,
@@ -609,12 +712,12 @@ class SearchEngine:
             raise ValueError("keywords must not contain duplicates")
         if not isinstance(include_full_preview, bool) or not isinstance(include_amendment_context, bool):
             raise ValueError("evidence include flags must be boolean")
-        text = self.cache.get(receipt_no)
+        text = self._cache_get(receipt_no, "auto")
         if text is None:
             if self.opendart is None:
                 raise SearchError(ErrorCode.API_KEY_MISSING, "근거 원문을 받으려면 OpenDART API 키가 필요합니다.")
             text = self.opendart.download_document(receipt_no)
-            self.cache.put(receipt_no, text)
+            self._cache_put(receipt_no, text, "auto")
         evidence = extract_evidence(receipt_no, text, normalized_keywords)
         evidence_payload = []
         for item in evidence[: defaults.EVIDENCE_MAX_SNIPPETS]:
@@ -630,9 +733,26 @@ class SearchEngine:
             "source_text_untrusted": True,
             "include_full_preview": False,
             "full_preview_ignored": bool(include_full_preview),
-            "amendment_context": "not_available_in_stage1_fast_path" if include_amendment_context else "not_requested",
+            "amendment_context": self._amendment_context_payload(text, receipt_no) if include_amendment_context else "not_requested",
             "dart_viewer_url": dart_viewer_url(receipt_no),
         }
+
+    @staticmethod
+    def _amendment_context_payload(text: str, receipt_no: str) -> dict[str, Any]:
+        from app.research.amendments import extract_amendment_context
+
+        return asdict(extract_amendment_context(text, receipt_no=receipt_no))
+
+    def _cache_get(self, receipt_no: str, cache_mode: str) -> str | None:
+        if cache_mode == "session" and hasattr(self.cache, "get_session"):
+            return self.cache.get_session(receipt_no)
+        return self.cache.get(receipt_no)
+
+    def _cache_put(self, receipt_no: str, text: str, cache_mode: str) -> None:
+        if cache_mode == "session" and hasattr(self.cache, "put_session"):
+            self.cache.put_session(receipt_no, text)
+        else:
+            self.cache.put(receipt_no, text)
 
     def _resolve_company(self, company: str | None, warnings: list[str], *, deadline: DeadlineBudget | None = None) -> str | None:
         if not company:

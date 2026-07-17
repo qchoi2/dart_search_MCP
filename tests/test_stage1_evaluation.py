@@ -43,7 +43,8 @@ class ConstantConsistencyTests(unittest.TestCase):
     def test_settings_match_single_source_defaults(self):
         settings = json.loads((ROOT / "settings.json").read_text(encoding="utf-8"))
         self.assertEqual(settings, DEFAULT_SETTINGS)
-        self.assertFalse(settings["cache"]["ttl_disk_enabled"])
+        self.assertTrue(settings["cache"]["ttl_disk_enabled"])
+        self.assertEqual(settings["cache"]["compression"], "gzip1")
 
     def test_rules_and_contract_schema_versions_match(self):
         for name in ("search_terms.yaml", "amendment_rules.yaml", "ranking_rules.yaml"):
@@ -73,7 +74,7 @@ class ConstantConsistencyTests(unittest.TestCase):
         plan = (ROOT / "DEVELOPMENT_PLAN.md").read_text(encoding="utf-8")
         required_text = (
             "effective_page_size=10", "요청 시작간격 최소 1,000ms", "40개 문서 또는 64MB",
-            "15분간 open", "3분간 open", "page_count=100", '"ttl_disk_enabled": false',
+            "15분간 open", "3분간 open", "page_count=100", '"ttl_disk_enabled": true',
         )
         for value in required_text:
             self.assertIn(value, plan)

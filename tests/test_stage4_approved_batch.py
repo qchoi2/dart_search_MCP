@@ -275,7 +275,7 @@ class Stage4BatchTests(unittest.TestCase):
             plan = self.preview(service)
             first = service.run(plan_id=plan["plan_id"], approved=True, confirmation_interval_minutes=5)
             self.assertEqual(first["status"], "continuation_confirmation_required")
-            self.assertEqual(first["checkpoint"]["next_row_offset"], 1)
+            self.assertEqual(first["checkpoint"]["next_row_offset"], 3)
             before = channel.download_calls
             declined = service.continue_run(job_id=first["job_id"], approved=False, confirmation_interval_minutes=5)
             self.assertEqual(declined["status"], "continuation_declined")
@@ -332,7 +332,7 @@ class Stage4BatchTests(unittest.TestCase):
             self.assertEqual(dart.health_calls, 1)
             self.assertEqual(dart.breaker.state.status, ChannelStatus.HEALTHY)
 
-    def test_document_requests_are_sequential_and_rate_limit_checkpoints(self):
+    def test_document_requests_use_stage5_concurrency_and_rate_limit_slows_down(self):
         rows = [row(f"2026071600000{index}") for index in range(1, 5)]
         with tempfile.TemporaryDirectory() as raw:
             channel = RateLimitedOnceOpenDart(rows)
@@ -341,10 +341,14 @@ class Stage4BatchTests(unittest.TestCase):
             stopped = service.run(plan_id=plan["plan_id"], approved=True, confirmation_interval_minutes=5)
             self.assertEqual(stopped["status"], "continuation_confirmation_required")
             self.assertEqual(stopped["stop_reason"], ErrorCode.OPENDART_HTTP_RATE_LIMITED.value)
-            self.assertLessEqual(channel.max_active_downloads, 1)
+            self.assertLessEqual(channel.max_active_downloads, 3)
+            checkpoint = service.checkpoints.load(stopped["job_id"])
+            self.assertEqual(checkpoint["document_concurrency"], 2)
+            self.assertEqual(checkpoint["document_concurrency_events"][-1]["from"], 3)
+            self.assertEqual(checkpoint["document_concurrency_events"][-1]["to"], 2)
             completed = service.continue_run(job_id=stopped["job_id"], approved=True, confirmation_interval_minutes=5)
             self.assertEqual(completed["status"], "completed")
-            self.assertLessEqual(channel.max_active_downloads, 1)
+            self.assertLessEqual(channel.max_active_downloads, 3)
 
     def test_csv_formula_prefixes_are_escaped(self):
         for value in ("=1+1", "+SUM(A1:A2)", "-2+3", "@cmd", "\tformula", "\rformula"):

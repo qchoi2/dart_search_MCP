@@ -46,14 +46,15 @@ class ContractTests(unittest.TestCase):
 
 
 class BaseInfrastructureTests(unittest.TestCase):
-    def test_default_disk_ttl_is_disabled_and_recovery(self):
-        self.assertFalse(DEFAULT_SETTINGS["cache"]["ttl_disk_enabled"])
+    def test_stage5_build_enables_benchmarked_disk_ttl_and_recovery(self):
+        self.assertTrue(DEFAULT_SETTINGS["cache"]["ttl_disk_enabled"])
+        self.assertEqual(DEFAULT_SETTINGS["cache"]["compression"], "gzip1")
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "settings.json"
             path.write_text("{bad", encoding="utf-8")
             settings = load_settings(path)
             self.assertTrue(settings.recovered_from_error)
-            self.assertFalse(settings.get("cache.ttl_disk_enabled"))
+            self.assertTrue(settings.get("cache.ttl_disk_enabled"))
 
     def test_zip_guard_accepts_normal_and_blocks_traversal(self):
         normal = io.BytesIO()

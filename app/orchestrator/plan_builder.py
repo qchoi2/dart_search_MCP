@@ -40,12 +40,42 @@ def query_variants(query: str) -> tuple[str, ...]:
 
 def choose_strategy(request: SearchRequest) -> tuple[str, str, tuple[str, ...]]:
     query = request.query
+    if request.amendment_comparison:
+        return "S6_amendment_comparison", "dart_fulltext", ("opendart",)
+    if any(marker in query for marker in ("최종 유효본", "최종유효본", "철회 여부", "철회여부")):
+        return "S7_effective_filing", "dart_fulltext", ("opendart",)
+    if request.sequence_required:
+        return "S5_event_sequence", "dart_fulltext", ("opendart",)
     listing = request.company and any(word in query for word in ("목록", "공시내역", "제출내역"))
     if listing:
         return "S1_company_disclosure_list", "opendart", ("dart_fulltext",)
     if request.company:
         return "S2_company_fulltext", "dart_fulltext", ("opendart",)
     return "S3_market_rare_phrase", "dart_fulltext", ("opendart",)
+
+
+def strategy_query_variants(request: SearchRequest, strategy: str) -> tuple[str, ...]:
+    if strategy == "S5_event_sequence":
+        variants = [term for term in ("공개매수", "주식교환", "주식이전") if term in request.query]
+        return tuple(variants or (request.query.strip(),))
+    if strategy == "S6_amendment_comparison":
+        from app.research.structural_diff import FIELD_LABELS
+
+        fields = [field for field in FIELD_LABELS if field in request.query]
+        if fields:
+            return tuple(fields)
+        stripped = request.query
+        for marker in ("정정 전후", "정정전후", "정정 비교", "정정비교", "정정된 사례", "정정 사례"):
+            stripped = stripped.replace(marker, " ")
+        stripped = " ".join(stripped.split())
+        return (stripped or "정정사항",)
+    if strategy == "S7_effective_filing":
+        stripped = request.query
+        for marker in ("최종 유효본", "최종유효본", "철회 여부", "철회여부"):
+            stripped = stripped.replace(marker, " ")
+        stripped = " ".join(stripped.split())
+        return (stripped or "정정사항",)
+    return query_variants(request.query)
 
 
 def build_search_plan(request: SearchRequest) -> SearchPlan:
@@ -61,10 +91,13 @@ def build_search_plan(request: SearchRequest) -> SearchPlan:
         list_budget = defaults.STANDARD_LIST_REQUEST_BUDGET
         dart_budget = defaults.STANDARD_DART_REQUEST_BUDGET
         # Scale down below the 20-result ceiling, while preserving validation headroom.
-        document_budget = min(
-            defaults.STANDARD_DOCUMENT_BUDGET,
-            max(request.target_count * defaults.DOCUMENT_CANDIDATE_HEADROOM_MULTIPLIER, request.target_count),
-        )
+        if strategy in {"S6_amendment_comparison", "S7_effective_filing"}:
+            document_budget = defaults.AMENDMENT_DOCUMENT_BUDGET
+        else:
+            document_budget = min(
+                defaults.STANDARD_DOCUMENT_BUDGET,
+                max(request.target_count * defaults.DOCUMENT_CANDIDATE_HEADROOM_MULTIPLIER, request.target_count),
+            )
         result_budget = min(request.target_count, defaults.STANDARD_RESULT_BUDGET)
         soft = defaults.STANDARD_SOFT_TIMEOUT_SECONDS
         hard = defaults.STANDARD_HARD_TIMEOUT_SECONDS
@@ -74,7 +107,7 @@ def build_search_plan(request: SearchRequest) -> SearchPlan:
         strategy=strategy,
         primary_channel=primary,
         secondary_channels=secondary,
-        query_variants=query_variants(request.query),
+        query_variants=strategy_query_variants(request, strategy),
         list_request_budget=list_budget,
         dart_request_budget=dart_budget,
         strategy_document_budget=document_budget,
@@ -82,7 +115,11 @@ def build_search_plan(request: SearchRequest) -> SearchPlan:
         effective_document_budget=effective,
         estimated_verified_cases=request.target_count,
         estimated_average_chain_length=None,
-        chain_length_estimation_basis="not_applicable_fast_path",
+        chain_length_estimation_basis=(
+            "explicit_relation_sampling_pending"
+            if strategy in {"S6_amendment_comparison", "S7_effective_filing"}
+            else "not_applicable_fast_path"
+        ),
         company_count=1 if request.company else 0,
         company_batch_count=1 if request.company else 0,
         result_budget=result_budget,
