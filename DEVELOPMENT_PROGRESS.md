@@ -1,5 +1,20 @@
 # 개발 진행 현황
 
+## 단계 1.1 핵심 검색 신뢰성 보강 완료 (2026-07-17)
+
+- 기준점 `v0.1-core-reviewed`와 `DEVELOPMENT_PLAN.md` v20을 대조하고 단계 1.1 범위만 구현했다.
+- Fast Path는 접수번호 전역 중복제거와 동일 접수번호 본문·첨부행 병합만 수행한다. 정정 접두어, `rm` 원문·플래그, 명시 관계 필드를 보존하며 서로 다른 접수번호의 사건 병합, 정정 체인 추정, 최종 유효본 판정, 구조 diff를 실행하지 않는다. Fast Path `effective_receipt_no`는 확정하지 않고 `null`로 둔다.
+- 감사로그 기본 계약을 정규화 질의 해시, 실제 실행 변형, 기간·회사·공시유형 범위, 후보·검증 접수번호, 제외 사유, 호출·캐시·재시도 진단, 경고코드, 완전성 등급으로 축소했다. `audit.audit_query_text=on`일 때만 평문 질의 필드를 허용하며 기본값은 `off`다.
+- DART 클라이언트에 명시적 `reset_session`과 Cookie jar 세대 추적을 추가했다. reset, jar 재생성, 프로세스 재시작, 모드 변경은 활성 모드와 상태진단 성공 캐시를 폐기하며 다음 검색에서 모드설정 POST를 1회 수행한다. 같은 세션·같은 모드의 검색어 전환은 재설정하지 않는다.
+- SearchPlan의 단일 hard deadline을 회사코드 조회, OpenDART 목록, DART 상태진단·모드설정·결과요청, 원문 다운로드, 애플리케이션 재시도, HTTP 재시도·백오프·timeout까지 전달했다. timeout은 `min(HTTP_TIMEOUT_SECONDS, remaining)`이고 새 요청 전·DART 간격 대기 전후·HTTP 백오프 전후에 잔여시간을 확인한다.
+- deadline 종료는 `partial`, `SEARCH_TIMEOUT_PARTIAL`, 처리·미처리 범위와 continuation token으로 반환한다. `deadline_limited_timeout`은 DART 회로의 네트워크 실패횟수에 포함하지 않는다.
+- DART 이상 응답은 첫 회에 `structure_failure_candidate`로만 두고 `main.do` 상태진단 1회 후 동일 `search.ax` 1회 재시도에서 반복될 때만 구조장애로 확정한다. 정상 0건은 `searchCnt=0` 또는 결과 테이블 내부의 고정 마커만 인정하며 회로·강등에 포함하지 않는다.
+- 폴백 응답에 `DART_FULLTEXT_FALLBACK`, reason, fallback_source, 정수 blocked_seconds, completeness_grade, 실제 원문 확인 수, 미처리 후보 수를 추가했다. 단발 폴백은 0초, open 회로는 양수이며 폴백 0건도 최소 `reduced`, 정상 무폴백 0건은 `complete`를 유지한다.
+- 규칙파일은 최초 로드 시 schema version, 필수 키, 수치 형식, 근거 5필드와 소수표본 provisional 조건을 즉시 검증한다.
+- 세션 제한 프로브는 7/20요청, 동시성 1, 최소 시작간격 1,000.130ms, 재시도 0회, TLS 검증 유지로 완료했다. Cookie jar 재생성 직후 직접 검색과 모드설정 후 검색이 모두 정상이고 응답 해시가 같아 서버 만료·Cookie 교체의 고유 실패 신호는 `unconfirmed`다. 자동감지는 추가하지 않았다.
+- fixture 회귀 100개, 고정 평가 24/24, compileall, diff check가 통과했다. 라이브 90초 성능 통과 주장은 하지 않는다.
+- 제외 범위는 그대로다: OpenDART 목록 동시성 2, 원문 동시성 3, 적응형 감속, S6·S7 정정/사건 연결, `rm=채` 조합 확정, KIND, 배치, TTL 디스크 캐시 기본 활성화, 대화형 MCP 도구 확장.
+
 ## REVIEW_REPORT 대조·최소 수정 (2026-07-17)
 
 - F1~F17과 P1~P5를 v19, 현재 코드, 단계 0·0.5·0.6 fixture에 대조하고 `REVIEW_RESOLUTION.md`에 분류했다.

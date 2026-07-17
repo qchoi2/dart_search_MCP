@@ -1,5 +1,43 @@
 # 테스트 결과
 
+## 단계 1.1 핵심 검색 신뢰성 보강 검증
+
+- 검증일: 2026-07-17 KST
+- 기준점: `v0.1-core-reviewed` (`98db81e`) + `DEVELOPMENT_PLAN.md` v20
+- Python: 3.14.6
+
+### 자동 테스트
+
+`python -m unittest discover -s tests -p "test*.py"`
+
+- 총 100개 통과, 실패 0개
+- 신규 단계 1.1 fixture: 새 세션 최초 모드설정, 동일 모드 검색어 전환, 모드 변경, reset, Cookie jar 재생성, DART 구조진단 순서, Fast 예산 경계 진단, 폴백 경고·등급, 정상 0건, 감사 최소화, 접수번호 비병합
+- deadline: 공통 HTTP timeout 절단, DART 상태진단·모드설정·결과요청, OpenDART 목록·원문 전파, 요청 전 중단, 재시도/백오프 전후 중단, deadline timeout 회로 비누적, partial·continuation 응답 통과
+- `python -m app.evaluation`: 24/24 통과
+- `python -m compileall -q app tests`: 통과
+- `git diff --check`: 통과
+
+### 세션 생명주기 라이브 프로브
+
+- 실제 요청: 7 / 20
+- 동시성: 1
+- 최소 요청 시작간격: 1,000.130ms
+- HTTP 재시도: 0
+- TLS 인증서 체인·호스트명 검증: 활성
+- API 키: 미사용
+- Cookie 이름·값 fixture: 저장 0건
+- 새 세션, 같은 세션 검색어 전환, Cookie jar 재생성 직후 직접 검색, 재설정 후 검색: 모두 HTTP 200
+- Cookie jar 재생성 직후 직접 검색과 모드설정 후 검색: 결과 15건·10행, 응답 SHA-256 동일
+- 서버 실제 만료 신호: `unconfirmed`
+- Cookie 교체 고유 실패 신호: `unconfirmed`
+- 자동 만료 감지: 미구현, 명시적 reset만 유지
+
+### 성능·범위 주의
+
+- 고정 평가 벤치마크: plan builder p95 0.0085ms, fixture parser p95 2.4573ms
+- 네트워크 90초 종단간 성능 게이트는 실행하거나 통과를 주장하지 않았다.
+- OpenDART 목록 동시성 2, 원문 동시성 3, 적응형 감속, 정정 체인·diff·사건 연결, KIND, 배치, TTL 디스크 기본 활성화는 테스트 대상 실행기에 연결하지 않았다.
+
 ## REVIEW_REPORT 해소 회귀검증 (2026-07-17 KST)
 
 - 기준: `DEVELOPMENT_PLAN.md` v19, 코드, 단계 0·0.5·0.6 fixture. 추가 라이브 네트워크 요청은 수행하지 않았다.

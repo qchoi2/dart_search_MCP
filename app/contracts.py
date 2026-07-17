@@ -101,6 +101,11 @@ class SearchExecutionDiagnostics:
     fully_pageable_by_query: dict[str, bool] = field(default_factory=dict)
     soft_timeout_reached: bool = False
     hard_timeout_reached: bool = False
+    deadline_limited_timeout: bool = False
+    deadline_request_start_blocked: bool = False
+    deadline_backoff_blocked: bool = False
+    processed_receipt_count: int = 0
+    unprocessed_candidate_count: int = 0
     schema_version: str = SCHEMA_VERSION
 
 

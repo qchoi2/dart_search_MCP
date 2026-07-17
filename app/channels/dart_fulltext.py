@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import html
-import json
 import math
 import re
 import time
@@ -25,8 +24,9 @@ from app.config.defaults import (
 )
 from app.contracts import ChannelStatus, DisclosureCandidate, SearchExecutionDiagnostics
 from app.errors import ErrorCode, SearchError
-from app.http_client import HttpClient
+from app.http_client import DeadlineBudget, HttpClient
 from app.research.normalization import dart_viewer_url, parse_report_name
+from app.rules.validation import load_rule_file
 
 from .health import CircuitBreaker
 
@@ -86,11 +86,17 @@ class _DartParser(HTMLParser):
         self._report_depth = 0
         self._company_depth = 0
         self._market_depth = 0
+        self._result_table_depth = 0
+        self.zero_markers: list[str] = []
         self._chunks: dict[str, list[str]] = {}
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         values = dict(attrs)
         classes = set((values.get("class") or "").split())
+        if self._result_table_depth:
+            self._result_table_depth += 1
+        elif tag == "table" and "tbWideList" in classes:
+            self._result_table_depth = 1
         if values.get("id") == "searchCnt":
             self.in_count = True
         if tag == "tr":
@@ -122,6 +128,8 @@ class _DartParser(HTMLParser):
         if self.in_count and tag in {"h4", "div", "span"}:
             self.in_count = False
         if not self.in_tr:
+            if self._result_table_depth:
+                self._result_table_depth -= 1
             return
         if tag == "a":
             if self._report_depth:
@@ -135,8 +143,14 @@ class _DartParser(HTMLParser):
         if tag == "tr":
             self._finish_row()
             self.in_tr = False
+        if self._result_table_depth:
+            self._result_table_depth -= 1
 
     def handle_data(self, data: str) -> None:
+        if self._result_table_depth:
+            for marker in ("조회 결과가 없습니다.",):
+                if marker in data and marker not in self.zero_markers:
+                    self.zero_markers.append(marker)
         if self.in_count:
             match = re.search(r"검색건수\s*[:：]\s*([0-9,]+)", data)
             if match:
@@ -187,10 +201,7 @@ class _DartParser(HTMLParser):
 def parse_search_html(text: str, current_page: int = 1) -> DartSearchPage:
     parser = _DartParser()
     parser.feed(text)
-    if parser.search_count is None:
-        matches = re.findall(r"검색건수\s*[:：]\s*([0-9,]+)", text)
-        parser.search_count = int(matches[-1].replace(",", "")) if matches else None
-    zero_markers = tuple(marker for marker in ("조회 결과가 없습니다.", "검색결과가 없습니다.", "조회된 결과가 없습니다.") if marker in text)
+    zero_markers = tuple(parser.zero_markers)
     if parser.rows:
         classification = "results"
     elif zero_markers or parser.search_count == 0:
@@ -236,7 +247,7 @@ def mechanical_score(row: DartResultRow, query: str) -> float:
 @lru_cache(maxsize=1)
 def _ranking_weights() -> dict[str, float]:
     path = Path(__file__).resolve().parents[1] / "rules" / "ranking_rules.yaml"
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload = load_rule_file(path, "ranking")
     return {key: float(value) for key, value in payload["weights"].items()}
 
 
@@ -302,17 +313,49 @@ class DartFulltextClient:
         self._last_request_started: float | None = None
         self._active_mode: str | None = None
         self._health_confirmed = False
+        self._session_generation = getattr(self.http, "session_generation", 0)
         self._request_lock = threading.Lock()
 
-    def _paced_request(self, method: str, url: str, **kwargs):
+    def _invalidate_session_state(self) -> None:
+        self._active_mode = None
+        self._health_confirmed = False
+
+    def _sync_session_state(self) -> None:
+        generation = getattr(self.http, "session_generation", self._session_generation)
+        if generation != self._session_generation:
+            self._session_generation = generation
+            self._invalidate_session_state()
+
+    def reset_session(self) -> None:
+        """Explicitly discard the known DART mode and health-success cache."""
+        recreate = getattr(self.http, "recreate_cookie_jar", None)
+        if callable(recreate):
+            recreate()
+        self._session_generation = getattr(self.http, "session_generation", self._session_generation + 1)
+        self._last_request_started = None
+        self._invalidate_session_state()
+
+    def _paced_request(self, method: str, url: str, *, deadline: DeadlineBudget | None = None, **kwargs):
         with self._request_lock:
+            self._sync_session_state()
+            if deadline is not None:
+                deadline.require_remaining("dart_pacing")
             now = self.clock()
             if self._last_request_started is not None:
                 remaining = DART_MIN_REQUEST_INTERVAL_SECONDS - (now - self._last_request_started)
                 if remaining > 0:
+                    if deadline is not None and deadline.remaining() <= remaining:
+                        deadline.backoff_blocked = True
+                        raise SearchError(
+                            ErrorCode.SEARCH_TIMEOUT_PARTIAL,
+                            "DART 요청 간격 대기 뒤 요청을 시작할 시간이 없어 부분 결과로 종료합니다.",
+                            details={"stage": "dart_pacing", "deadline_limited_timeout": deadline.deadline_limited_timeout},
+                        )
                     self.sleeper(remaining)
+                    if deadline is not None:
+                        deadline.require_remaining("dart_pacing")
             self._last_request_started = self.clock()
-            return self.http.request(method, url, **kwargs)
+            return self.http.request(method, url, deadline=deadline, **kwargs)
 
     @staticmethod
     def _form(query: str, date_from: date, date_to: date, mode: str, page: int, company: str | None = None) -> dict[str, str]:
@@ -336,12 +379,13 @@ class DartFulltextClient:
         return form
 
     def _ensure_available(self, diagnostics: SearchExecutionDiagnostics) -> None:
+        self._sync_session_state()
         status = self.breaker.before_request()
         if status == ChannelStatus.CIRCUIT_OPEN:
             diagnostics.fallback_used = True
             event = self.breaker.event()
             diagnostics.channel_health_events.append(event)
-            blocked = max(0, int((event.get("blocked_until_epoch") or 0) - time.time()))
+            blocked = self.breaker.remaining_blocked_seconds()
             raise SearchError(
                 ErrorCode.DART_FULLTEXT_CIRCUIT_OPEN,
                 "DART 본문검색 채널이 차단되어 OpenDART 원문검색으로 즉시 폴백합니다.",
@@ -357,18 +401,26 @@ class DartFulltextClient:
             + diagnostics.structure_retry_requests
         )
 
-    def health_check(self, diagnostics: SearchExecutionDiagnostics, *, force: bool = False) -> bool:
+    def health_check(
+        self,
+        diagnostics: SearchExecutionDiagnostics,
+        *,
+        force: bool = False,
+        deadline: DeadlineBudget | None = None,
+    ) -> bool:
         self._ensure_available(diagnostics)
         if self._health_confirmed and not force:
             return True
         failure_class = "network"
         try:
             diagnostics.health_check_requests += 1
-            response = self._paced_request("GET", f"{DART_BASE}/dsab007/main.do")
+            response = self._paced_request("GET", f"{DART_BASE}/dsab007/main.do", deadline=deadline)
             healthy = response.status == 200 and b"detailSearch" in response.body
             if response.status == 200 and not healthy:
                 failure_class = "structure_or_access"
-        except SearchError:
+        except SearchError as exc:
+            if exc.code == ErrorCode.SEARCH_TIMEOUT_PARTIAL:
+                raise
             healthy = False
         if healthy:
             self.breaker.success()
@@ -390,10 +442,14 @@ class DartFulltextClient:
         page: int = 1,
         request_budget: int = STANDARD_DART_REQUEST_BUDGET,
         company: str | None = None,
+        deadline: DeadlineBudget | None = None,
     ) -> DartSearchPage:
-        self._ensure_available(diagnostics)
         if mode not in MODE_ENDPOINTS:
             raise ValueError("mode must be contents or report")
+        self._sync_session_state()
+        if self._active_mode is not None and self._active_mode != mode:
+            self._invalidate_session_state()
+        self._ensure_available(diagnostics)
         form = self._form(query, date_from, date_to, mode, page, company)
         referer = {"Referer": f"{DART_BASE}/dsab007/main.do", "X-Requested-With": "XMLHttpRequest"}
         try:
@@ -401,19 +457,20 @@ class DartFulltextClient:
                 if self._request_count(diagnostics) >= request_budget:
                     raise SearchError(ErrorCode.DOCUMENT_BUDGET_EXCEEDED, "DART 요청예산이 소진되었습니다.")
                 diagnostics.mode_setup_requests += 1
-                self._paced_request("POST", f"{DART_BASE}/dsab007/{MODE_ENDPOINTS[mode]}", form=form, headers=referer)
+                self._paced_request("POST", f"{DART_BASE}/dsab007/{MODE_ENDPOINTS[mode]}", form=form, headers=referer, deadline=deadline)
                 self._active_mode = mode
             if self._request_count(diagnostics) >= request_budget:
                 raise SearchError(ErrorCode.DOCUMENT_BUDGET_EXCEEDED, "DART 요청예산이 소진되었습니다.")
             diagnostics.dart_result_page_requests += 1
-            response = self._paced_request("POST", f"{DART_BASE}/dsab007/search.ax", form=form, headers=referer)
+            response = self._paced_request("POST", f"{DART_BASE}/dsab007/search.ax", form=form, headers=referer, deadline=deadline)
             parsed = parse_search_html(response.body.decode("utf-8", errors="replace"), page)
             if parsed.classification == "structure_failure_candidate":
-                # One status-diagnostic replay is required before structure failure is confirmed.
-                if self._request_count(diagnostics) < request_budget:
-                    diagnostics.structure_retry_requests += 1
-                    retry = self._paced_request("POST", f"{DART_BASE}/dsab007/search.ax", form=form, headers=referer)
-                    parsed = parse_search_html(retry.body.decode("utf-8", errors="replace"), page)
+                # The first abnormal response is only a candidate. Diagnose main.do,
+                # then replay the exact search once before confirming structure failure.
+                self.health_check(diagnostics, force=True, deadline=deadline)
+                diagnostics.structure_retry_requests += 1
+                retry = self._paced_request("POST", f"{DART_BASE}/dsab007/search.ax", form=form, headers=referer, deadline=deadline)
+                parsed = parse_search_html(retry.body.decode("utf-8", errors="replace"), page)
                 if parsed.classification == "structure_failure_candidate":
                     self._health_confirmed = False
                     self.breaker.trip("structure_or_access")
@@ -427,6 +484,8 @@ class DartFulltextClient:
             self.breaker.success()
             return parsed
         except SearchError as exc:
+            if exc.code == ErrorCode.SEARCH_TIMEOUT_PARTIAL:
+                raise
             if exc.code == ErrorCode.OPENDART_TEMPORARY_FAILURE:
                 self.breaker.failure("network")
                 diagnostics.channel_health_events.append(self.breaker.event())
@@ -444,13 +503,17 @@ class DartFulltextClient:
         request_budget: int = STANDARD_DART_REQUEST_BUDGET,
         max_unique: int | None = None,
         company: str | None = None,
+        deadline: DeadlineBudget | None = None,
     ) -> list[DisclosureCandidate]:
         rows: list[DartResultRow] = []
         query_by_receipt: dict[str, str] = {}
         for query in queries:
             page = 1
             while True:
-                result = self.search_page(query, date_from, date_to, diagnostics, page=page, request_budget=request_budget, company=company)
+                result = self.search_page(
+                    query, date_from, date_to, diagnostics, page=page,
+                    request_budget=request_budget, company=company, deadline=deadline,
+                )
                 for row in result.rows:
                     rows.append(row)
                     query_by_receipt.setdefault(row.receipt_no, query)
@@ -487,6 +550,7 @@ class DartFulltextClient:
         *,
         window_days: int,
         request_budget: int = STANDARD_DART_REQUEST_BUDGET,
+        deadline: DeadlineBudget | None = None,
     ) -> DartWindowCollection:
         """Search contiguous inclusive windows and union by receipt number.
 
@@ -501,7 +565,7 @@ class DartFulltextClient:
             before = self._request_count(diagnostics)
             found = self.search_variants(
                 queries, start, end, diagnostics,
-                request_budget=request_budget,
+                request_budget=request_budget, deadline=deadline,
             )
             for candidate in found:
                 previous = by_receipt.get(candidate.receipt_no)

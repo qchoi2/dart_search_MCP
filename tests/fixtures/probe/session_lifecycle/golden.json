@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "probe": "dart_session_lifecycle",
+  "measured_at_utc": "2026-07-17T03:28:50Z",
+  "constraints": {
+    "max_requests": 20,
+    "actual_requests": 7,
+    "concurrency": 1,
+    "minimum_start_interval_ms": 1000,
+    "minimum_observed_start_interval_ms": 1000.13,
+    "http_retries": 0,
+    "tls_certificate_verification": true,
+    "tls_hostname_verification": true,
+    "cookie_values_persisted": false,
+    "api_key_used": false
+  },
+  "observations": [
+    {"step":"new_session_health","status":200,"classification":"not_search_response","set_cookie_header_present":true,"cookie_count_after":2},
+    {"step":"initial_mode_setup","status":200,"classification":"not_search_response","set_cookie_header_present":false,"cookie_count_after":2},
+    {"step":"initial_search","status":200,"classification":"results","search_count":15,"row_count":10,"body_sha256":"f6904a06f0445f9845aad17a58a17f1b49be79b635268ffbd3696ac83ea67953"},
+    {"step":"same_session_keyword_switch","status":200,"classification":"results","search_count":8436,"row_count":10},
+    {"step":"new_cookie_jar_direct_search","status":200,"classification":"results","search_count":15,"row_count":10,"set_cookie_header_present":true,"body_sha256":"f6904a06f0445f9845aad17a58a17f1b49be79b635268ffbd3696ac83ea67953"},
+    {"step":"new_cookie_jar_mode_setup","status":200,"classification":"not_search_response","set_cookie_header_present":false,"cookie_count_after":2},
+    {"step":"new_cookie_jar_search_after_setup","status":200,"classification":"results","search_count":15,"row_count":10,"set_cookie_header_present":false,"body_sha256":"f6904a06f0445f9845aad17a58a17f1b49be79b635268ffbd3696ac83ea67953"}
+  ],
+  "server_expiry_signal": {
+    "status": "unconfirmed",
+    "automatic_detection_eligible": false
+  },
+  "cookie_replacement_signal": {
+    "status": "unconfirmed",
+    "direct_search_succeeded": true,
+    "direct_and_post_setup_response_hash_equal": true,
+    "automatic_detection_eligible": false
+  },
+  "automatic_server_expiry_detection": "not_implemented"
+}

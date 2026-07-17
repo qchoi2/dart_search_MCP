@@ -11,6 +11,7 @@ from app.config.defaults import AUDIT_MAX_SIZE_MB
 from .atomic import atomic_write_bytes
 
 _SECRET_KEYS = {"api_key", "crtfc_key", "cookie", "cookies", "authorization", "document_text", "raw_document"}
+_QUERY_TEXT_KEYS = {"query", "original_query", "raw_query", "query_text", "user_query"}
 
 
 def _is_secret_key(key: str) -> bool:
@@ -28,18 +29,41 @@ def redact(value: Any) -> Any:
     return value
 
 
+def minimize_query_text(value: Any, *, allow_query_text: bool) -> Any:
+    if isinstance(value, dict):
+        return {
+            key: minimize_query_text(item, allow_query_text=allow_query_text)
+            for key, item in value.items()
+            if allow_query_text or key.lower().replace("-", "_") not in _QUERY_TEXT_KEYS
+        }
+    if isinstance(value, list):
+        return [minimize_query_text(item, allow_query_text=allow_query_text) for item in value]
+    if isinstance(value, tuple):
+        return [minimize_query_text(item, allow_query_text=allow_query_text) for item in value]
+    return value
+
+
 class AuditLog:
-    def __init__(self, path: Path, enabled: bool = True, max_size_mb: int = AUDIT_MAX_SIZE_MB):
+    def __init__(
+        self,
+        path: Path,
+        enabled: bool = True,
+        max_size_mb: int = AUDIT_MAX_SIZE_MB,
+        *,
+        audit_query_text: bool = False,
+    ):
         self.path = path
         self.enabled = enabled
         self.max_bytes = max_size_mb * 1024 * 1024
+        self.audit_query_text = audit_query_text
 
     def append_summary(self, record: dict[str, Any]) -> bool:
         if not self.enabled:
             return False
         try:
             existing = self.path.read_bytes() if self.path.exists() else b""
-            line = json.dumps(redact(record), ensure_ascii=False, separators=(",", ":")).encode("utf-8") + b"\n"
+            minimized = minimize_query_text(record, allow_query_text=self.audit_query_text)
+            line = json.dumps(redact(minimized), ensure_ascii=False, separators=(",", ":")).encode("utf-8") + b"\n"
             combined = existing + line
             if len(combined) > self.max_bytes:
                 combined = combined[-self.max_bytes :]

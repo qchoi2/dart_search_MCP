@@ -53,6 +53,8 @@ def validate_settings(values: dict[str, Any]) -> None:
         raise ValueError(f"search.max_results cannot exceed {INTERACTIVE_TARGET_MAX}")
     if not isinstance(values["cache"]["ttl_disk_enabled"], bool):
         raise ValueError("cache.ttl_disk_enabled must be boolean")
+    if values["audit"]["audit_query_text"] not in {"on", "off"}:
+        raise ValueError("audit.audit_query_text must be on or off")
 
 
 def load_settings(path: Path | None = None) -> Settings:

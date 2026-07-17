@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import time
 from dataclasses import asdict, replace
 from datetime import date, datetime, timezone
@@ -13,6 +14,7 @@ from app.channels.dart_fulltext import DartFulltextClient
 from app.channels.opendart import ListCollection, OpenDartClient
 from app.contracts import DisclosureCandidate, EvidenceSnippet, SearchExecutionDiagnostics, SearchRequest, VerifiedCase
 from app.errors import ErrorCode, SearchError
+from app.http_client import DeadlineBudget
 from app.research.evidence import extract_evidence
 from app.research.normalization import dart_viewer_url
 from app.security.untrusted_text import mark_untrusted
@@ -60,6 +62,11 @@ class SearchEngine:
         self.clock = clock
         self._known_candidates: dict[str, DisclosureCandidate] = {}
 
+    def reset_session(self) -> None:
+        """Explicit session reset; no server-expiry inference is performed."""
+        if self.dart is not None:
+            self.dart.reset_session()
+
     def execute(self, request: SearchRequest) -> dict[str, Any]:
         lineage = _lineage(request)
         if not request.date_from or not request.date_to:
@@ -75,10 +82,14 @@ class SearchEngine:
             )
         start = self.clock()
         plan = build_search_plan(request)
+        deadline = DeadlineBudget(start + plan.hard_timeout_seconds, clock=self.clock)
         diagnostics = SearchExecutionDiagnostics()
         warnings: list[str] = []
+        warning_codes: list[str] = []
+        warning_details: list[dict[str, Any]] = []
         candidates: list[DisclosureCandidate] = []
         list_result = ListCollection()
+        hard_timeout = False
         from_date = date.fromisoformat(request.date_from)
         to_date = date.fromisoformat(request.date_to)
         continuation_state = None
@@ -90,34 +101,55 @@ class SearchEngine:
         resolved_company_code = None
         if request.company:
             try:
-                resolved_company_code = self._resolve_company(request.company, warnings)
+                resolved_company_code = self._resolve_company(request.company, warnings, deadline=deadline)
             except SearchError as exc:
-                return self._channel_error_response(exc, lineage, plan, diagnostics, warnings, candidates)
+                if exc.code == ErrorCode.SEARCH_TIMEOUT_PARTIAL:
+                    hard_timeout = True
+                    diagnostics.hard_timeout_reached = True
+                else:
+                    return self._channel_error_response(exc, lineage, plan, diagnostics, warnings, candidates)
 
         fallback = False
         disclosure_type = self._opendart_disclosure_type(request)
-        if plan.primary_channel == "dart_fulltext" and self.dart is not None:
+        if not hard_timeout and plan.primary_channel == "dart_fulltext" and self.dart is not None:
             try:
-                if not self.dart.health_check(diagnostics):
+                if not self.dart.health_check(diagnostics, deadline=deadline):
                     fallback = True
                     diagnostics.fallback_used = True
-                    warnings.append("DART 본문검색 상태진단이 실패하여 OpenDART 원문검색으로 폴백합니다.")
+                    message = "DART 본문검색 상태진단이 실패하여 OpenDART 원문검색으로 폴백합니다."
+                    warnings.append(message)
+                    self._add_fallback_warning(
+                        warning_codes, warning_details, message=message,
+                        reason="status_diagnostic_failed", dart=self.dart,
+                    )
                 else:
                     candidates = self.dart.search_variants(
                         plan.query_variants, from_date, to_date, diagnostics,
                         request_budget=plan.dart_request_budget,
                         max_unique=plan.effective_document_budget,
                         company=resolved_company_code or request.company,
+                        deadline=deadline,
                     )
                     candidates = self._apply_request_scope(candidates, request)
             except SearchError as exc:
-                if exc.code in {ErrorCode.DART_FULLTEXT_CIRCUIT_OPEN, ErrorCode.DART_FULLTEXT_STRUCTURE_CHANGED, ErrorCode.OPENDART_TEMPORARY_FAILURE}:
+                if exc.code == ErrorCode.SEARCH_TIMEOUT_PARTIAL:
+                    hard_timeout = True
+                    diagnostics.hard_timeout_reached = True
+                elif exc.code in {ErrorCode.DART_FULLTEXT_CIRCUIT_OPEN, ErrorCode.DART_FULLTEXT_STRUCTURE_CHANGED, ErrorCode.OPENDART_TEMPORARY_FAILURE}:
                     fallback = True
                     diagnostics.fallback_used = True
                     warnings.append(exc.message)
+                    reason = (exc.details or {}).get("failure_class") or (
+                        "structure_or_access" if exc.code in {ErrorCode.DART_FULLTEXT_CIRCUIT_OPEN, ErrorCode.DART_FULLTEXT_STRUCTURE_CHANGED}
+                        else "network"
+                    )
+                    self._add_fallback_warning(
+                        warning_codes, warning_details, message=exc.message,
+                        reason=str(reason), dart=self.dart, error=exc,
+                    )
                 else:
                     raise
-        if plan.primary_channel == "opendart" or fallback or not candidates or disclosure_type is not None:
+        if not hard_timeout and (plan.primary_channel == "opendart" or fallback or not candidates or disclosure_type is not None):
             if self.opendart is None:
                 if candidates:
                     warnings.append("OpenDART API 키가 없어 후보 원문을 검증하지 못했습니다.")
@@ -125,6 +157,9 @@ class SearchEngine:
                     return self._base_response(
                         "api_key_action_required", lineage, plan=plan, diagnostics=diagnostics,
                         warnings=["OpenDART API 키가 없어 목록·원문 검색을 실행할 수 없습니다."],
+                        warning_codes=warning_codes,
+                        warning_details=warning_details,
+                        completeness_grade="unconfirmed",
                         error={"code": ErrorCode.API_KEY_MISSING.value, "message": "DART_API_KEY를 설정해 주세요."},
                     )
             else:
@@ -135,9 +170,17 @@ class SearchEngine:
                         disclosure_type=disclosure_type,
                         start_window=int((continuation_state or {}).get("window", 0)),
                         start_page=int((continuation_state or {}).get("page", 1)),
+                        deadline=deadline,
                     )
                 except SearchError as exc:
-                    return self._channel_error_response(exc, lineage, plan, diagnostics, warnings, candidates)
+                    if exc.code == ErrorCode.SEARCH_TIMEOUT_PARTIAL:
+                        hard_timeout = True
+                        diagnostics.hard_timeout_reached = True
+                        list_result.complete = False
+                        list_result.next_window_index = int((continuation_state or {}).get("window", 0))
+                        list_result.next_page = int((continuation_state or {}).get("page", 1))
+                    else:
+                        return self._channel_error_response(exc, lineage, plan, diagnostics, warnings, candidates)
                 candidates = self._merge_candidates(candidates, list_result.candidates)
                 candidates = self._apply_request_scope(candidates, request)
 
@@ -149,11 +192,10 @@ class SearchEngine:
         processed_this_run: list[str] = []
         listing_strategy = plan.strategy == "S1_company_disclosure_list"
         terminal_error: SearchError | None = None
-        hard_timeout = False
         soft_timeout = False
         for candidate in candidates:
             elapsed = self.clock() - start
-            if elapsed >= plan.hard_timeout_seconds:
+            if deadline.remaining() <= 0:
                 hard_timeout = True
                 diagnostics.hard_timeout_reached = True
                 break
@@ -167,7 +209,6 @@ class SearchEngine:
                 continue
             if len(verified) >= plan.result_budget:
                 break
-            processed_this_run.append(receipt_hash)
             if diagnostics.first_candidate_elapsed_ms is None:
                 diagnostics.first_candidate_elapsed_ms = int((self.clock() - start) * 1000)
             if listing_strategy:
@@ -175,9 +216,11 @@ class SearchEngine:
                 finalized = replace(candidate, verification_status="verified", evidence=(evidence,))
                 verified.append(self._to_case(finalized, request.query))
                 self._known_candidates[finalized.receipt_no] = finalized
+                processed_this_run.append(receipt_hash)
                 continue
             if self.opendart is None:
                 preliminary.append(candidate)
+                processed_this_run.append(receipt_hash)
                 continue
             text = self.cache.get(candidate.receipt_no)
             if text is not None:
@@ -185,9 +228,13 @@ class SearchEngine:
             elif diagnostics.actual_document_requests < plan.effective_document_budget:
                 requests_before = getattr(self.opendart, "requests_started", None)
                 try:
-                    text = self.opendart.download_document(candidate.receipt_no)
+                    text = self.opendart.download_document(candidate.receipt_no, deadline=deadline)
                     self.cache.put(candidate.receipt_no, text)
                 except SearchError as exc:
+                    if exc.code == ErrorCode.SEARCH_TIMEOUT_PARTIAL:
+                        hard_timeout = True
+                        diagnostics.hard_timeout_reached = True
+                        break
                     if exc.code in {
                         ErrorCode.OPENDART_KEY_UNREGISTERED, ErrorCode.OPENDART_KEY_SUSPENDED,
                         ErrorCode.OPENDART_IP_NOT_ALLOWED, ErrorCode.OPENDART_REQUEST_LIMIT_EXCEEDED,
@@ -197,6 +244,7 @@ class SearchEngine:
                         break
                     status = "document_unavailable" if exc.code == ErrorCode.OPENDART_FILE_NOT_FOUND else "parse_failed"
                     preliminary.append(replace(candidate, verification_status=status))
+                    processed_this_run.append(receipt_hash)
                     continue
                 finally:
                     if requests_before is None:
@@ -205,6 +253,7 @@ class SearchEngine:
                         diagnostics.actual_document_requests += self.opendart.requests_started - requests_before
             else:
                 preliminary.append(candidate)
+                processed_this_run.append(receipt_hash)
                 continue
             evidence = extract_evidence(candidate.receipt_no, text, plan.query_variants)
             if evidence:
@@ -220,7 +269,13 @@ class SearchEngine:
                 self._known_candidates[finalized.receipt_no] = finalized
             else:
                 preliminary.append(replace(candidate, verification_status="excluded"))
+            processed_this_run.append(receipt_hash)
 
+        diagnostics.deadline_limited_timeout = deadline.deadline_limited_timeout
+        diagnostics.deadline_request_start_blocked = deadline.request_start_blocked
+        diagnostics.deadline_backoff_blocked = deadline.backoff_blocked
+        diagnostics.processed_receipt_count = len(processed_this_run)
+        diagnostics.unprocessed_candidate_count = max(0, len(candidates) - len(processed_hashes) - len(processed_this_run))
         diagnostics.completed_elapsed_ms = int((self.clock() - start) * 1000)
         pending = hard_timeout or soft_timeout or not list_result.complete or len(candidates) > len(verified) + len(preliminary) or diagnostics.actual_document_requests >= plan.effective_document_budget and bool(preliminary)
         token = None
@@ -247,6 +302,13 @@ class SearchEngine:
         elif hard_timeout:
             response_error = {"code": ErrorCode.SEARCH_TIMEOUT_PARTIAL.value, "message": "하드 시간예산에 도달해 부분 결과와 continuation token을 반환합니다."}
             warnings.append(response_error["message"])
+            self._add_warning(
+                warning_codes, warning_details, ErrorCode.SEARCH_TIMEOUT_PARTIAL.value,
+                response_error["message"],
+                processed_receipts=diagnostics.processed_receipt_count,
+                unprocessed_candidates=diagnostics.unprocessed_candidate_count,
+                deadline_limited_timeout=diagnostics.deadline_limited_timeout,
+            )
         if not verified and not preliminary and not token:
             warnings.append("지정한 범위에서 정상적으로 검색했지만 확인된 결과가 없습니다.")
         coverage = {
@@ -257,9 +319,28 @@ class SearchEngine:
             "local_ranking": "mechanical_score",
             "latest_first_bias": diagnostics.latest_first_bias,
             "fallback_used": fallback,
+            "actual_document_verification_count": diagnostics.actual_document_requests,
+            "unprocessed_candidate_count": diagnostics.unprocessed_candidate_count,
+            "processed_window_count": diagnostics.processed_window_count,
+            "remaining_scope": {
+                "next_window_index": list_result.next_window_index if not list_result.complete else None,
+                "next_page": list_result.next_page if not list_result.complete else None,
+            },
         }
+        completeness_grade = self._completeness_grade(
+            status=status,
+            fallback=fallback,
+            has_continuation=token is not None,
+            latest_first_bias=diagnostics.latest_first_bias,
+        )
+        for detail in warning_details:
+            if detail.get("code") == "DART_FULLTEXT_FALLBACK":
+                detail["actual_document_verification_count"] = diagnostics.actual_document_requests
+                detail["unprocessed_candidate_count"] = diagnostics.unprocessed_candidate_count
         response = self._base_response(
             status, lineage, plan=plan, diagnostics=diagnostics, warnings=warnings,
+            warning_codes=warning_codes, warning_details=warning_details,
+            completeness_grade=completeness_grade,
             results=[_case_dict(case) for case in verified[: plan.result_budget]],
             preliminary=[_candidate_dict(candidate) for candidate in preliminary[: plan.preliminary_budget]],
             coverage=coverage,
@@ -299,6 +380,64 @@ class SearchEngine:
             decision_summary="OpenDART 상태코드 정책에 따라 재시도 없이 중단",
         )
 
+    @staticmethod
+    def _add_warning(
+        codes: list[str],
+        details: list[dict[str, Any]],
+        code: str,
+        message: str,
+        **extra: Any,
+    ) -> None:
+        if code not in codes:
+            codes.append(code)
+        if not any(item.get("code") == code for item in details):
+            details.append({"code": code, "message": message, **extra})
+
+    @classmethod
+    def _add_fallback_warning(
+        cls,
+        codes: list[str],
+        details: list[dict[str, Any]],
+        *,
+        message: str,
+        reason: str,
+        dart: DartFulltextClient,
+        error: SearchError | None = None,
+    ) -> None:
+        breaker = getattr(dart, "breaker", None)
+        event = breaker.event() if breaker is not None else {}
+        blocked = int((error.details or {}).get("blocked_seconds", 0)) if error else 0
+        if event.get("status") == "CIRCUIT_OPEN":
+            blocked = max(
+                1,
+                blocked,
+                breaker.remaining_blocked_seconds(),
+            )
+        else:
+            blocked = 0
+        cls._add_warning(
+            codes, details, "DART_FULLTEXT_FALLBACK", message,
+            reason=reason,
+            fallback_source=str((error.details or {}).get("fallback_source", "opendart_document_search")) if error else "opendart_document_search",
+            blocked_seconds=blocked,
+        )
+
+    @staticmethod
+    def _completeness_grade(
+        *,
+        status: str,
+        fallback: bool,
+        has_continuation: bool,
+        latest_first_bias: bool,
+    ) -> str:
+        if status in {"failed", "api_key_action_required"}:
+            return "unconfirmed"
+        if status == "partial" or has_continuation:
+            return "partial"
+        if fallback or latest_first_bias:
+            return "reduced"
+        return "complete"
+
     def get_evidence(self, receipt_no: str, keywords: list[str], *, include_full_preview: bool = False, include_amendment_context: bool = True) -> dict[str, Any]:
         if not receipt_no.isdigit() or len(receipt_no) != defaults.RECEIPT_NO_LENGTH:
             raise ValueError(f"receipt_no must contain {defaults.RECEIPT_NO_LENGTH} digits")
@@ -318,13 +457,14 @@ class SearchEngine:
             "dart_viewer_url": dart_viewer_url(receipt_no),
         }
 
-    def _resolve_company(self, company: str | None, warnings: list[str]) -> str | None:
+    def _resolve_company(self, company: str | None, warnings: list[str], *, deadline: DeadlineBudget | None = None) -> str | None:
         if not company:
             return None
         if company.isdigit() and len(company) == defaults.CORP_CODE_LENGTH:
             return company
         if self.company_resolver is not None:
-            resolved = self.company_resolver(company)
+            parameters = inspect.signature(self.company_resolver).parameters
+            resolved = self.company_resolver(company, deadline=deadline) if "deadline" in parameters else self.company_resolver(company)
             if resolved:
                 return resolved
         # Name resolution is intentionally deferred to the cached company directory in the MCP factory.
@@ -385,7 +525,7 @@ class SearchEngine:
             assessment_confidence="not_assessed",
             amendment_status=amendment,
             withdrawal_status=withdrawal,
-            effective_receipt_no=candidate.receipt_no,
+            effective_receipt_no=None,
             relevance_reason=f"'{query}' 검색의 기계적 원문/목록 근거",
         )
 
@@ -400,7 +540,12 @@ class SearchEngine:
             "plan": asdict(plan) if plan else None,
             "coverage": kwargs.pop("coverage", {}),
             "diagnostics": asdict(diagnostics) if diagnostics else {},
+            "actual_document_verification_count": diagnostics.actual_document_requests if diagnostics else 0,
+            "unprocessed_candidate_count": diagnostics.unprocessed_candidate_count if diagnostics else 0,
             "warnings": kwargs.pop("warnings", []),
+            "warning_codes": kwargs.pop("warning_codes", []),
+            "warning_details": kwargs.pop("warning_details", []),
+            "completeness_grade": kwargs.pop("completeness_grade", "unconfirmed" if status in {"failed", "api_key_action_required"} else "complete"),
             "decision_summary": kwargs.pop("decision_summary", "검색 전 필수조건 확인"),
             "results": kwargs.pop("results", []),
             "preliminary_candidates": kwargs.pop("preliminary", []),
@@ -415,21 +560,20 @@ class SearchEngine:
             "ts": datetime.now(timezone.utc).isoformat(),
             "search_lineage_id": response["search_lineage_id"],
             "normalized_query_hash": hashlib.sha256(" ".join(request.query.casefold().split()).encode()).hexdigest(),
-            "mode": request.mode,
-            "date_from": request.date_from,
-            "date_to": request.date_to,
-            "company": request.company,
-            "status": response["status"],
-            "query_variants": (response.get("plan") or {}).get("query_variants", []),
-            "candidate_receipts": [item["case_id"] for item in response["results"]],
-            "preliminary_receipts": [item["receipt_no"] for item in response["preliminary_candidates"]],
-            "excluded": [
+            "executed_query_variants": (response.get("plan") or {}).get("query_variants", []),
+            "search_period": {"date_from": request.date_from, "date_to": request.date_to},
+            "scope": {"company": request.company, "disclosure_type": self._opendart_disclosure_type(request)},
+            "candidate_receipts": list(dict.fromkeys([
+                *[item["case_id"] for item in response["results"]],
+                *[item["receipt_no"] for item in response["preliminary_candidates"]],
+            ])),
+            "verified_receipts": [item["case_id"] for item in response["results"]],
+            "exclusion_reasons": [
                 {"receipt_no": item["receipt_no"], "reason": item["verification_status"]}
                 for item in response["preliminary_candidates"]
                 if item["verification_status"] != "unverified"
             ],
-            "retry_count": response["diagnostics"].get("structure_retry_requests", 0),
-            "completeness": "complete" if response["coverage"].get("complete") else "partial",
-            "diagnostics": response["diagnostics"],
-            "coverage": response["coverage"],
+            "call_cache_retry_diagnostics": response["diagnostics"],
+            "warning_codes": response.get("warning_codes", []),
+            "completeness_grade": response.get("completeness_grade"),
         })

@@ -45,7 +45,7 @@ class FakeOpenDart:
         diagnostics.actual_list_requests += 1
         return ListCollection(list(self.candidates), self.complete, 0 if not self.complete else None, 2 if not self.complete else None)
 
-    def download_document(self, receipt_no):
+    def download_document(self, receipt_no, **kwargs):
         self.downloads.append(receipt_no)
         value = self.texts.get(receipt_no)
         if isinstance(value, Exception):
@@ -59,7 +59,7 @@ class FakeDart:
         self.error = error
         self.calls = 0
 
-    def health_check(self, diagnostics):
+    def health_check(self, diagnostics, **kwargs):
         diagnostics.health_check_requests += 1
         return True
 
@@ -130,7 +130,7 @@ class SearchExecutionTests(unittest.TestCase):
         self.assertTrue(result["continuation_token"].startswith("cursor_"))
 
     def test_hard_timeout_returns_partial_with_continuation(self):
-        ticks = iter([0.0, 100.0, 100.0])
+        ticks = iter([0.0, *([100.0] * 20)])
         opendart = FakeOpenDart([candidate_from_list_row(row())])
         result = SearchEngine(opendart=opendart, dart=None, clock=lambda: next(ticks)).execute(
             SearchRequest("공시 목록", company="00123456", date_from="2026-01-01", date_to="2026-01-31")
@@ -139,6 +139,9 @@ class SearchExecutionTests(unittest.TestCase):
         self.assertEqual(result["error"]["code"], ErrorCode.SEARCH_TIMEOUT_PARTIAL.value)
         self.assertTrue(result["diagnostics"]["hard_timeout_reached"])
         self.assertTrue(result["continuation_token"])
+        self.assertIn(ErrorCode.SEARCH_TIMEOUT_PARTIAL.value, result["warning_codes"])
+        self.assertEqual(result["completeness_grade"], "partial")
+        self.assertIn("remaining_scope", result["coverage"])
 
     def test_audit_records_safe_reproduction_fields(self):
         candidate = candidate_from_list_row(row())
@@ -151,10 +154,10 @@ class SearchExecutionTests(unittest.TestCase):
             )
             engine.execute(SearchRequest("상계납입", date_from="2026-01-01", date_to="2026-01-31"))
             saved = json.loads(path.read_text(encoding="utf-8"))
-            self.assertIn("상계납입", saved["query_variants"])
-            self.assertEqual(saved["preliminary_receipts"], [candidate.receipt_no])
-            self.assertEqual(saved["excluded"][0]["reason"], "excluded")
-            self.assertIn(saved["completeness"], {"complete", "partial"})
+            self.assertIn("상계납입", saved["executed_query_variants"])
+            self.assertEqual(saved["candidate_receipts"], [candidate.receipt_no])
+            self.assertEqual(saved["exclusion_reasons"][0]["reason"], "excluded")
+            self.assertIn(saved["completeness_grade"], {"complete", "reduced", "partial", "unconfirmed"})
             self.assertNotIn("query", saved)
 
     def test_company_name_is_resolved_before_opendart_list(self):

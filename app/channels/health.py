@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import time
 from dataclasses import dataclass
 from typing import Callable
@@ -76,3 +77,8 @@ class CircuitBreaker:
             "blocked_until_epoch": self.state.blocked_until,
             "opened_count": self.state.opened_count,
         }
+
+    def remaining_blocked_seconds(self) -> int:
+        if self.state.status != ChannelStatus.CIRCUIT_OPEN or self.state.blocked_until is None:
+            return 0
+        return max(1, math.ceil(self.state.blocked_until - self.clock()))

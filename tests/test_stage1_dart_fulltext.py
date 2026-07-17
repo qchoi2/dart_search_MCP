@@ -108,17 +108,21 @@ class FulltextTests(unittest.TestCase):
     def test_structure_failure_requires_retry_then_opens_15_minute_circuit(self):
         clock = [1000.0]
         breaker = CircuitBreaker(clock=lambda: clock[0])
-        http = FakeHttp([b"mode", b"<html>changed</html>", b"<html>changed again</html>"])
+        http = FakeHttp([b"mode", b"<html>changed</html>", b"detailSearch ready", b"<html>changed again</html>"])
         client = DartFulltextClient(http=http, breaker=breaker, clock=lambda: clock[0], sleeper=lambda _: None)  # type: ignore[arg-type]
         diagnostics = SearchExecutionDiagnostics()
         with self.assertRaises(SearchError) as caught:
             client.search_page("x", date(2026, 1, 1), date(2026, 1, 2), diagnostics)
         self.assertEqual(caught.exception.code, ErrorCode.DART_FULLTEXT_STRUCTURE_CHANGED)
-        self.assertEqual(diagnostics.health_check_requests, 0)
+        self.assertEqual(diagnostics.health_check_requests, 1)
         self.assertEqual(diagnostics.structure_retry_requests, 1)
         self.assertEqual(diagnostics.dart_result_page_requests, 1)
         self.assertEqual(breaker.state.status, ChannelStatus.CIRCUIT_OPEN)
         self.assertEqual(breaker.state.blocked_until, 1900.0)
+        self.assertEqual(
+            [url.rsplit("/", 1)[-1] for _, url, _ in http.requests],
+            ["detailSearchMain2.do", "search.ax", "main.do", "search.ax"],
+        )
         request_count = len(http.requests)
         with self.assertRaises(SearchError) as second:
             client.search_page("y", date(2026, 1, 1), date(2026, 1, 2), diagnostics)

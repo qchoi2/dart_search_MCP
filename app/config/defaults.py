@@ -112,6 +112,6 @@ DEFAULT_SETTINGS = {
         "recommended_confirmation_minutes": BATCH_RECOMMENDED_CONFIRMATION_MINUTES,
         "checkpoint_retention_days": CHECKPOINT_RETENTION_DAYS,
     },
-    "audit": {"enabled": True, "retention_days": AUDIT_RETENTION_DAYS},
+    "audit": {"enabled": True, "retention_days": AUDIT_RETENTION_DAYS, "audit_query_text": "off"},
     "features": {"dart_fulltext": True, "kind_search": False, "orchestrator": True},
 }

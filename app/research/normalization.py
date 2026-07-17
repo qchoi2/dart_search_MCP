@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
-import json
 from functools import lru_cache
 from pathlib import Path
 
 from app.config.defaults import RECEIPT_NO_LENGTH
+from app.rules.validation import load_rule_file
 
 
 @lru_cache(maxsize=1)
 def _rules() -> dict:
     path = Path(__file__).resolve().parents[1] / "rules" / "amendment_rules.yaml"
-    return json.loads(path.read_text(encoding="utf-8"))
+    return load_rule_file(path, "amendment")
 
 
 def parse_rm(raw: str | None) -> tuple[tuple[str, ...], tuple[str, ...]]:

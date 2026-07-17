@@ -2,18 +2,18 @@
 
 from __future__ import annotations
 
-import json
 from functools import lru_cache
 from pathlib import Path
 
 from app.config import defaults
 from app.contracts import SearchPlan, SearchRequest
+from app.rules.validation import load_rule_file
 
 
 @lru_cache(maxsize=1)
 def search_term_rules() -> dict:
     path = Path(__file__).resolve().parents[1] / "rules" / "search_terms.yaml"
-    return json.loads(path.read_text(encoding="utf-8"))
+    return load_rule_file(path, "search_terms")
 
 
 def query_variants(query: str) -> tuple[str, ...]:

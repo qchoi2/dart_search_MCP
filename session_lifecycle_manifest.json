@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "probe": "dart_session_lifecycle",
+  "measured_at_utc": "2026-07-17T03:28:50Z",
+  "request_policy": {
+    "max_requests": 20,
+    "actual_requests": 7,
+    "concurrency": 1,
+    "minimum_start_interval_ms": 1000,
+    "http_retries": 0,
+    "tls_certificate_verification": true,
+    "tls_hostname_verification": true,
+    "api_key_used": false,
+    "cookie_fixture_stored": false
+  },
+  "files": [
+    {
+      "path": "app/probe/session_lifecycle.py",
+      "sha256": "142fee29124a79ef140b14c0bf56b0c9e06e75f05048cb91a5c33e0d33628adb"
+    },
+    {
+      "path": "app/probe/session_lifecycle_main.py",
+      "sha256": "d5e33085d67c4400e61074ccae8ce228f964eb3bdb3cf82ff69cb98426f21dfc"
+    },
+    {
+      "path": "tests/fixtures/probe/session_lifecycle/golden.json",
+      "sha256": "8d4e281b2b4c06250c9a7e85abefd21d7d2a90c9c1d99b8b3c3428c00839ed84",
+      "bytes": 2061
+    },
+    {
+      "path": "PROBE_RESULTS_SESSION_LIFECYCLE.md",
+      "sha256": "4d8bb62cfe31e94cb51241823f88821deafb92951cc7c5f9d154ab43ffde6334",
+      "bytes": 2042
+    }
+  ],
+  "server_expiry_signal": "unconfirmed",
+  "cookie_replacement_signal": "unconfirmed",
+  "automatic_server_expiry_detection": "not_implemented"
+}

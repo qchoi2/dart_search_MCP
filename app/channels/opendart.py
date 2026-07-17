@@ -23,7 +23,7 @@ from app.config.defaults import (
 )
 from app.contracts import DisclosureCandidate, SearchExecutionDiagnostics
 from app.errors import ErrorCode, SearchError
-from app.http_client import HttpClient
+from app.http_client import DeadlineBudget, HttpClient
 from app.research.normalization import dart_viewer_url, parse_report_name, parse_rm
 from app.security.archive_guard import read_safe_zip
 from app.security.xml_guard import parse_xml_safely
@@ -220,18 +220,20 @@ class OpenDartClient:
         self.http = http or HttpClient()
         self.requests_started = 0
 
-    def _request(self, method: str, url: str, **kwargs):
+    def _request(self, method: str, url: str, *, deadline: DeadlineBudget | None = None, **kwargs):
+        if deadline is not None:
+            deadline.require_remaining("opendart_request_start")
         self.requests_started += 1
-        return self.http.request(method, url, **kwargs)
+        return self.http.request(method, url, deadline=deadline, **kwargs)
 
-    def _json(self, endpoint: str, params: dict) -> dict:
-        response = self._request("GET", f"{BASE_URL}/{endpoint}", params={"crtfc_key": self._api_key, **params})
+    def _json(self, endpoint: str, params: dict, *, deadline: DeadlineBudget | None = None) -> dict:
+        response = self._request("GET", f"{BASE_URL}/{endpoint}", params={"crtfc_key": self._api_key, **params}, deadline=deadline)
         try:
             return response.json()
         except (ValueError, UnicodeError) as exc:
             raise SearchError(ErrorCode.OPENDART_TEMPORARY_FAILURE, "OpenDART JSON 응답을 해석하지 못했습니다.") from exc
 
-    def list_page(self, *, date_from: date, date_to: date, page_no: int = 1, corp_code: str | None = None, corp_cls: str | None = None, disclosure_type: str | None = None) -> dict:
+    def list_page(self, *, date_from: date, date_to: date, page_no: int = 1, corp_code: str | None = None, corp_cls: str | None = None, disclosure_type: str | None = None, deadline: DeadlineBudget | None = None) -> dict:
         params = {
             "corp_code": corp_code,
             "bgn_de": date_from.strftime("%Y%m%d"),
@@ -243,11 +245,11 @@ class OpenDartClient:
             "page_no": page_no,
             "page_count": OPENDART_PAGE_COUNT,
         }
-        payload = self._json("list.json", params)
+        payload = self._json("list.json", params, deadline=deadline)
         # Only status 900 permits one conservative application-level retry.
         # Limit/service/auth/maintenance statuses must never be retried here.
         if str(payload.get("status")) == "900":
-            payload = self._json("list.json", params)
+            payload = self._json("list.json", params, deadline=deadline)
         ensure_success(payload)
         return payload
 
@@ -263,6 +265,7 @@ class OpenDartClient:
         disclosure_type: str | None = None,
         start_window: int = 0,
         start_page: int = 1,
+        deadline: DeadlineBudget | None = None,
     ) -> ListCollection:
         windows = list(reversed(split_date_windows(date_from, date_to)))
         seen: set[str] = set()
@@ -277,7 +280,11 @@ class OpenDartClient:
                     return result
                 before_requests = self.requests_started
                 try:
-                    payload = self.list_page(date_from=window.date_from, date_to=window.date_to, page_no=page, corp_code=corp_code, corp_cls=corp_cls, disclosure_type=disclosure_type)
+                    payload = self.list_page(
+                        date_from=window.date_from, date_to=window.date_to, page_no=page,
+                        corp_code=corp_code, corp_cls=corp_cls, disclosure_type=disclosure_type,
+                        deadline=deadline,
+                    )
                 finally:
                     diagnostics.actual_list_requests += self.requests_started - before_requests
                 diagnostics.measured_total_count_by_window[window.key] = int(payload.get("total_count", 0))
@@ -299,13 +306,13 @@ class OpenDartClient:
         diagnostics.estimation_confidence = "high"
         return result
 
-    def download_document(self, receipt_no: str) -> str:
+    def download_document(self, receipt_no: str, *, deadline: DeadlineBudget | None = None) -> str:
         params = {"crtfc_key": self._api_key, "rcept_no": receipt_no}
-        response = self._request("GET", f"{BASE_URL}/document.xml", params=params)
+        response = self._request("GET", f"{BASE_URL}/document.xml", params=params, deadline=deadline)
         if not response.body.startswith(b"PK"):
             payload = self._non_zip_payload(response.body, "원문")
             if str(payload.get("status")) == "900":
-                response = self._request("GET", f"{BASE_URL}/document.xml", params=params)
+                response = self._request("GET", f"{BASE_URL}/document.xml", params=params, deadline=deadline)
                 if not response.body.startswith(b"PK"):
                     payload = self._non_zip_payload(response.body, "원문")
                     ensure_success(payload, allow_no_data=False)
@@ -313,16 +320,16 @@ class OpenDartClient:
                 ensure_success(payload, allow_no_data=False)
         return normalize_document_zip(response.body)
 
-    def load_company_directory(self, cache_path: Path, *, now: float | None = None) -> CompanyDirectory:
+    def load_company_directory(self, cache_path: Path, *, now: float | None = None, deadline: DeadlineBudget | None = None) -> CompanyDirectory:
         current = time.time() if now is None else now
         if cache_path.exists() and current - cache_path.stat().st_mtime < CORPCODE_TTL_HOURS * 3600:
             return CompanyDirectory.from_zip(cache_path.read_bytes())
         params = {"crtfc_key": self._api_key}
-        response = self._request("GET", f"{BASE_URL}/corpCode.xml", params=params)
+        response = self._request("GET", f"{BASE_URL}/corpCode.xml", params=params, deadline=deadline)
         if not response.body.startswith(b"PK"):
             payload = self._non_zip_payload(response.body, "회사코드")
             if str(payload.get("status")) == "900":
-                response = self._request("GET", f"{BASE_URL}/corpCode.xml", params=params)
+                response = self._request("GET", f"{BASE_URL}/corpCode.xml", params=params, deadline=deadline)
                 if not response.body.startswith(b"PK"):
                     ensure_success(self._non_zip_payload(response.body, "회사코드"), allow_no_data=False)
             else:

@@ -32,12 +32,15 @@ def build_engine() -> SearchEngine:
     audit = None
     if settings.get("audit.enabled", True):
         paths.ensure("logs")
-        audit = AuditLog(paths.logs / "search_audit.jsonl")
-    def resolve_company(name: str) -> str | None:
+        audit = AuditLog(
+            paths.logs / "search_audit.jsonl",
+            audit_query_text=settings.get("audit.audit_query_text", "off") == "on",
+        )
+    def resolve_company(name: str, *, deadline=None) -> str | None:
         if opendart is None:
             return None
         paths.ensure("cache")
-        matches = opendart.load_company_directory(paths.cache / "corpCode.zip").lookup(name, limit=COMPANY_EXACT_MATCH_LIMIT)
+        matches = opendart.load_company_directory(paths.cache / "corpCode.zip", deadline=deadline).lookup(name, limit=COMPANY_EXACT_MATCH_LIMIT)
         return matches[0].corp_code if len(matches) == 1 else None
 
     return SearchEngine(opendart=opendart, dart=dart, audit=audit, company_resolver=resolve_company)
