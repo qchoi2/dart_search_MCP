@@ -49,3 +49,67 @@ EVIDENCE_TOOL = {
         "additionalProperties": False,
     },
 }
+
+BATCH_PREVIEW_TOOL = {
+    "name": "preview_batch_research",
+    "description": "배치 검색의 요청 수·시간·저장량을 추정하고 승인용 plan_id를 발급합니다. 원문은 다운로드하지 않습니다.",
+    "inputSchema": {
+        "type": "object",
+        "required": ["query", "date_from", "date_to"],
+        "properties": {
+            "query": {"type": "string", "minLength": 1, "maxLength": defaults.QUERY_MAX_CHARS},
+            "company": {"type": ["string", "null"]},
+            "date_from": {"type": "string", "format": "date"},
+            "date_to": {"type": "string", "format": "date"},
+            "disclosure_types": {"type": "array", "items": {"type": "string"}, "default": []},
+            "target_count": {"type": "integer", "minimum": 1, "maximum": defaults.BATCH_TARGET_MAX, "default": defaults.BATCH_TARGET_MAX},
+            "exhaustive": {"type": "boolean", "default": True},
+        },
+        "additionalProperties": False,
+    },
+}
+
+BATCH_RUN_TOOL = {
+    "name": "run_batch_research",
+    "description": "유효한 plan_id와 명시 승인, 5/10/15/30분 실행구간을 받아 배치를 시작합니다.",
+    "inputSchema": {
+        "type": "object",
+        "required": ["plan_id", "approved"],
+        "properties": {
+            "plan_id": {"type": "string"},
+            "approved": {"type": "boolean"},
+            "confirmation_interval_minutes": {"type": ["integer", "null"], "enum": [5, 10, 15, 30, None]},
+        },
+        "additionalProperties": False,
+    },
+}
+
+BATCH_CONTINUE_TOOL = {
+    "name": "continue_batch_research",
+    "description": "체크포인트의 배치 작업을 새 승인구간 동안 재개합니다.",
+    "inputSchema": {
+        "type": "object",
+        "required": ["job_id", "approved"],
+        "properties": {
+            "job_id": {"type": "string"},
+            "approved": {"type": "boolean"},
+            "confirmation_interval_minutes": {"type": ["integer", "null"], "enum": [5, 10, 15, 30, None]},
+        },
+        "additionalProperties": False,
+    },
+}
+
+EXPORT_RESULTS_TOOL = {
+    "name": "export_search_results",
+    "description": "완료된 배치 결과를 사용자가 지정한 폴더에 CSV/JSON으로 원자적으로 저장합니다.",
+    "inputSchema": {
+        "type": "object",
+        "required": ["search_record_id", "formats"],
+        "properties": {
+            "search_record_id": {"type": "string"},
+            "formats": {"type": "array", "items": {"type": "string", "enum": ["csv", "json"]}, "minItems": 1, "uniqueItems": True},
+            "output_directory": {"type": ["string", "null"]},
+        },
+        "additionalProperties": False,
+    },
+}

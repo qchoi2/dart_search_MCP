@@ -5,11 +5,13 @@ from __future__ import annotations
 import json
 import os
 import sys
+from datetime import date
 from pathlib import Path
 from typing import Any
 
 from app.channels.dart_fulltext import DartFulltextClient
 from app.channels.opendart import OpenDartClient
+from app.batch import BatchResearchService
 from app.config.env import get_opendart_api_key, load_env_file
 from app.config.defaults import COMPANY_EXACT_MATCH_LIMIT, PRODUCT_VERSION, SCHEMA_VERSION
 from app.config.paths import AppPaths
@@ -19,7 +21,14 @@ from app.errors import SearchError
 from app.orchestrator.engine import SearchEngine
 from app.storage.audit_log import AuditLog
 
-from .tool_contracts import EVIDENCE_TOOL, SEARCH_TOOL
+from .tool_contracts import (
+    BATCH_CONTINUE_TOOL,
+    BATCH_PREVIEW_TOOL,
+    BATCH_RUN_TOOL,
+    EVIDENCE_TOOL,
+    EXPORT_RESULTS_TOOL,
+    SEARCH_TOOL,
+)
 
 
 def build_engine() -> SearchEngine:
@@ -47,16 +56,36 @@ def build_engine() -> SearchEngine:
 
 
 class McpApplication:
-    def __init__(self, engine: SearchEngine | None = None):
+    def __init__(self, engine: SearchEngine | None = None, batch: BatchResearchService | None = None):
         self.engine = engine or build_engine()
+        paths = AppPaths.discover()
+        self.batch = batch or BatchResearchService(
+            self.engine,
+            root=paths.local_data / "batch",
+            settings=load_settings(paths.root / "settings.json"),
+        )
 
     def call_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         try:
             if name == "search_disclosure_cases":
-                return self.engine.execute(SearchRequest(**arguments))
-            if name == "get_disclosure_evidence":
-                return self.engine.get_evidence(**arguments)
-            raise ValueError(f"unknown tool: {name}")
+                result = self.engine.execute(SearchRequest(**arguments))
+            elif name == "get_disclosure_evidence":
+                result = self.engine.get_evidence(**arguments)
+            elif name == "preview_batch_research":
+                values = dict(arguments)
+                values["date_from"] = date.fromisoformat(values["date_from"])
+                values["date_to"] = date.fromisoformat(values["date_to"])
+                result = self.batch.preview(**values)
+            elif name == "run_batch_research":
+                result = self.batch.run(**arguments)
+            elif name == "continue_batch_research":
+                result = self.batch.continue_run(**arguments)
+            elif name == "export_search_results":
+                result = self.batch.export(**arguments)
+            else:
+                raise ValueError(f"unknown tool: {name}")
+            result.setdefault("schema_version", SCHEMA_VERSION)
+            return result
         except (SearchError, ValueError, TypeError) as exc:
             if isinstance(exc, SearchError):
                 error = exc.to_dict()
@@ -72,7 +101,7 @@ class McpApplication:
         if method == "initialize":
             result = {"protocolVersion": "2025-03-26", "capabilities": {"tools": {}}, "serverInfo": {"name": "dart-disclosure-search", "version": PRODUCT_VERSION}}
         elif method == "tools/list":
-            result = {"tools": [SEARCH_TOOL, EVIDENCE_TOOL]}
+            result = {"tools": [SEARCH_TOOL, EVIDENCE_TOOL, BATCH_PREVIEW_TOOL, BATCH_RUN_TOOL, BATCH_CONTINUE_TOOL, EXPORT_RESULTS_TOOL]}
         elif method == "tools/call":
             params = request.get("params") or {}
             payload = self.call_tool(params.get("name", ""), params.get("arguments") or {})

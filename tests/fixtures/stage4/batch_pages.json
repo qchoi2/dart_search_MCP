@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "scope": {
+    "query": "상계",
+    "date_from": "2026-01-01",
+    "date_to": "2026-03-31"
+  },
+  "pages": [
+    {
+      "status": "000",
+      "total_count": 4,
+      "total_page": 1,
+      "list": [
+        {"rcept_no": "20260716000001", "corp_code": "00126380", "corp_name": "테스트회사", "report_nm": "주요사항보고서 상계", "rcept_dt": "20260716", "flr_nm": "테스트회사", "rm": ""},
+        {"rcept_no": "20260716000002", "corp_code": "00126380", "corp_name": "테스트회사", "report_nm": "주요사항보고서 상계", "rcept_dt": "20260716", "flr_nm": "테스트회사", "rm": ""},
+        {"rcept_no": "20260716000003", "corp_code": "00126380", "corp_name": "테스트회사", "report_nm": "주요사항보고서 상계", "rcept_dt": "20260716", "flr_nm": "테스트회사", "rm": ""},
+        {"rcept_no": "20260716000004", "corp_code": "00126380", "corp_name": "테스트회사", "report_nm": "주요사항보고서 상계", "rcept_dt": "20260716", "flr_nm": "테스트회사", "rm": ""}
+      ]
+    }
+  ],
+  "expected": {
+    "confirmation_intervals_minutes": [5, 10, 15, 30],
+    "soft_deadline_seconds_for_5m": 270,
+    "hard_deadline_seconds_for_5m": 300,
+    "document_concurrency": 3,
+    "result_count": 4
+  }
+}

@@ -79,6 +79,32 @@ class CircuitBreaker:
             "opened_count": self.state.opened_count,
         }
 
+    def snapshot(self) -> dict:
+        """Serializable state for batch checkpoints."""
+        return self.event()
+
+    def restore(self, value: dict) -> None:
+        """Restore a checkpoint and immediately re-evaluate its wall-clock expiry."""
+        try:
+            status = ChannelStatus(str(value.get("status", ChannelStatus.HEALTHY.value)))
+            failure_count = max(0, int(value.get("failure_count", 0)))
+            opened_count = max(0, int(value.get("opened_count", 0)))
+            raw_blocked_until = value.get("blocked_until_epoch", value.get("blocked_until"))
+            blocked_until = float(raw_blocked_until) if raw_blocked_until is not None else None
+        except (TypeError, ValueError):
+            status = ChannelStatus.HEALTHY
+            failure_count = 0
+            opened_count = 0
+            blocked_until = None
+        self.state = CircuitSnapshot(
+            status=status,
+            failure_class=value.get("failure_class"),
+            failure_count=failure_count,
+            blocked_until=blocked_until,
+            opened_count=opened_count,
+        )
+        self.before_request()
+
     def remaining_blocked_seconds(self) -> int:
         if self.state.status != ChannelStatus.CIRCUIT_OPEN or self.state.blocked_until is None:
             return 0

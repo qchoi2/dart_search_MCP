@@ -272,7 +272,17 @@ class McpTests(unittest.TestCase):
         app = McpApplication(SearchEngine(opendart=FakeOpenDart([]), dart=FakeDart([])))
         listing = app.handle({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
         names = [item["name"] for item in listing["result"]["tools"]]
-        self.assertEqual(names, ["search_disclosure_cases", "get_disclosure_evidence"])
+        self.assertEqual(
+            names,
+            [
+                "search_disclosure_cases",
+                "get_disclosure_evidence",
+                "preview_batch_research",
+                "run_batch_research",
+                "continue_batch_research",
+                "export_search_results",
+            ],
+        )
         called = app.handle({"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "search_disclosure_cases", "arguments": {"query": "x"}}})
         self.assertEqual(called["result"]["structuredContent"]["status"], "clarification_required")
 
