@@ -86,7 +86,15 @@ class SearchEngine:
             if continuation_state.get("lineage") != lineage:
                 raise SearchError(ErrorCode.INVALID_CONTINUATION_TOKEN, "다른 검색의 continuation token입니다.")
 
+        resolved_company_code = None
+        if request.company:
+            try:
+                resolved_company_code = self._resolve_company(request.company, warnings)
+            except SearchError as exc:
+                return self._channel_error_response(exc, lineage, plan, diagnostics, warnings, candidates)
+
         fallback = False
+        disclosure_type = self._opendart_disclosure_type(request)
         if plan.primary_channel == "dart_fulltext" and self.dart is not None:
             try:
                 if not self.dart.health_check(diagnostics):
@@ -98,8 +106,9 @@ class SearchEngine:
                         plan.query_variants, from_date, to_date, diagnostics,
                         request_budget=plan.dart_request_budget,
                         max_unique=plan.effective_document_budget,
-                        company=request.company,
+                        company=resolved_company_code or request.company,
                     )
+                    candidates = self._apply_request_scope(candidates, request)
             except SearchError as exc:
                 if exc.code in {ErrorCode.DART_FULLTEXT_CIRCUIT_OPEN, ErrorCode.DART_FULLTEXT_STRUCTURE_CHANGED, ErrorCode.OPENDART_TEMPORARY_FAILURE}:
                     fallback = True
@@ -107,7 +116,7 @@ class SearchEngine:
                     warnings.append(exc.message)
                 else:
                     raise
-        if plan.primary_channel == "opendart" or fallback or not candidates:
+        if plan.primary_channel == "opendart" or fallback or not candidates or disclosure_type is not None:
             if self.opendart is None:
                 if candidates:
                     warnings.append("OpenDART API 키가 없어 후보 원문을 검증하지 못했습니다.")
@@ -119,16 +128,17 @@ class SearchEngine:
                     )
             else:
                 try:
-                    corp_code = self._resolve_company(request.company, warnings)
                     list_result = self.opendart.collect_lists(
                         date_from=from_date, date_to=to_date, diagnostics=diagnostics,
-                        request_budget=plan.list_request_budget, corp_code=corp_code,
+                        request_budget=plan.list_request_budget, corp_code=resolved_company_code,
+                        disclosure_type=disclosure_type,
                         start_window=int((continuation_state or {}).get("window", 0)),
                         start_page=int((continuation_state or {}).get("page", 1)),
                     )
                 except SearchError as exc:
                     return self._channel_error_response(exc, lineage, plan, diagnostics, warnings, candidates)
                 candidates = self._merge_candidates(candidates, list_result.candidates)
+                candidates = self._apply_request_scope(candidates, request)
 
         # Global receipt-number dedupe happens before any document request.
         candidates = list({candidate.receipt_no: candidate for candidate in candidates}.values())
@@ -323,6 +333,24 @@ class SearchEngine:
                     mechanical_score=previous.mechanical_score,
                 )
         return [result[key] for key in order]
+
+    @staticmethod
+    def _apply_request_scope(candidates: list[DisclosureCandidate], request: SearchRequest) -> list[DisclosureCandidate]:
+        normalized_query = "".join(request.query.split())
+        if "주요사항보고서" in normalized_query:
+            return [
+                candidate
+                for candidate in candidates
+                if "".join(candidate.report_name.split()).startswith("주요사항보고서")
+            ]
+        return candidates
+
+    @staticmethod
+    def _opendart_disclosure_type(request: SearchRequest) -> str | None:
+        normalized_query = "".join(request.query.split())
+        if "주요사항보고서" in normalized_query:
+            return "B"
+        return None
 
     @staticmethod
     def _to_case(candidate: DisclosureCandidate, query: str) -> VerifiedCase:

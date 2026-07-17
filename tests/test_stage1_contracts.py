@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+import ssl
 import tempfile
 import unittest
 import zipfile
@@ -122,11 +123,15 @@ class BaseInfrastructureTests(unittest.TestCase):
         self.assertTrue(marked["instruction_like_content_detected"])
         self.assertEqual(marked["trust"], "untrusted_disclosure_text")
 
-    def test_shared_http_client_owns_cookie_session_and_strict_tls(self):
+    def test_shared_http_client_owns_cookie_session_and_verified_tls(self):
         client = HttpClient()
         self.assertIsNotNone(client._cookie_jar)
         self.assertEqual(client._context.verify_mode.name, "CERT_REQUIRED")
         self.assertTrue(client._context.check_hostname)
+        strict_flag = getattr(ssl, "VERIFY_X509_STRICT", 0)
+        if strict_flag:
+            self.assertFalse(client._context.verify_flags & strict_flag)
+            self.assertTrue(client.tls_strict_flag_relaxed)
 
 
 if __name__ == "__main__":

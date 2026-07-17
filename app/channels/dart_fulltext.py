@@ -316,17 +316,19 @@ class DartFulltextClient:
     def _form(query: str, date_from: date, date_to: date, mode: str, page: int, company: str | None = None) -> dict[str, str]:
         compact_from = date_from.strftime("%Y%m%d")
         compact_to = date_to.strftime("%Y%m%d")
+        company_code = company if company and company.isdigit() and len(company) == 8 else ""
+        company_name = "" if company_code else company or ""
         form = {
             "currentPage": str(page), "maxResults": str(DART_EFFECTIVE_PAGE_SIZE), "maxLinks": str(DART_MAX_LINKS),
             "sort": "DATE", "sortType": "desc", "option": mode,
             "keyword": query if mode == "contents" else "", "b_keyword": query if mode == "contents" else "",
             "reportName": query if mode == "report" else "", "b_reportName": query if mode == "report" else "",
-            "textCrpCik": "", "textCrpNm": company or "", "flrCik": "", "textPresenterNm": "",
+            "textCrpCik": company_code, "textCrpNm": company_name, "flrCik": "", "textPresenterNm": "",
             "startDate": compact_from, "endDate": compact_to,
             "b_startDate": compact_from, "b_endDate": compact_to,
             "docType": "", "b_docType": "", "dspTypeTab": "", "b_dspType": "",
             "isSort": "false", "isTab": "false", "tocSrch": "", "lateKeyword": "",
-            "b_textCrpCik": "", "b_flrCik": "", "b_textPresenterNm": "",
+            "b_textCrpCik": company_code, "b_flrCik": "", "b_textPresenterNm": "",
             "b_synonym": "", "b_reSearch": "", "reportNamePopYn": "N", "autoSearch": "N", "decadeType": "",
         }
         return form

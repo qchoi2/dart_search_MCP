@@ -44,6 +44,15 @@ class HttpClient:
         self.timeout = timeout
         self.user_agent = user_agent
         self._context = ssl.create_default_context()
+        self.tls_strict_flag_relaxed = False
+        strict_flag = getattr(ssl, "VERIFY_X509_STRICT", 0)
+        if strict_flag and self._context.verify_flags & strict_flag:
+            # Python 3.14 rejects DART's otherwise browser-valid chain because
+            # a CA BasicConstraints extension is not marked critical.  This is
+            # the same compatibility setting used by the measured probe client;
+            # certificate-chain and hostname verification remain mandatory.
+            self._context.verify_flags &= ~strict_flag
+            self.tls_strict_flag_relaxed = True
         self._cookie_jar = http.cookiejar.CookieJar()
         if opener is None:
             director = urllib.request.build_opener(

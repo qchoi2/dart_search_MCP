@@ -1,5 +1,16 @@
 # 테스트 결과
 
+## 단계 1 라이브 인수검증 (2026-07-17 KST)
+
+- Python 3.14 TLS 호환 설정 후 인증서 검증 `CERT_REQUIRED`, 호스트명 검증 활성 상태에서 DART `HEALTHY`와 OpenDART 정상 응답을 확인했다.
+- 전체 자동 테스트: 74개 통과, 실패 0개.
+- 삼성전자 주요사항보고서(2025-01-01~2025-12-31): OpenDART 유형 `B` 전기간 집계 8건, 목표 결과 5건. 5건 모두 회사명·보고서명·원문 근거 확인, DART 링크 HTTP 200 및 삼성전자 표식 확인.
+- 검색기간 누락: `clarification_required`, `DATE_RANGE_REQUIRED`, plan/diagnostics 없음으로 네트워크 전 중단 확인.
+- 정상 0건: 2025-01-01 하루 삼성전자 `공개매수 대상회사 의견표명서` 검색 결과 0건, status `completed`, 채널 `HEALTHY`, coverage complete, OpenDART 측정 0건.
+- 잘못된 API 키: 실제 `.env` 키 한 글자 변경 시 status `api_key_action_required`, `OPENDART_KEY_UNREGISTERED`, DART 상태 `010`. 응답·로그 키 노출 0건. 원래 키 복원 후 정상 `013` 재확인.
+- 상계납입(2025-07-16~2026-07-16): 실제 결과 5건, 고유 접수번호 5건, 중복 0건, 전부 OpenDART 원문에서 `상계납입` 확인. 실행 검색어는 붙여쓴 `상계납입` 1종이고 `상계 납입` 미실행. DART 요청 간격 최솟값 1.000초, `latest_first_bias=true`, partial coverage 표시.
+- 확인된 상계납입 접수번호: `20260708000160`, `20260616000322`, `20260612000426`, `20260601000409`, `20260601000332`.
+
 ## 단계 1 핵심 공시검색 MCP 검증
 
 - 검증일: 2026-07-17 KST

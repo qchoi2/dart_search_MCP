@@ -70,6 +70,12 @@ class FulltextTests(unittest.TestCase):
         self.assertEqual(form["startDate"], "20260102")
         self.assertEqual(form["endDate"], "20260203")
 
+    def test_form_uses_resolved_company_code_for_dart_filter(self):
+        form = DartFulltextClient._form("주요사항보고서", date(2025, 1, 1), date(2025, 12, 31), "contents", 1, "00126380")
+        self.assertEqual(form["textCrpCik"], "00126380")
+        self.assertEqual(form["b_textCrpCik"], "00126380")
+        self.assertEqual(form["textCrpNm"], "")
+
     def test_nonoverlap_date_windows_cover_entire_period(self):
         windows = dart_date_windows(date(2026, 1, 1), date(2026, 1, 10), 3)
         self.assertEqual(windows[0], (date(2026, 1, 1), date(2026, 1, 3)))

@@ -32,9 +32,11 @@ class FakeOpenDart:
         self.complete = complete
         self.downloads = []
         self.collects = 0
+        self.last_collect_kwargs = None
 
     def collect_lists(self, **kwargs):
         self.collects += 1
+        self.last_collect_kwargs = kwargs
         diagnostics = kwargs["diagnostics"]
         diagnostics.actual_list_requests += 1
         return ListCollection(list(self.candidates), self.complete, 0 if not self.complete else None, 2 if not self.complete else None)
@@ -132,6 +134,34 @@ class SearchExecutionTests(unittest.TestCase):
         engine = SearchEngine(opendart=CapturingOpenDart([]), dart=None, company_resolver=lambda name: "00126380" if name == "삼성전자" else None)
         engine.execute(SearchRequest("공시 목록", company="삼성전자", date_from="2026-01-01", date_to="2026-01-31"))
         self.assertEqual(seen["corp_code"], "00126380")
+
+    def test_explicit_major_report_query_excludes_result_report_mentions(self):
+        major = replace(
+            candidate_from_list_row(row("20250101000001", "삼성전자")),
+            report_name="주요사항보고서(자기주식취득결정)",
+            source_channels=("dart_fulltext",),
+            matched_terms=("주요사항보고서",),
+        )
+        result_report = replace(
+            candidate_from_list_row(row("20250102000002", "삼성전자")),
+            report_name="자기주식취득결과보고서",
+            source_channels=("dart_fulltext",),
+            matched_terms=("주요사항보고서",),
+        )
+        opendart = FakeOpenDart(
+            [],
+            {major.receipt_no: "주요사항보고서 자기주식 취득 결정"},
+        )
+        result = SearchEngine(
+            opendart=opendart,
+            dart=FakeDart([major, result_report]),
+            company_resolver=lambda _: "00126380",
+        ).execute(
+            SearchRequest("주요사항보고서", company="삼성전자", date_from="2025-01-01", date_to="2025-12-31")
+        )
+        self.assertEqual([item["case_id"] for item in result["results"]], [major.receipt_no])
+        self.assertEqual(opendart.downloads, [major.receipt_no])
+        self.assertEqual(opendart.last_collect_kwargs["disclosure_type"], "B")
 
     def test_exhaustive_does_not_start_batch(self):
         opendart = FakeOpenDart([])
