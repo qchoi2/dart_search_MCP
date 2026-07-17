@@ -61,6 +61,7 @@ class SearchEngine:
         self.company_resolver = company_resolver
         self.clock = clock
         self._known_candidates: dict[str, DisclosureCandidate] = {}
+        self._batch_recommendations: dict[str, tuple[float, int, int]] = {}
 
     def reset_session(self) -> None:
         """Explicit session reset; no server-expiry inference is performed."""
@@ -79,6 +80,9 @@ class SearchEngine:
             return self._base_response(
                 "batch_confirmation_required", lineage,
                 warnings=["전수·배치 검색은 대화형 MCP에서 자동 실행하지 않습니다. 범위를 줄이거나 후속 배치 미리보기가 필요합니다."],
+                batch_research_recommended=True,
+                batch_recommendation_reason="exhaustive_or_batch_requested",
+                batch_preview_tool="preview_batch_research",
             )
         if request.amendment_comparison or request.sequence_required:
             return self._base_response(
@@ -423,8 +427,85 @@ class SearchEngine:
             decision_summary=f"{plan.strategy}: {plan.primary_channel} 우선, 검증 원문 {diagnostics.actual_document_requests}건",
             error=response_error,
         )
+        response.update(
+            self._batch_recommendation(
+                lineage=hashlib.sha256(
+                    "|".join((" ".join(request.query.casefold().split()), (request.company or "").casefold())).encode()
+                ).hexdigest(),
+                plan=plan,
+                diagnostics=diagnostics,
+                candidate_count=len(candidates),
+                fallback=fallback,
+            )
+        )
         self._audit(request, response)
         return response
+
+    def _batch_recommendation(
+        self,
+        *,
+        lineage: str,
+        plan,
+        diagnostics: SearchExecutionDiagnostics,
+        candidate_count: int,
+        fallback: bool,
+    ) -> dict[str, Any]:
+        estimated_dart_rows = sum(
+            max(0, int(last_page or 0)) * defaults.DART_EFFECTIVE_PAGE_SIZE
+            for last_page in diagnostics.dart_linked_last_page_by_query.values()
+        )
+        filtered_documents = max(candidate_count, int(estimated_dart_rows * 0.65))
+        dart_rate_floor = max(
+            0,
+            diagnostics.dart_result_page_requests + diagnostics.mode_setup_requests - 1,
+        ) * defaults.DART_MIN_REQUEST_INTERVAL_SECONDS
+        estimated_seconds = int(max(dart_rate_floor, filtered_documents * 1.05))
+        thresholds = dict(plan.batch_threshold)
+        reason = None
+        if filtered_documents > thresholds["estimated_documents"]:
+            reason = "filtered_estimated_documents_exceed_threshold"
+        elif estimated_seconds > thresholds["estimated_seconds"]:
+            reason = "estimated_duration_exceeds_threshold"
+        elif fallback and filtered_documents >= max(1, int(plan.effective_document_budget * 1.25)):
+            reason = "fallback_estimate_increased"
+        if reason is None:
+            return {
+                "batch_research_recommended": False,
+                "batch_recommendation_reason": None,
+                "batch_estimate": {
+                    "filtered_estimated_documents": filtered_documents,
+                    "estimated_seconds": estimated_seconds,
+                },
+            }
+        now = self.clock()
+        previous = self._batch_recommendations.get(lineage)
+        if previous and now - previous[0] < defaults.CONTINUATION_TTL_SECONDS:
+            old_documents, old_seconds = previous[1], previous[2]
+            materially_larger = (
+                filtered_documents >= max(1, int(old_documents * 1.5))
+                or estimated_seconds >= max(1, int(old_seconds * 1.5))
+            )
+            if not materially_larger:
+                return {
+                    "batch_research_recommended": False,
+                    "batch_recommendation_suppressed": True,
+                    "batch_recommendation_reason": reason,
+                    "batch_estimate": {
+                        "filtered_estimated_documents": filtered_documents,
+                        "estimated_seconds": estimated_seconds,
+                    },
+                }
+        self._batch_recommendations[lineage] = (now, filtered_documents, estimated_seconds)
+        return {
+            "batch_research_recommended": True,
+            "batch_recommendation_suppressed": False,
+            "batch_recommendation_reason": reason,
+            "batch_preview_tool": "preview_batch_research",
+            "batch_estimate": {
+                "filtered_estimated_documents": filtered_documents,
+                "estimated_seconds": estimated_seconds,
+            },
+        }
 
     @staticmethod
     def _response_status_for_error(error: SearchError, *, has_results: bool) -> str:

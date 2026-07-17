@@ -1,0 +1,10 @@
+# Hash-verified fixtures and probe artifacts retain byte-exact line endings.
+/app/probe/session_lifecycle.py -text -diff
+/app/probe/session_lifecycle_main.py -text -diff
+/PROBE_RESULTS_SESSION_LIFECYCLE.md -text -diff
+/tests/fixtures/probe/dart_web/** -text -diff
+/tests/fixtures/probe/opendart/** -text -diff
+/tests/fixtures/probe/golden/stage0_5/** -text -diff
+/tests/fixtures/probe/stage0_6/golden/** -text -diff
+/tests/fixtures/probe/session_lifecycle/** -text -diff
+/tests/fixtures/stage4/** -text -diff

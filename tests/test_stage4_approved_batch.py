@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import hashlib
+import csv
+import io
 import tempfile
 import threading
 import time
@@ -11,10 +13,13 @@ from pathlib import Path
 
 from app.batch.service import BatchResearchService
 from app.channels.health import CircuitBreaker
+from app.channels.dart_fulltext import DartResultRow, DartSearchPage
 from app.contracts import ChannelStatus
 from app.errors import ErrorCode, SearchError
 from app.mcp_server.server import McpApplication
 from app.storage.batch_store import BatchPlanStore
+from app.storage.audit_log import AuditLog
+from app.security.csv_guard import escape_csv_cell
 
 
 def row(receipt: str, text: str = "상계") -> dict:
@@ -84,6 +89,7 @@ class RateLimitedOnceOpenDart(FakeOpenDart):
 
 class FakeDart:
     def __init__(self, clock: Clock) -> None:
+        self.clock = clock
         self.breaker = CircuitBreaker(clock=clock)
         self.health_calls = 0
 
@@ -93,10 +99,53 @@ class FakeDart:
         return True
 
 
+class FakeSearchDart(FakeDart):
+    def __init__(self, clock: Clock) -> None:
+        super().__init__(clock)
+        self.search_calls = 0
+
+    def search_page(self, query, date_from, date_to, diagnostics, **kwargs):
+        self.search_calls += 1
+        diagnostics.dart_result_page_requests += 1
+        result_row = DartResultRow(
+            receipt_no="20260716000001",
+            corp_code="00126380",
+            company="테스트회사",
+            market=None,
+            report_name="주요사항보고서 상계",
+            report_name_prefixes=(),
+            snippet="상계",
+            disclosure_group=None,
+            match_scope="body",
+            filer_name="테스트회사",
+            receipt_date="20260716",
+            row_tags=(),
+        )
+        return DartSearchPage("normal_results", 1, (result_row,), (), 1, 1, 1, False)
+
+
+class PagedSearchDart(FakeSearchDart):
+    def search_page(self, query, date_from, date_to, diagnostics, **kwargs):
+        page_no = int(kwargs.get("page", 1))
+        self.clock.value += 280
+        result = super().search_page(query, date_from, date_to, diagnostics, **kwargs)
+        return DartSearchPage(
+            result.classification,
+            2,
+            result.rows,
+            result.zero_markers,
+            page_no,
+            2,
+            2,
+            False,
+        )
+
+
 class Engine:
-    def __init__(self, opendart: FakeOpenDart, dart=None) -> None:
+    def __init__(self, opendart: FakeOpenDart, dart=None, audit=None) -> None:
         self.opendart = opendart
         self.dart = dart
+        self.audit = audit
 
 
 class Stage4BatchTests(unittest.TestCase):
@@ -139,6 +188,10 @@ class Stage4BatchTests(unittest.TestCase):
             self.assertEqual(channel.list_calls, 1)
             self.assertEqual(channel.download_calls, 0)
             self.assertEqual(first["confirmation_interval_options_minutes"], [5, 10, 15, 30])
+            self.assertEqual(
+                first["dart_rate_floor_seconds"],
+                max(0, first["estimated_dart_requests"] - 1),
+            )
 
     def test_decline_and_invalid_interval_never_start_network(self):
         with tempfile.TemporaryDirectory() as raw:
@@ -222,7 +275,7 @@ class Stage4BatchTests(unittest.TestCase):
             plan = self.preview(service)
             first = service.run(plan_id=plan["plan_id"], approved=True, confirmation_interval_minutes=5)
             self.assertEqual(first["status"], "continuation_confirmation_required")
-            self.assertEqual(first["checkpoint"]["next_row_offset"], 3)
+            self.assertEqual(first["checkpoint"]["next_row_offset"], 1)
             before = channel.download_calls
             declined = service.continue_run(job_id=first["job_id"], approved=False, confirmation_interval_minutes=5)
             self.assertEqual(declined["status"], "continuation_declined")
@@ -251,6 +304,7 @@ class Stage4BatchTests(unittest.TestCase):
             self.assertEqual(len(exported["files_written"]), 2)
             payload = json.loads((output / f"{completed['search_record_id']}.json").read_text(encoding="utf-8"))
             self.assertIsNone(payload["request"]["query"])
+            self.assertTrue(payload["export_safety"]["json_preserves_original_text"])
 
     def test_checkpoint_store_rejects_path_traversal(self):
         with tempfile.TemporaryDirectory() as raw:
@@ -278,20 +332,105 @@ class Stage4BatchTests(unittest.TestCase):
             self.assertEqual(dart.health_calls, 1)
             self.assertEqual(dart.breaker.state.status, ChannelStatus.HEALTHY)
 
-    def test_document_concurrency_is_three_and_rate_limit_reduces_it(self):
+    def test_document_requests_are_sequential_and_rate_limit_checkpoints(self):
         rows = [row(f"2026071600000{index}") for index in range(1, 5)]
         with tempfile.TemporaryDirectory() as raw:
             channel = RateLimitedOnceOpenDart(rows)
             service = self.make_service(Path(raw), channel)
             plan = self.preview(service)
+            stopped = service.run(plan_id=plan["plan_id"], approved=True, confirmation_interval_minutes=5)
+            self.assertEqual(stopped["status"], "continuation_confirmation_required")
+            self.assertEqual(stopped["stop_reason"], ErrorCode.OPENDART_HTTP_RATE_LIMITED.value)
+            self.assertLessEqual(channel.max_active_downloads, 1)
+            completed = service.continue_run(job_id=stopped["job_id"], approved=True, confirmation_interval_minutes=5)
+            self.assertEqual(completed["status"], "completed")
+            self.assertLessEqual(channel.max_active_downloads, 1)
+
+    def test_csv_formula_prefixes_are_escaped(self):
+        for value in ("=1+1", "+SUM(A1:A2)", "-2+3", "@cmd", "\tformula", "\rformula"):
+            self.assertEqual(escape_csv_cell(value), "'" + value)
+        raw = BatchResearchService._csv_bytes(
+            [{
+                "receipt_no": "20260716000001",
+                "corp_name": "@company",
+                "report_name": "=HYPERLINK(\"bad\")",
+                "receipt_date": "20260716",
+                "viewer_url": "+unsafe",
+                "evidence": [{"text": "-SUM(A1:A2)"}],
+            }]
+        )
+        parsed = next(csv.DictReader(io.StringIO(raw.decode("utf-8-sig"))))
+        self.assertTrue(parsed["corp_name"].startswith("'@"))
+        self.assertTrue(parsed["report_name"].startswith("'="))
+        self.assertTrue(parsed["viewer_url"].startswith("'+"))
+        self.assertTrue(parsed["evidence"].startswith("'-"))
+
+    def test_dart_date_window_candidates_drive_batch_verification(self):
+        with tempfile.TemporaryDirectory() as raw:
+            clock = Clock()
+            channel = FakeOpenDart([row("20260716000099")])
+            dart = FakeSearchDart(clock)
+            service = self.make_service(Path(raw), channel, clock, dart)
+            plan = self.preview(service)
+            preview_list_calls = channel.list_calls
             completed = service.run(plan_id=plan["plan_id"], approved=True, confirmation_interval_minutes=5)
             self.assertEqual(completed["status"], "completed")
-            self.assertLessEqual(channel.max_active_downloads, 3)
-            self.assertGreaterEqual(channel.max_active_downloads, 2)
-            record = service.records.load(completed["search_record_id"])
-            slowdowns = [item for item in record["diagnostics"] if item.get("reason") == "adaptive_document_slowdown"]
-            self.assertEqual(slowdowns[-1]["from"], 3)
-            self.assertEqual(slowdowns[-1]["to"], 2)
+            self.assertEqual(completed["result_count"], 1)
+            self.assertEqual(channel.list_calls, preview_list_calls)
+            self.assertGreaterEqual(dart.search_calls, 2)
+            self.assertEqual(channel.download_calls, 1)
+
+    def test_dart_page_checkpoint_resumes_at_exact_page(self):
+        with tempfile.TemporaryDirectory() as raw:
+            clock = Clock()
+            channel = FakeOpenDart([])
+            dart = PagedSearchDart(clock)
+            service = self.make_service(Path(raw), channel, clock, dart)
+            plan = service.preview(
+                query="희귀문구",
+                date_from=date(2026, 1, 1),
+                date_to=date(2026, 3, 31),
+                target_count=100,
+                exhaustive=True,
+            )
+            first = service.run(plan_id=plan["plan_id"], approved=True, confirmation_interval_minutes=5)
+            self.assertEqual(first["status"], "continuation_confirmation_required")
+            self.assertEqual(first["checkpoint"]["phase"], "dart_discovery")
+            self.assertEqual(first["checkpoint"]["dart_next_page"], 2)
+
+    def test_batch_response_exposes_open_circuit_deadline(self):
+        with tempfile.TemporaryDirectory() as raw:
+            clock = Clock()
+            channel = FakeOpenDart([])
+            dart = FakeDart(clock)
+            dart.breaker.trip("structure_or_access")
+            service = self.make_service(Path(raw), channel, clock, dart)
+            plan = self.preview(service)
+            completed = service.run(plan_id=plan["plan_id"], approved=True, confirmation_interval_minutes=5)
+            self.assertEqual(completed["status"], "completed")
+            self.assertGreater(completed["blocked_seconds"], 0)
+            self.assertIsNotNone(completed["blocked_until"])
+
+    def test_completed_batch_writes_minimized_audit_summary(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            audit = AuditLog(root / "audit.jsonl")
+            channel = FakeOpenDart([row("20260716000001")])
+            engine = Engine(channel, audit=audit)
+            clock = Clock()
+            service = BatchResearchService(
+                engine,
+                root=root / "state",
+                clock=clock,
+                wall_clock=clock,
+                plans=BatchPlanStore(clock=clock),
+            )
+            plan = self.preview(service)
+            service.run(plan_id=plan["plan_id"], approved=True, confirmation_interval_minutes=5)
+            record = json.loads((root / "audit.jsonl").read_text(encoding="utf-8"))
+            self.assertEqual(record["mode"], "approved_batch")
+            self.assertNotIn("query", record)
+            self.assertTrue(record["normalized_query_hash"])
 
 
 if __name__ == "__main__":

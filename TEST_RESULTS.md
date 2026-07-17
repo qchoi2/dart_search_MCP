@@ -1,13 +1,24 @@
 # 테스트 결과
 
+## 단계 2~4 검토의견 반영 회귀 (2026-07-17 KST)
+
+- `python -m pytest -q`: 139개 통과, 20 subtests 통과, 실패 0개
+- `python -m app.evaluation`: 24/24 통과
+- CSV formula injection: `=·+·-·@·TAB·CR` 6종 셀 이스케이프 및 CSV 전체 출력 필드 방어
+- 배치 DART 경로: 90일 날짜창·페이지 후보를 사용하고 OpenDART 목록 추가호출 없이 해당 접수번호 원문만 검증
+- 배치 계약: `dart_rate_floor_seconds`, open 회로의 양수 `blocked_seconds`·`blocked_until`, 순차 원문 요청, rate limit 체크포인트
+- 대화형 권고: 필터 후 예상문서 80건 초과 시 구조화 권고, 동일 lineage 2회째 억제, exhaustive 요청의 명시 권고
+- 감사: 배치 완료 요약 기록, 원 질의 평문 미저장, 해시·실행 변형·범위·접수번호·진단 보존
+- fixture: hash 대상 경로 `.gitattributes -text` 적용
+
 ## 단계 4 승인형 배치 리서치 검증 (2026-07-17 KST)
 
 - 기준: `21b92f5` + `DEVELOPMENT_PLAN.md` v20 단계 4
-- `python -m pytest -q`: 132개 통과, 20 subtests 통과, 실패 0개
-- 단계 4 전용 회귀 12개: 미리보기 원문 무호출, 동일 plan 무호출 재사용, 거절 후 30분 억제, 50% 범위증가 재허용, invalid plan·시간구간 무호출, 승인 완료, soft/hard 구간, 행 단위 체크포인트·추가승인 재개, 회로 만료 후 1회 probe, 동시성 3·3→2 감속, 경로 없는 export 무저장, CSV/JSON 원자 저장, 경로순회 거절, MCP schema version, fixture manifest hash
+- `python -m pytest -q`: 139개 통과, 20 subtests 통과, 실패 0개
+- 단계 4 전용 회귀 17개: 미리보기 원문 무호출, 동일 plan 무호출 재사용, 거절 후 30분 억제, 50% 범위증가 재허용, invalid plan·시간구간 무호출, 승인 완료, soft/hard 구간, 행 단위 체크포인트·추가승인 재개, 회로 만료 후 1회 probe, 순차 원문요청·rate limit 체크포인트, DART 날짜창 후보경로·페이지 재개, CSV 수식 방어, 배치 감사, blocked_until, 경로 없는 export 무저장, CSV/JSON 원자 저장, 경로순회 거절, MCP schema version, fixture manifest hash
 - 5분 구간 fixture: soft 270초, hard 300초; 구간 종료 후 `continuation_confirmation_required`와 다음 날짜창·페이지·행 위치 반환
 - 저장 검증: 체크포인트에 원 질의 평문 없음, 실제 검색 변형·정규화 해시만 보존; 결과 레코드 24시간, 체크포인트 7일; 완료 체크포인트 즉시 삭제
-- 채널 검증: 문서 동시성 최대 3, HTTP rate limit fixture에서 3→2 감속, 만료된 DART open 회로 복구 시 `PROBING` 상태진단 정확히 1회
+- 채널 검증: 단계 5 전 문서 요청 순차 1, HTTP rate limit에서 체크포인트 중단, 만료된 DART open 회로 복구 시 `PROBING` 상태진단 정확히 1회
 - `python -m app.evaluation`: 24/24 통과
 - `python -m compileall -q app tests`: 통과
 - `git diff --check`: 통과

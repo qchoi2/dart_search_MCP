@@ -6,12 +6,12 @@ import io
 import json
 import math
 import time
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
+from app.channels.dart_fulltext import dart_date_windows, row_to_candidate
 from app.channels.opendart import candidate_from_list_row, split_date_windows
 from app.config import Settings, defaults
 from app.errors import ErrorCode, SearchError
@@ -19,6 +19,7 @@ from app.http_client import DeadlineBudget
 from app.contracts import ChannelStatus, SearchExecutionDiagnostics, SearchRequest
 from app.orchestrator.plan_builder import query_variants
 from app.research.evidence import extract_evidence
+from app.security.csv_guard import escape_csv_cell, has_formula_prefix
 from app.storage.atomic import atomic_write_bytes
 from app.storage.batch_store import BatchCheckpointStore, BatchPlanStore, BatchResultStore
 
@@ -252,7 +253,7 @@ class BatchResearchService:
         # Preview is deliberately metadata-only: no disclosure document is downloaded.
         type_scopes: list[str | None] = disclosure_types or [None]
         estimated_list_requests = len(windows) * len(type_scopes)
-        estimated_dart_requests = len(windows)
+        estimated_dart_requests = len(windows) * max(1, len(variants))
         observed_list_rows = 0
         observed_dart_hits = 0
         observed_dart_pages = 0
@@ -320,6 +321,7 @@ class BatchResearchService:
             "estimated_unique_documents": estimated_unique,
             "estimated_documents": raw_estimate,
             "request_start_interval_floor_ms": 1000,
+            "dart_rate_floor_seconds": max(0, estimated_dart_requests - 1) * defaults.DART_MIN_REQUEST_INTERVAL_SECONDS,
             "estimated_duration_seconds": duration_seconds,
             "estimated_storage_bytes": estimated_unique * 4096,
             "estimation_basis": "window_first_pages" if observed else "unconfirmed_conservative_prior",
@@ -339,12 +341,33 @@ class BatchResearchService:
             for start, end in [(window.date_from, window.date_to)]
             for disclosure_type in type_scopes
         ]
+        use_dart = (
+            self.dart is not None
+            and hasattr(self.dart, "search_page")
+            and not request.get("disclosure_types")
+        )
+        dart_units = [
+            [start.isoformat(), end.isoformat(), variant]
+            for start, end in dart_date_windows(
+                date.fromisoformat(request["date_from"]),
+                date.fromisoformat(request["date_to"]),
+                90,
+            )
+            for variant in request["query_variants"]
+        ] if use_dart else []
         return {
             "schema_version": 1,
             "job_id": job_id,
             "plan_id": plan["plan_id"],
             "request": request,
             "windows": windows,
+            "opendart_windows": windows,
+            "phase": "dart_discovery" if use_dart else "opendart_discovery",
+            "dart_units": dart_units,
+            "dart_next_unit_index": 0,
+            "dart_next_page": 1,
+            "dart_candidates": {},
+            "dart_health_checked": False,
             "next_window_index": 0,
             "next_page": 1,
             "next_row_offset": 0,
@@ -352,7 +375,7 @@ class BatchResearchService:
             "results": [],
             "diagnostics": [],
             "calls": 0,
-            "document_concurrency": int(self.settings.get("search.document_concurrency", defaults.DOCUMENT_CONCURRENCY)),
+            "document_concurrency": 1,
             "created_at_epoch": self.wall_clock(),
             "updated_at_epoch": self.wall_clock(),
             "circuit_state": self._circuit_snapshot(),
@@ -372,26 +395,63 @@ class BatchResearchService:
         network_started = self._probe_restored_circuit(state, hard_deadline)
         stop_reason: str | None = None
         corp_code = request.get("resolved_company_code")
+        if state.get("phase") == "dart_discovery":
+            discovery_started, discovery_stop = self._discover_dart_candidates(
+                state,
+                hard_deadline,
+                start=start,
+                soft_seconds=soft_seconds,
+            )
+            network_started = network_started or discovery_started
+            if discovery_stop is not None:
+                state["circuit_state"] = self._circuit_snapshot()
+                self._save_checkpoint(state)
+                return {
+                    "status": "continuation_confirmation_required",
+                    "job_id": state["job_id"],
+                    "stop_reason": discovery_stop,
+                    "selected_confirmation_interval_minutes": interval_minutes,
+                    "soft_deadline_seconds": soft_seconds,
+                    "hard_deadline_seconds": hard_seconds,
+                    "processed_document_count": len(processed),
+                    "result_count": len(state["results"]),
+                    "checkpoint": {
+                        "phase": state["phase"],
+                        "dart_next_unit_index": state.get("dart_next_unit_index"),
+                        "dart_next_page": state.get("dart_next_page"),
+                    },
+                    "network_started": network_started,
+                    "completeness_grade": "partial",
+                    **self._circuit_response_fields(),
+                }
+            windows = state["windows"]
         try:
             while int(state["next_window_index"]) < len(windows):
                 if self.clock() - start >= soft_seconds or hard_deadline.remaining() <= 0:
                     stop_reason = "confirmation_interval_ended"
                     break
                 window_index = int(state["next_window_index"])
-                window_start = date.fromisoformat(windows[window_index][0])
-                window_end = date.fromisoformat(windows[window_index][1])
-                disclosure_type = windows[window_index][2]
                 page_no = int(state["next_page"])
-                page = self.opendart.list_page(
-                    date_from=window_start,
-                    date_to=window_end,
-                    page_no=page_no,
-                    corp_code=corp_code,
-                    disclosure_type=disclosure_type,
-                    deadline=hard_deadline,
-                )
-                network_started = True
-                state["calls"] = int(state.get("calls", 0)) + 1
+                if windows[window_index][0] == "dart_candidates":
+                    page = {
+                        "list": list(state.get("dart_candidates", {}).values()),
+                        "total_page": 1,
+                        "total_count": len(state.get("dart_candidates", {})),
+                    }
+                else:
+                    window_start = date.fromisoformat(windows[window_index][0])
+                    window_end = date.fromisoformat(windows[window_index][1])
+                    disclosure_type = windows[window_index][2]
+                    page = self.opendart.list_page(
+                        date_from=window_start,
+                        date_to=window_end,
+                        page_no=page_no,
+                        corp_code=corp_code,
+                        disclosure_type=disclosure_type,
+                        deadline=hard_deadline,
+                    )
+                    network_started = True
+                    state["calls"] = int(state.get("calls", 0)) + 1
                 rows = list(page.get("list", []))
                 offset = int(state.get("next_row_offset", 0))
                 row_index = offset
@@ -400,7 +460,7 @@ class BatchResearchService:
                         state["next_row_offset"] = row_index
                         stop_reason = "confirmation_interval_ended"
                         break
-                    concurrency = max(1, min(defaults.DOCUMENT_CONCURRENCY, int(state.get("document_concurrency", defaults.DOCUMENT_CONCURRENCY))))
+                    concurrency = 1
                     batch: list[tuple[int, Any]] = []
                     while row_index < len(rows) and len(batch) < concurrency:
                         row = rows[row_index]
@@ -415,23 +475,19 @@ class BatchResearchService:
                     state["calls"] = int(state.get("calls", 0)) + len(batch)
                     failed_index: int | None = None
                     failed_error: SearchError | None = None
-                    with ThreadPoolExecutor(max_workers=concurrency, thread_name_prefix="dart-batch-doc") as pool:
-                        futures = [
-                            (index, candidate, pool.submit(self._download_evidence, candidate.receipt_no, variants, hard_deadline))
-                            for index, candidate in batch
-                        ]
-                        for index, candidate, future in futures:
-                            try:
-                                evidence = future.result()
-                            except SearchError as exc:
-                                if failed_index is None or index < failed_index:
-                                    failed_index, failed_error = index, exc
-                                continue
-                            except Exception:
-                                exc = SearchError(ErrorCode.DOCUMENT_PARSE_FAILED, "배치 원문 처리에 실패했습니다.")
-                                if failed_index is None or index < failed_index:
-                                    failed_index, failed_error = index, exc
-                                continue
+                    for index, candidate in batch:
+                        try:
+                            evidence = self._download_evidence(candidate.receipt_no, variants, hard_deadline)
+                        except SearchError as exc:
+                            if failed_index is None or index < failed_index:
+                                failed_index, failed_error = index, exc
+                            continue
+                        except Exception:
+                            exc = SearchError(ErrorCode.DOCUMENT_PARSE_FAILED, "배치 원문 처리에 실패했습니다.")
+                            if failed_index is None or index < failed_index:
+                                failed_index, failed_error = index, exc
+                            continue
+                        else:
                             if evidence and (
                                 request.get("exhaustive")
                                 or len(state["results"]) < int(request["target_count"])
@@ -443,7 +499,10 @@ class BatchResearchService:
                                         "report_name": candidate.report_name,
                                         "receipt_date": candidate.receipt_date,
                                         "viewer_url": candidate.dart_viewer_url,
-                                        "evidence": [asdict(item) for item in evidence[:3]],
+                                        "evidence": [
+                                            {**asdict(item), "csv_formula_risk": has_formula_prefix(item.text)}
+                                            for item in evidence[:3]
+                                        ],
                                     }
                                 )
                             processed.add(candidate.receipt_no)
@@ -458,11 +517,8 @@ class BatchResearchService:
                             ErrorCode.OPENDART_HTTP_RATE_LIMITED,
                             ErrorCode.OPENDART_TEMPORARY_FAILURE,
                         }:
-                            state["document_concurrency"] = max(1, concurrency - 1)
-                            state["diagnostics"].append(
-                                {"reason": "adaptive_document_slowdown", "from": concurrency, "to": state["document_concurrency"]}
-                            )
-                            row_index = failed_index
+                            stop_reason = failed_error.code.value
+                            break
                         elif failed_error.code == ErrorCode.SEARCH_TIMEOUT_PARTIAL:
                             stop_reason = failed_error.code.value
                             break
@@ -508,18 +564,32 @@ class BatchResearchService:
                     "next_row_offset": state["next_row_offset"],
                 },
                 "network_started": network_started,
+                "completeness_grade": "partial",
+                **self._circuit_response_fields(),
             }
         record_id = self.records.new_id("search")
+        for result in state["results"]:
+            result["csv_formula_risk_fields"] = [
+                key
+                for key in ("receipt_no", "corp_name", "report_name", "receipt_date", "viewer_url")
+                if has_formula_prefix(result.get(key, ""))
+            ]
         record = {
             "schema_version": 1,
             "search_record_id": record_id,
             "request": request,
             "results": state["results"],
             "diagnostics": state["diagnostics"],
+            "export_safety": {
+                "csv_formula_prefixes": ["=", "+", "-", "@", "TAB", "CR"],
+                "csv_escape": "leading_apostrophe",
+                "json_preserves_original_text": True,
+            },
             "created_at_epoch": self.wall_clock(),
             "retention_hours": 24,
         }
         self.records.save(record_id, record)
+        self._audit_completed(state, record_id)
         self.checkpoints.delete(state["job_id"])
         return {
             "status": "completed",
@@ -534,6 +604,8 @@ class BatchResearchService:
             "export_requires_output_directory": True,
             "retention_hours": 24,
             "network_started": network_started,
+            "completeness_grade": "complete",
+            **self._circuit_response_fields(),
         }
 
     def _save_checkpoint(self, state: dict[str, Any]) -> None:
@@ -548,6 +620,114 @@ class BatchResearchService:
     ) -> tuple[Any, ...]:
         document = self.opendart.download_document(receipt_no, deadline=deadline)
         return extract_evidence(receipt_no, document, variants)
+
+    def _discover_dart_candidates(
+        self,
+        state: dict[str, Any],
+        deadline: DeadlineBudget,
+        *,
+        start: float,
+        soft_seconds: int,
+    ) -> tuple[bool, str | None]:
+        diagnostics = SearchExecutionDiagnostics()
+        network_started = False
+        try:
+            if not state.get("dart_health_checked"):
+                network_started = True
+                if not self.dart.health_check(diagnostics, deadline=deadline):
+                    state["phase"] = "opendart_discovery"
+                    state["windows"] = state["opendart_windows"]
+                    state["diagnostics"].append(
+                        {"channel": "dart", "reason": "DART_FULLTEXT_FALLBACK", "fallback_source": "opendart"}
+                    )
+                    return network_started, None
+                state["calls"] = int(state.get("calls", 0)) + diagnostics.health_check_requests
+                state["dart_health_checked"] = True
+            units = state.get("dart_units", [])
+            while int(state.get("dart_next_unit_index", 0)) < len(units):
+                if self.clock() - start >= soft_seconds or deadline.remaining() <= 0:
+                    return network_started, "confirmation_interval_ended"
+                unit_index = int(state["dart_next_unit_index"])
+                start_date, end_date, variant = units[unit_index]
+                page_no = int(state.get("dart_next_page", 1))
+                before = (
+                    diagnostics.health_check_requests
+                    + diagnostics.mode_setup_requests
+                    + diagnostics.dart_result_page_requests
+                    + diagnostics.structure_retry_requests
+                )
+                result = self.dart.search_page(
+                    variant,
+                    date.fromisoformat(start_date),
+                    date.fromisoformat(end_date),
+                    diagnostics,
+                    page=page_no,
+                    request_budget=before + max(
+                        defaults.STANDARD_DART_REQUEST_BUDGET,
+                        int(deadline.remaining()) + 5,
+                    ),
+                    company=state["request"].get("resolved_company_code"),
+                    deadline=deadline,
+                )
+                after = (
+                    diagnostics.health_check_requests
+                    + diagnostics.mode_setup_requests
+                    + diagnostics.dart_result_page_requests
+                    + diagnostics.structure_retry_requests
+                )
+                network_started = True
+                state["calls"] = int(state.get("calls", 0)) + max(1, after - before)
+                for row in result.rows:
+                    candidate = row_to_candidate(row, variant)
+                    state["dart_candidates"].setdefault(
+                        candidate.receipt_no,
+                        {
+                            "rcept_no": candidate.receipt_no,
+                            "corp_code": candidate.corp_code,
+                            "corp_name": candidate.corp_name,
+                            "report_nm": "".join(candidate.report_name_prefixes) + candidate.report_name,
+                            "rcept_dt": candidate.receipt_date,
+                            "flr_nm": candidate.filer_name,
+                            "rm": candidate.rm_raw,
+                        },
+                    )
+                if result.classification == "normal_zero" or not result.estimated_pages or page_no >= result.estimated_pages:
+                    state["dart_next_unit_index"] = unit_index + 1
+                    state["dart_next_page"] = 1
+                else:
+                    state["dart_next_page"] = page_no + 1
+                self._save_checkpoint(state)
+            state["phase"] = "dart_verification"
+            state["windows"] = [["dart_candidates", "", None]]
+            state["next_window_index"] = 0
+            state["next_page"] = 1
+            state["next_row_offset"] = 0
+            self._save_checkpoint(state)
+            return network_started, None
+        except SearchError as exc:
+            if exc.code == ErrorCode.SEARCH_TIMEOUT_PARTIAL:
+                return network_started, exc.code.value
+            if exc.code in {
+                ErrorCode.DART_FULLTEXT_CIRCUIT_OPEN,
+                ErrorCode.DART_FULLTEXT_STRUCTURE_CHANGED,
+                ErrorCode.OPENDART_TEMPORARY_FAILURE,
+                ErrorCode.OPENDART_HTTP_RATE_LIMITED,
+            }:
+                state["phase"] = "opendart_discovery"
+                state["windows"] = state["opendart_windows"]
+                state["next_window_index"] = 0
+                state["next_page"] = 1
+                state["next_row_offset"] = 0
+                state["diagnostics"].append(
+                    {
+                        "channel": "dart",
+                        "reason": "DART_FULLTEXT_FALLBACK",
+                        "error": exc.code.value,
+                        "fallback_source": "opendart",
+                    }
+                )
+                return network_started, None
+            raise
 
     def _validate_interval(self, value: int | None) -> dict[str, Any] | None:
         if value not in INTERVAL_OPTIONS:
@@ -568,6 +748,53 @@ class BatchResearchService:
         breaker = getattr(self.dart, "breaker", None)
         if value and breaker is not None and hasattr(breaker, "restore"):
             breaker.restore(value)
+
+    def _circuit_response_fields(self) -> dict[str, Any]:
+        breaker = getattr(self.dart, "breaker", None)
+        if breaker is None:
+            return {"blocked_until": None, "blocked_seconds": 0}
+        event = breaker.event()
+        return {
+            "blocked_until": event.get("blocked_until"),
+            "blocked_seconds": breaker.remaining_blocked_seconds()
+            if event.get("status") == ChannelStatus.CIRCUIT_OPEN.value
+            else 0,
+        }
+
+    def _audit_completed(self, state: dict[str, Any], record_id: str) -> None:
+        audit = getattr(self.engine, "audit", None)
+        if audit is None:
+            return
+        request = state["request"]
+        receipts = [item["receipt_no"] for item in state["results"]]
+        audit.append_summary(
+            {
+                "ts": datetime.now(timezone.utc).isoformat(),
+                "search_lineage_id": state.get("plan_id"),
+                "search_record_id": record_id,
+                "mode": "approved_batch",
+                "normalized_query_hash": request["normalized_query_hash"],
+                "executed_query_variants": request["query_variants"],
+                "search_period": {"date_from": request["date_from"], "date_to": request["date_to"]},
+                "scope": {
+                    "company": request.get("company"),
+                    "disclosure_types": request.get("disclosure_types", []),
+                },
+                "candidate_receipts": list(
+                    dict.fromkeys(
+                        [*state.get("dart_candidates", {}).keys(), *state.get("processed_receipts", [])]
+                    )
+                ),
+                "verified_receipts": receipts,
+                "exclusion_reasons": [],
+                "call_cache_retry_diagnostics": {
+                    "calls": state.get("calls", 0),
+                    "events": state.get("diagnostics", []),
+                },
+                "warning_codes": [],
+                "completeness_grade": "complete",
+            }
+        )
 
     def _probe_restored_circuit(self, state: dict[str, Any], deadline: DeadlineBudget) -> bool:
         breaker = getattr(self.dart, "breaker", None)
@@ -595,8 +822,10 @@ class BatchResearchService:
         for result in results:
             writer.writerow(
                 {
-                    **{key: result.get(key, "") for key in fields[:-1]},
-                    "evidence": " | ".join(str(item.get("text", "")) for item in result.get("evidence", [])),
+                    **{key: escape_csv_cell(result.get(key, "")) for key in fields[:-1]},
+                    "evidence": escape_csv_cell(
+                        " | ".join(str(item.get("text", "")) for item in result.get("evidence", []))
+                    ),
                 }
             )
         return ("\ufeff" + stream.getvalue()).encode("utf-8")

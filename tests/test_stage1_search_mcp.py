@@ -258,6 +258,36 @@ class SearchExecutionTests(unittest.TestCase):
         self.assertEqual(result["status"], "api_key_action_required")
         self.assertEqual(result["results"], [])
 
+    def test_filtered_estimate_recommends_batch_once_per_lineage(self):
+        candidate = replace(candidate_from_list_row(row()), source_channels=("dart_fulltext",), matched_terms=("상계납입",))
+
+        class WideDart(FakeDart):
+            def search_variants(self, variants, date_from, date_to, diagnostics, **kwargs):
+                diagnostics.dart_result_page_requests += 1
+                diagnostics.dart_linked_last_page_by_query[variants[0]] = 20
+                return [candidate]
+
+        engine = SearchEngine(
+            opendart=FakeOpenDart([], {candidate.receipt_no: "상계납입 근거"}),
+            dart=WideDart([candidate]),
+        )
+        request = SearchRequest("상계납입", date_from="2026-01-01", date_to="2026-01-31", target_count=1)
+        first = engine.execute(request)
+        second = engine.execute(request)
+        self.assertTrue(first["batch_research_recommended"])
+        self.assertEqual(first["batch_preview_tool"], "preview_batch_research")
+        self.assertGreater(first["batch_estimate"]["filtered_estimated_documents"], 80)
+        self.assertFalse(second["batch_research_recommended"])
+        self.assertTrue(second["batch_recommendation_suppressed"])
+
+    def test_exhaustive_request_returns_structured_batch_recommendation(self):
+        result = SearchEngine(opendart=FakeOpenDart([]), dart=None).execute(
+            SearchRequest("상계납입", date_from="2026-01-01", date_to="2026-01-31", exhaustive=True)
+        )
+        self.assertEqual(result["status"], "batch_confirmation_required")
+        self.assertTrue(result["batch_research_recommended"])
+        self.assertEqual(result["batch_preview_tool"], "preview_batch_research")
+
     def test_evidence_tool_limits_and_never_returns_full_document(self):
         receipt = "20260101000001"
         opendart = FakeOpenDart([], {receipt: ("상계납입 근거 " * 1000)})
