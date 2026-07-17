@@ -113,6 +113,15 @@ class SessionLifecycleTests(unittest.TestCase):
 
 
 class DeadlineTests(unittest.TestCase):
+    def test_http_access_status_is_preserved_for_channel_classification(self):
+        def forbidden(request, **kwargs):
+            raise urllib.error.HTTPError(request.full_url, 403, "forbidden", {}, None)
+
+        with self.assertRaises(SearchError) as caught:
+            HttpClient(opener=forbidden).request("GET", "https://example.invalid")
+        self.assertEqual(caught.exception.code, ErrorCode.OPENDART_TEMPORARY_FAILURE)
+        self.assertEqual(caught.exception.details["http_status"], 403)
+
     def test_http_timeout_is_minimum_of_default_and_remaining(self):
         seen = []
 

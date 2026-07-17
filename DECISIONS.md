@@ -1,5 +1,15 @@
 # Stage 0 Decisions
 
+## 34. 단계 2 DART 장애 분류·페이지 계약
+
+- 결정: DART HTTP 실패는 공통 HTTP 오류코드를 새 공개 오류코드로 복제하지 않고 어댑터 경계에서 채널 의미로 변환한다. 408·425·429·5xx·연결오류는 `network`, 그 밖의 실제 4xx 거절은 `structure_or_access`다.
+- 결정: 단발 네트워크 실패는 회로가 열리지 않았더라도 `OPENDART_TEMPORARY_FAILURE`로 OpenDART 폴백을 허용하고 `blocked_seconds=0`을 반환한다. 두 번째 연속 네트워크 실패는 `DART_FULLTEXT_CIRCUIT_OPEN`으로 승격한다. 명시적 접근거절은 첫 확인에서 바로 15분 회로를 연다.
+- 결정: `main.do` 상태진단 성공은 접속 가능성만 확인하므로 이전 `search.ax` 실패횟수를 지우지 않는다. 이후 실제 `search.ax` 성공 또는 차단 만료 후 `PROBING` 성공에서만 회로를 `HEALTHY`로 초기화한다.
+- 결정: 회로 이벤트는 절대 차단시각 `blocked_until`과 호환 필드 `blocked_until_epoch`, 실패 분류·횟수·open 횟수를 보존한다. 차단 만료 후 상태진단 결과는 `probe_result`로 별도 기록한다.
+- 결정: 페이지 계약은 `ceil(search_count / 10)`, 현재 페이지의 기대 행 수, HTML에 실제 존재하는 `search(n)` 링크의 최댓값을 함께 비교한다. 정상 0건과 범위초과 정상 0건은 변화로 판정하지 않는다.
+- 결정: 페이지 계약 변화는 검색을 임의로 계속 완전하다고 주장하지 않고 `PAGINATION_CONTRACT_CHANGED` 경고와 `unconfirmed` 완전성으로 노출한다. 실제 관측 행 수·계산 페이지·링크 마지막 페이지를 진단에 포함한다.
+- 이유: 단계 2의 자동 폴백은 장애 원인이 사용자에게 구조화돼야 하고, 단계 0.5에서 실측한 10행 계약이 바뀌면 기존 요청예산·완전성 계산을 그대로 신뢰할 수 없기 때문이다.
+
 실측 결과와 후속 사용자 결정을 기록한다. 미확인 사실과 개인용 사용 결정을 구분한다.
 
 <!-- STAGE0_6_DECISIONS -->

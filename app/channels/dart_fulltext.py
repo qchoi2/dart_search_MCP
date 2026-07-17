@@ -63,6 +63,8 @@ class DartSearchPage:
     zero_markers: tuple[str, ...]
     current_page: int
     estimated_pages: int | None
+    linked_last_page: int | None
+    pagination_contract_changed: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -209,7 +211,42 @@ def parse_search_html(text: str, current_page: int = 1) -> DartSearchPage:
     else:
         classification = "structure_failure_candidate"
     pages = math.ceil(parser.search_count / DART_EFFECTIVE_PAGE_SIZE) if parser.search_count is not None else None
-    return DartSearchPage(classification, parser.search_count, tuple(parser.rows), zero_markers, current_page, pages)
+    linked_pages = tuple(int(value) for value in re.findall(r"\bsearch\(\s*(\d+)\s*\)", text))
+    linked_last_page = max((current_page, *linked_pages)) if linked_pages else None
+    pagination_changed = _pagination_contract_changed(
+        search_count=parser.search_count,
+        row_count=len(parser.rows),
+        current_page=current_page,
+        linked_last_page=linked_last_page,
+        classification=classification,
+    )
+    return DartSearchPage(
+        classification, parser.search_count, tuple(parser.rows), zero_markers,
+        current_page, pages, linked_last_page, pagination_changed,
+    )
+
+
+def _pagination_contract_changed(
+    *,
+    search_count: int | None,
+    row_count: int,
+    current_page: int,
+    linked_last_page: int | None,
+    classification: str,
+) -> bool:
+    """Compare a result page with the measured ten-row paging contract."""
+    if classification == "normal_zero" or search_count is None or search_count <= 0:
+        return False
+    estimated_pages = math.ceil(search_count / DART_EFFECTIVE_PAGE_SIZE)
+    if linked_last_page is not None and linked_last_page != estimated_pages:
+        return True
+    if current_page > estimated_pages:
+        return False
+    expected_rows = min(
+        DART_EFFECTIVE_PAGE_SIZE,
+        search_count - ((current_page - 1) * DART_EFFECTIVE_PAGE_SIZE),
+    )
+    return row_count != expected_rows
 
 
 def merge_duplicate_rows(rows: Iterable[DartResultRow]) -> list[DartResultRow]:
@@ -378,7 +415,7 @@ class DartFulltextClient:
         }
         return form
 
-    def _ensure_available(self, diagnostics: SearchExecutionDiagnostics) -> None:
+    def _ensure_available(self, diagnostics: SearchExecutionDiagnostics) -> ChannelStatus:
         self._sync_session_state()
         status = self.breaker.before_request()
         if status == ChannelStatus.CIRCUIT_OPEN:
@@ -391,6 +428,44 @@ class DartFulltextClient:
                 "DART 본문검색 채널이 차단되어 OpenDART 원문검색으로 즉시 폴백합니다.",
                 details={"blocked_seconds": blocked, "fallback_source": "opendart_document_search", **event},
             )
+        return status
+
+    @staticmethod
+    def _transport_failure_class(error: SearchError) -> str:
+        status = (error.details or {}).get("http_status")
+        if isinstance(status, int) and 400 <= status < 500 and status not in {408, 425, 429}:
+            return "structure_or_access"
+        return "network"
+
+    def _record_transport_failure(
+        self,
+        error: SearchError,
+        diagnostics: SearchExecutionDiagnostics,
+    ) -> dict[str, object]:
+        self._health_confirmed = False
+        failure_class = self._transport_failure_class(error)
+        if failure_class == "structure_or_access":
+            self.breaker.trip(failure_class)
+        else:
+            self.breaker.failure(failure_class)
+        event: dict[str, object] = self.breaker.event()
+        diagnostics.channel_health_events.append(event)
+        return event
+
+    def _circuit_error(self, event: dict[str, object], *, cause: SearchError | None = None) -> SearchError:
+        details = {
+            "blocked_seconds": self.breaker.remaining_blocked_seconds(),
+            "fallback_source": "opendart_document_search",
+            **event,
+        }
+        if cause is not None:
+            details.update(cause.details or {})
+            details["failure_class"] = event.get("failure_class")
+        return SearchError(
+            ErrorCode.DART_FULLTEXT_CIRCUIT_OPEN,
+            "DART 본문검색 채널이 일시 차단되어 OpenDART 원문검색으로 폴백합니다.",
+            details=details,
+        )
 
     @staticmethod
     def _request_count(diagnostics: SearchExecutionDiagnostics) -> int:
@@ -408,10 +483,11 @@ class DartFulltextClient:
         force: bool = False,
         deadline: DeadlineBudget | None = None,
     ) -> bool:
-        self._ensure_available(diagnostics)
+        initial_status = self._ensure_available(diagnostics)
         if self._health_confirmed and not force:
             return True
         failure_class = "network"
+        explicit_transport_failure = False
         try:
             diagnostics.health_check_requests += 1
             response = self._paced_request("GET", f"{DART_BASE}/dsab007/main.do", deadline=deadline)
@@ -422,13 +498,28 @@ class DartFulltextClient:
             if exc.code == ErrorCode.SEARCH_TIMEOUT_PARTIAL:
                 raise
             healthy = False
+            failure_class = self._transport_failure_class(exc)
+            explicit_transport_failure = True
         if healthy:
-            self.breaker.success()
+            # A main.do diagnostic only proves that the lightweight health
+            # endpoint is reachable.  Do not erase a preceding search.ax
+            # network failure until an actual search request succeeds.
+            if initial_status in {ChannelStatus.HEALTHY, ChannelStatus.PROBING}:
+                self.breaker.success()
             self._health_confirmed = True
+            event = self.breaker.event()
+            if initial_status == ChannelStatus.PROBING:
+                event = {**event, "probe_result": "success"}
         else:
             self._health_confirmed = False
-            self.breaker.failure(failure_class)
-        diagnostics.channel_health_events.append(self.breaker.event())
+            if failure_class == "structure_or_access" and explicit_transport_failure:
+                self.breaker.trip(failure_class)
+            else:
+                self.breaker.failure(failure_class)
+            event = self.breaker.event()
+            if initial_status == ChannelStatus.PROBING:
+                event = {**event, "probe_result": "failure"}
+        diagnostics.channel_health_events.append(event)
         return healthy
 
     def search_page(
@@ -468,6 +559,9 @@ class DartFulltextClient:
                 # The first abnormal response is only a candidate. Diagnose main.do,
                 # then replay the exact search once before confirming structure failure.
                 self.health_check(diagnostics, force=True, deadline=deadline)
+                if self.breaker.state.status == ChannelStatus.CIRCUIT_OPEN:
+                    diagnostics.fallback_used = True
+                    raise self._circuit_error(self.breaker.event())
                 diagnostics.structure_retry_requests += 1
                 retry = self._paced_request("POST", f"{DART_BASE}/dsab007/search.ax", form=form, headers=referer, deadline=deadline)
                 parsed = parse_search_html(retry.body.decode("utf-8", errors="replace"), page)
@@ -479,18 +573,45 @@ class DartFulltextClient:
                     raise SearchError(
                         ErrorCode.DART_FULLTEXT_STRUCTURE_CHANGED,
                         "DART 본문검색 구조 또는 접근 방식 변경이 의심되어 15분간 차단하고 OpenDART로 폴백합니다.",
-                        details={"blocked_seconds": STRUCTURE_CIRCUIT_SECONDS, "fallback_source": "opendart_document_search"},
+                        details={
+                            "blocked_seconds": STRUCTURE_CIRCUIT_SECONDS,
+                            "fallback_source": "opendart_document_search",
+                            **self.breaker.event(),
+                        },
                     )
+            if parsed.pagination_contract_changed:
+                diagnostics.pagination_contract_changed = True
+                diagnostics.pagination_contract_observations.append({
+                    "query": query,
+                    "current_page": page,
+                    "search_count": parsed.search_count,
+                    "observed_rows": len(parsed.rows),
+                    "expected_page_size": DART_EFFECTIVE_PAGE_SIZE,
+                    "estimated_pages": parsed.estimated_pages,
+                    "linked_last_page": parsed.linked_last_page,
+                })
             self.breaker.success()
             return parsed
         except SearchError as exc:
             if exc.code == ErrorCode.SEARCH_TIMEOUT_PARTIAL:
                 raise
-            if exc.code == ErrorCode.OPENDART_TEMPORARY_FAILURE:
-                self.breaker.failure("network")
-                diagnostics.channel_health_events.append(self.breaker.event())
+            if exc.code in {ErrorCode.DART_FULLTEXT_STRUCTURE_CHANGED, ErrorCode.DART_FULLTEXT_CIRCUIT_OPEN}:
+                raise
+            if exc.code in {ErrorCode.OPENDART_TEMPORARY_FAILURE, ErrorCode.OPENDART_HTTP_RATE_LIMITED}:
+                event = self._record_transport_failure(exc, diagnostics)
+                diagnostics.fallback_used = True
                 if self.breaker.state.status == ChannelStatus.CIRCUIT_OPEN:
-                    diagnostics.fallback_used = True
+                    raise self._circuit_error(event, cause=exc) from exc
+                raise SearchError(
+                    ErrorCode.OPENDART_TEMPORARY_FAILURE,
+                    "DART 본문검색 요청이 일시 실패하여 OpenDART 원문검색으로 폴백합니다.",
+                    retryable=True,
+                    details={
+                        "failure_class": event.get("failure_class"),
+                        "fallback_source": "opendart_document_search",
+                        **(exc.details or {}),
+                    },
+                ) from exc
             raise
 
     def search_variants(
@@ -514,6 +635,8 @@ class DartFulltextClient:
                     query, date_from, date_to, diagnostics, page=page,
                     request_budget=request_budget, company=company, deadline=deadline,
                 )
+                if page == 1:
+                    diagnostics.dart_linked_last_page_by_query[query] = result.linked_last_page
                 for row in result.rows:
                     rows.append(row)
                     query_by_receipt.setdefault(row.receipt_no, query)

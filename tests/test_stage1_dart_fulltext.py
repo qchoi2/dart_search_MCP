@@ -30,6 +30,8 @@ class FakeHttp:
     def request(self, method, url, **kwargs):
         self.requests.append((method, url, kwargs))
         body = self.bodies.pop(0)
+        if isinstance(body, Exception):
+            raise body
         if isinstance(body, str):
             body = body.encode()
         return HttpResponse(200, {}, body, url)
@@ -49,6 +51,16 @@ class FulltextTests(unittest.TestCase):
         self.assertEqual(first.match_scope, "body")
         self.assertEqual(first.filer_name, "영풍")
         self.assertEqual(first.receipt_date, "20260708")
+        self.assertEqual(result.linked_last_page, 5)
+        self.assertFalse(result.pagination_contract_changed)
+
+    def test_pagination_contract_change_is_detected_from_fixture_link_mismatch(self):
+        fixture = next((FIXTURE / "query_switch").glob("01_*_control.html"))
+        text = fixture.read_text(encoding="utf-8")
+        result = parse_search_html(text + '<a href="javascript:search(6)">6</a>')
+        self.assertEqual(result.estimated_pages, 5)
+        self.assertEqual(result.linked_last_page, 6)
+        self.assertTrue(result.pagination_contract_changed)
 
     def test_mode_setup_is_not_repeated_for_keyword_switch(self):
         html_a = (FIXTURE / "query_switch" / "01_상계납입_control.html").read_bytes()
@@ -173,6 +185,97 @@ class FulltextTests(unittest.TestCase):
         self.assertEqual(breaker.failure("network"), ChannelStatus.DEGRADED)
         self.assertEqual(breaker.failure("network"), ChannelStatus.CIRCUIT_OPEN)
         self.assertEqual(breaker.state.blocked_until, 100.0 + NETWORK_CIRCUIT_SECONDS)
+
+    def test_explicit_access_denial_opens_structure_circuit_immediately(self):
+        clock = [100.0]
+        error = SearchError(
+            ErrorCode.OPENDART_TEMPORARY_FAILURE,
+            "forbidden",
+            details={"http_status": 403, "failure_kind": "http_status"},
+        )
+        client = DartFulltextClient(
+            http=FakeHttp([error]),
+            breaker=CircuitBreaker(clock=lambda: clock[0]),
+            clock=lambda: clock[0], sleeper=lambda _: None,
+        )  # type: ignore[arg-type]
+        diagnostics = SearchExecutionDiagnostics()
+        self.assertFalse(client.health_check(diagnostics))
+        self.assertEqual(client.breaker.state.status, ChannelStatus.CIRCUIT_OPEN)
+        self.assertEqual(client.breaker.state.failure_class, "structure_or_access")
+        self.assertEqual(diagnostics.channel_health_events[-1]["blocked_until"], 1000.0)
+
+    def test_rate_limit_is_fallback_eligible_and_repeated_failure_opens_network_circuit(self):
+        clock = [100.0]
+        errors = [
+            SearchError(ErrorCode.OPENDART_HTTP_RATE_LIMITED, "rate", retryable=True),
+            SearchError(ErrorCode.OPENDART_HTTP_RATE_LIMITED, "rate", retryable=True),
+        ]
+        client = DartFulltextClient(
+            http=FakeHttp(errors), breaker=CircuitBreaker(clock=lambda: clock[0]),
+            clock=lambda: clock[0], sleeper=lambda _: None,
+        )  # type: ignore[arg-type]
+        diagnostics = SearchExecutionDiagnostics()
+        with self.assertRaises(SearchError) as first:
+            client.search_page("x", date(2026, 1, 1), date(2026, 1, 2), diagnostics)
+        self.assertEqual(first.exception.code, ErrorCode.OPENDART_TEMPORARY_FAILURE)
+        self.assertEqual(client.breaker.state.status, ChannelStatus.DEGRADED)
+        with self.assertRaises(SearchError) as second:
+            client.search_page("x", date(2026, 1, 1), date(2026, 1, 2), diagnostics)
+        self.assertEqual(second.exception.code, ErrorCode.DART_FULLTEXT_CIRCUIT_OPEN)
+        self.assertEqual(client.breaker.state.blocked_until, 100.0 + NETWORK_CIRCUIT_SECONDS)
+        self.assertTrue(diagnostics.fallback_used)
+
+    def test_expired_circuit_runs_one_health_probe_and_records_result(self):
+        clock = [100.0]
+        breaker = CircuitBreaker(clock=lambda: clock[0])
+        breaker.trip("network")
+        clock[0] += NETWORK_CIRCUIT_SECONDS + 1
+        client = DartFulltextClient(
+            http=FakeHttp([b"detailSearch ready"]), breaker=breaker,
+            clock=lambda: clock[0], sleeper=lambda _: None,
+        )  # type: ignore[arg-type]
+        diagnostics = SearchExecutionDiagnostics()
+        self.assertTrue(client.health_check(diagnostics))
+        self.assertEqual(diagnostics.health_check_requests, 1)
+        self.assertEqual(diagnostics.channel_health_events[-1]["probe_result"], "success")
+        self.assertEqual(breaker.state.status, ChannelStatus.HEALTHY)
+
+    def test_failed_half_open_probe_reopens_circuit_and_records_result(self):
+        clock = [100.0]
+        breaker = CircuitBreaker(clock=lambda: clock[0])
+        breaker.trip("network")
+        clock[0] += NETWORK_CIRCUIT_SECONDS + 1
+        error = SearchError(ErrorCode.OPENDART_TEMPORARY_FAILURE, "network", retryable=True)
+        client = DartFulltextClient(
+            http=FakeHttp([error]), breaker=breaker,
+            clock=lambda: clock[0], sleeper=lambda _: None,
+        )  # type: ignore[arg-type]
+        diagnostics = SearchExecutionDiagnostics()
+        self.assertFalse(client.health_check(diagnostics))
+        self.assertEqual(diagnostics.channel_health_events[-1]["probe_result"], "failure")
+        self.assertEqual(breaker.state.status, ChannelStatus.CIRCUIT_OPEN)
+        self.assertGreater(breaker.remaining_blocked_seconds(), 0)
+
+    def test_health_success_does_not_clear_prior_search_endpoint_failure(self):
+        clock = [100.0]
+        error = SearchError(ErrorCode.OPENDART_TEMPORARY_FAILURE, "network", retryable=True)
+        http = FakeHttp([b"detailSearch ready", b"mode", error, b"detailSearch ready", error])
+        client = DartFulltextClient(
+            http=http, breaker=CircuitBreaker(clock=lambda: clock[0]),
+            clock=lambda: clock[0], sleeper=lambda _: None,
+        )  # type: ignore[arg-type]
+        diagnostics = SearchExecutionDiagnostics()
+
+        self.assertTrue(client.health_check(diagnostics))
+        with self.assertRaises(SearchError):
+            client.search_page("x", date(2026, 1, 1), date(2026, 1, 2), diagnostics)
+        self.assertEqual(client.breaker.state.status, ChannelStatus.DEGRADED)
+
+        self.assertTrue(client.health_check(diagnostics))
+        self.assertEqual(client.breaker.state.status, ChannelStatus.DEGRADED)
+        with self.assertRaises(SearchError) as second:
+            client.search_page("x", date(2026, 1, 1), date(2026, 1, 2), diagnostics)
+        self.assertEqual(second.exception.code, ErrorCode.DART_FULLTEXT_CIRCUIT_OPEN)
 
     def test_exhaustive_date_window_primitive_dedupes_global_receipts(self):
         base = DartResultRow(

@@ -1,5 +1,15 @@
 # 개발 진행 현황
 
+## 단계 2 DART 어댑터·폴백 잔여 계약 보강 완료 (2026-07-17)
+
+- `DEVELOPMENT_PLAN.md` v20의 단계 2 완료기준을 `v0.1.1-reliability` 코드와 다시 대조했다. 본문검색·상태진단·구조장애 재진단·OpenDART 폴백의 큰 흐름은 구현돼 있었고, HTTP 접근오류 분류, 회로 진단 필드, 페이지 계약 변화 감지가 잔여 항목이었다.
+- DART에서 HTTP 408·425·429와 5xx·연결오류는 네트워크 장애로 분류한다. 완료된 검색 동작 기준 2회 연속 실패하면 3분 회로를 열고, 단발 실패도 즉시 OpenDART 폴백 대상으로 반환한다.
+- HTTP 4xx 중 408·425·429를 제외한 명시적 거절은 구조·접근 장애로 분류해 즉시 15분 회로를 연다. 공통 HTTP 계층이 실제 상태코드를 보존하므로 추정 HTML이나 특정 Cookie 이름을 사용하지 않는다.
+- 회로 진단에 `blocked_until`을 추가하고 기존 `blocked_until_epoch` 호환 필드를 유지했다. 차단 만료 후 상태진단은 `PROBING`에서 정확히 1회 수행하며 `probe_result=success|failure`를 감사 진단에 남긴다.
+- DART 결과의 실측 10행 페이지 크기, `search_count` 기반 계산 페이지 수, 실제 `search(n)` 마지막 링크를 대조한다. 불일치 시 `PAGINATION_CONTRACT_CHANGED`, 관측값, `completeness_grade=unconfirmed`를 구조화해 반환한다. 정상 0건은 이 판정에서 제외한다.
+- 단계 2 보강 회귀를 포함한 전체 자동 테스트 109개가 통과했다. 네트워크 요청은 추가하지 않았으며 기존 golden HTML fixture를 재사용했다.
+- 후속 단계 범위인 정정 체인·구조 diff·사건 연결·KIND·배치·OpenDART/원문 동시성·적응형 감속·TTL 디스크 캐시 기본 활성화는 변경하지 않았다.
+
 ## 단계 1.1 핵심 검색 신뢰성 보강 완료 (2026-07-17)
 
 - 기준점 `v0.1-core-reviewed`와 `DEVELOPMENT_PLAN.md` v20을 대조하고 단계 1.1 범위만 구현했다.

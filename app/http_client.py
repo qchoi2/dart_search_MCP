@@ -142,6 +142,12 @@ class HttpClient:
                     code = ErrorCode.OPENDART_HTTP_RATE_LIMITED
                 elif exc.code >= 500:
                     code = ErrorCode.OPENDART_TEMPORARY_FAILURE
+                elif 400 <= exc.code < 500:
+                    raise SearchError(
+                        ErrorCode.OPENDART_TEMPORARY_FAILURE,
+                        f"HTTP 요청이 {exc.code} 상태로 거절되었습니다.",
+                        details={"http_status": exc.code, "failure_kind": "http_status"},
+                    ) from exc
                 else:
                     raise SearchError(ErrorCode.OPENDART_TEMPORARY_FAILURE, f"HTTP 요청이 {exc.code} 상태로 거절되었습니다.") from exc
                 if attempt >= max_retries:

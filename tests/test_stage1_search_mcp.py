@@ -122,6 +122,40 @@ class SearchExecutionTests(unittest.TestCase):
         self.assertTrue(failed_channel["coverage"]["fallback_used"])
         self.assertTrue(any("15분" in warning for warning in failed_channel["warnings"]))
 
+    def test_pagination_contract_change_returns_warning_and_unconfirmed_grade(self):
+        class ChangedPaginationDart(FakeDart):
+            def search_variants(self, variants, date_from, date_to, diagnostics, **kwargs):
+                diagnostics.dart_result_page_requests += 1
+                diagnostics.pagination_contract_changed = True
+                diagnostics.pagination_contract_observations.append({
+                    "query": variants[0],
+                    "current_page": 1,
+                    "search_count": 42,
+                    "observed_rows": 11,
+                    "expected_page_size": 10,
+                    "estimated_pages": 5,
+                    "linked_last_page": 5,
+                })
+                return []
+
+        result = SearchEngine(opendart=FakeOpenDart([]), dart=ChangedPaginationDart()).execute(
+            SearchRequest("pagination", date_from="2026-01-01", date_to="2026-01-02")
+        )
+        self.assertIn("PAGINATION_CONTRACT_CHANGED", result["warning_codes"])
+        self.assertEqual(result["completeness_grade"], "unconfirmed")
+        detail = next(item for item in result["warning_details"] if item["code"] == "PAGINATION_CONTRACT_CHANGED")
+        self.assertEqual(detail["observations"][0]["observed_rows"], 11)
+
+    def test_rate_limited_dart_error_uses_structured_fallback(self):
+        error = SearchError(ErrorCode.OPENDART_HTTP_RATE_LIMITED, "rate limited", retryable=True)
+        result = SearchEngine(opendart=FakeOpenDart([]), dart=FakeDart(error=error)).execute(
+            SearchRequest("rate", date_from="2026-01-01", date_to="2026-01-02")
+        )
+        self.assertIn("DART_FULLTEXT_FALLBACK", result["warning_codes"])
+        detail = next(item for item in result["warning_details"] if item["code"] == "DART_FULLTEXT_FALLBACK")
+        self.assertEqual(detail["reason"], "network")
+        self.assertEqual(detail["blocked_seconds"], 0)
+
     def test_partial_result_has_continuation_token(self):
         opendart = FakeOpenDart([candidate_from_list_row(row())], complete=False)
         engine = SearchEngine(opendart=opendart, dart=None)

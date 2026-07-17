@@ -1,5 +1,20 @@
 # 테스트 결과
 
+## 단계 2 DART 어댑터·폴백 잔여 계약 검증 (2026-07-17 KST)
+
+- 기준: `v0.1.1-reliability` + `DEVELOPMENT_PLAN.md` v20 단계 2
+- `python -m unittest discover -s tests -p "test_*.py"`: 109개 통과, 실패 0개
+- 기존 DART golden HTML: 검색건수 42, 10행, 계산 마지막 페이지 5와 링크 마지막 페이지 5가 일치하고 계약 변화 오탐 없음
+- fixture 변형: 링크 마지막 페이지를 6으로 바꾸면 `PAGINATION_CONTRACT_CHANGED`, 관측 세부정보, `completeness_grade=unconfirmed` 반환
+- HTTP 403: 실제 상태코드 보존, `structure_or_access`, 첫 진단에서 15분 회로 open, 양수 `blocked_seconds`
+- HTTP 429: 단발 실패는 `blocked_seconds=0` 구조 폴백, 반복 실패는 `network` 3분 회로 open
+- 정상 `main.do` 진단이 선행 `search.ax` 네트워크 실패횟수를 지우지 않으며, 실제 결과요청 성공 시에만 `HEALTHY`로 복구
+- 회로 만료: 상태진단 1회로 `PROBING → HEALTHY`; 실패 시 즉시 재open하며 각각 `probe_result=success|failure` 기록
+- 구조장애: 기존 fixture의 `search.ax` 이상 응답 → `main.do` 1회 → 동일 `search.ax` 1회 순서와 반복 시 확정 유지
+- 정상 0건: `HEALTHY`, 폴백 경고 없음, 페이지 계약 경고 없음, 완전성 무강등 유지
+- deadline 제한 timeout은 기존과 같이 채널 실패횟수에 포함되지 않음
+- 이번 검증에서 라이브 네트워크 요청과 90초 성능 통과 주장은 하지 않음
+
 ## 단계 1.1 핵심 검색 신뢰성 보강 검증
 
 - 검증일: 2026-07-17 KST

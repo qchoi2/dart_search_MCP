@@ -99,6 +99,9 @@ class SearchExecutionDiagnostics:
     latest_first_bias: bool = False
     fallback_used: bool = False
     fully_pageable_by_query: dict[str, bool] = field(default_factory=dict)
+    dart_linked_last_page_by_query: dict[str, int | None] = field(default_factory=dict)
+    pagination_contract_changed: bool = False
+    pagination_contract_observations: list[dict[str, Any]] = field(default_factory=list)
     soft_timeout_reached: bool = False
     hard_timeout_reached: bool = False
     deadline_limited_timeout: bool = False

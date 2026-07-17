@@ -120,7 +120,11 @@ class SearchEngine:
                     warnings.append(message)
                     self._add_fallback_warning(
                         warning_codes, warning_details, message=message,
-                        reason="status_diagnostic_failed", dart=self.dart,
+                        reason=str(
+                            getattr(getattr(self.dart, "breaker", None), "event", lambda: {})().get("failure_class")
+                            or "status_diagnostic_failed"
+                        ),
+                        dart=self.dart,
                     )
                 else:
                     candidates = self.dart.search_variants(
@@ -135,7 +139,12 @@ class SearchEngine:
                 if exc.code == ErrorCode.SEARCH_TIMEOUT_PARTIAL:
                     hard_timeout = True
                     diagnostics.hard_timeout_reached = True
-                elif exc.code in {ErrorCode.DART_FULLTEXT_CIRCUIT_OPEN, ErrorCode.DART_FULLTEXT_STRUCTURE_CHANGED, ErrorCode.OPENDART_TEMPORARY_FAILURE}:
+                elif exc.code in {
+                    ErrorCode.DART_FULLTEXT_CIRCUIT_OPEN,
+                    ErrorCode.DART_FULLTEXT_STRUCTURE_CHANGED,
+                    ErrorCode.OPENDART_TEMPORARY_FAILURE,
+                    ErrorCode.OPENDART_HTTP_RATE_LIMITED,
+                }:
                     fallback = True
                     diagnostics.fallback_used = True
                     warnings.append(exc.message)
@@ -327,11 +336,22 @@ class SearchEngine:
                 "next_page": list_result.next_page if not list_result.complete else None,
             },
         }
+        if diagnostics.pagination_contract_changed:
+            message = "DART 페이지 계산이 실측 10행 계약과 달라 전체 검색 범위를 확정할 수 없습니다."
+            warnings.append(message)
+            self._add_warning(
+                warning_codes,
+                warning_details,
+                "PAGINATION_CONTRACT_CHANGED",
+                message,
+                observations=diagnostics.pagination_contract_observations,
+            )
         completeness_grade = self._completeness_grade(
             status=status,
             fallback=fallback,
             has_continuation=token is not None,
             latest_first_bias=diagnostics.latest_first_bias,
+            pagination_contract_changed=diagnostics.pagination_contract_changed,
         )
         for detail in warning_details:
             if detail.get("code") == "DART_FULLTEXT_FALLBACK":
@@ -429,8 +449,11 @@ class SearchEngine:
         fallback: bool,
         has_continuation: bool,
         latest_first_bias: bool,
+        pagination_contract_changed: bool = False,
     ) -> str:
         if status in {"failed", "api_key_action_required"}:
+            return "unconfirmed"
+        if pagination_contract_changed:
             return "unconfirmed"
         if status == "partial" or has_continuation:
             return "partial"

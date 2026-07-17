@@ -74,6 +74,7 @@ class CircuitBreaker:
             "status": self.state.status.value,
             "failure_class": self.state.failure_class,
             "failure_count": self.state.failure_count,
+            "blocked_until": self.state.blocked_until,
             "blocked_until_epoch": self.state.blocked_until,
             "opened_count": self.state.opened_count,
         }
