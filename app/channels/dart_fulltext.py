@@ -631,6 +631,7 @@ class DartFulltextClient:
         max_unique: int | None = None,
         company: str | None = None,
         deadline: DeadlineBudget | None = None,
+        mode: str = "contents",
     ) -> list[DisclosureCandidate]:
         rows: list[DartResultRow] = []
         query_by_receipt: dict[str, str] = {}
@@ -638,7 +639,7 @@ class DartFulltextClient:
             page = 1
             while True:
                 result = self.search_page(
-                    query, date_from, date_to, diagnostics, page=page,
+                    query, date_from, date_to, diagnostics, mode=mode, page=page,
                     request_budget=request_budget, company=company, deadline=deadline,
                 )
                 if page == 1:
@@ -680,6 +681,7 @@ class DartFulltextClient:
         window_days: int,
         request_budget: int = STANDARD_DART_REQUEST_BUDGET,
         deadline: DeadlineBudget | None = None,
+        mode: str = "contents",
     ) -> DartWindowCollection:
         """Search contiguous inclusive windows and union by receipt number.
 
@@ -694,7 +696,7 @@ class DartFulltextClient:
             before = self._request_count(diagnostics)
             found = self.search_variants(
                 queries, start, end, diagnostics,
-                request_budget=request_budget, deadline=deadline,
+                request_budget=request_budget, deadline=deadline, mode=mode,
             )
             for candidate in found:
                 previous = by_receipt.get(candidate.receipt_no)

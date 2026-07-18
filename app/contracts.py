@@ -107,6 +107,9 @@ class SearchPlan:
     # AND-of-OR concept groups for co-occurrence verification. Empty tuple keeps
     # the legacy behaviour of verifying by any query_variant substring match.
     verification_term_groups: tuple[tuple[str, ...], ...] = ()
+    # DART full-text channel mode: "contents" (body keyword) or "report"
+    # (title-constrained pool; body concepts verify by co-occurrence).
+    search_mode: str = "contents"
 
 
 @dataclass(slots=True)

@@ -4,7 +4,7 @@
 
 ## 산출물
 
-- `dist/공시검색-MCP-0.3.0.mcpb`
+- `dist/공시검색-MCP-0.3.1.mcpb`
 - `dist/사용설명서.html`
 - `dist/SHA256SUMS.txt`
 - `app/assets/disclosure-detective.png`

@@ -1,5 +1,17 @@
 # 진행 기록
 
+## 2026-07-18 제목제약 검색 + 질의 분해 마무리
+
+- 배경: "공개매수가 완료될 것을 전제로 … 주식매매계약 관련 공시" 같은 문장형 질의가 (1) 조사·어미가 붙은 토큰("공개매수가", "찾아줘")으로 잘못 분해되고 (2) 본문 전체검색이라 후보 풀 12만+건·배치 37시간대 추정으로 사실상 불가였다.
+- 토큰 위생: `_clean_token`이 조사(particles)·동사어미(verb_suffixes)를 2회까지 박리(잔여 2자 이상일 때만), 지시어(drop_endings: ~도록/~줘)와 수량 토큰(10개)은 전체 제거한다. "주가"처럼 조사를 떼면 1자만 남는 토큰은 원형을 유지한다.
+- 제목제약 전략: 질의에 `title_constraints` 트리거가 있으면 S2/S3에서 `search_mode="report"`(DART 제목검색, 기측정 계약)로 전환하고 `query_variants=("공개매수",)`로 후보 풀을 좁힌다. 본문 개념은 전부 `verification_term_groups`(AND-of-OR 동시출현)로 이동한다.
+- 배치 반영: `app/batch/service.py`를 구식 `query_variants` 통짜 검색에서 `resolve_query_terms`+`title_constraint`로 교체하고, plan/state에 `mode`·`verification_term_groups`를 저장·복원, `search_page` 호출에 `mode` 전달, `_download_evidence`는 그룹이 있으면 `extract_cooccurrence_evidence`로 검증한다. 상계·출자전환 legacy 경로(빈 그룹)는 기존 `extract_evidence` 동작 유지.
+- continuation: engine이 `search_mode`도 저장하고 재개 시 plan과 불일치하면 `INVALID_CONTINUATION_TOKEN`으로 처리한다.
+- 검증: `unittest discover` 179 tests OK, `pytest -q` 170 passed(+신규), `app.evaluation` 24/24. 신규 테스트는 토큰 위생 오라클, 제목제약 plan(mode/variants/groups), 검색변형 순서(동의어그룹 우선), q2·상계납입 회귀, `dart_fulltext` mode 전달, batch 제목제약+동시출현 경로를 단언한다.
+- 배포: 버전 0.3.0→0.3.1로 올리고 MCPB를 재빌드했다(`dist/공시검색-MCP-0.3.1.mcpb`). README에 "질의 유형별 검색 전략" 섹션, DECISIONS #43(제목제약 전략 근거)을 추가했다.
+- 이월(측정 선행): report 모드 "공개매수" 제목검색의 최근 10년 실제 풀 크기·`preview_batch_research` 추정 하락, 실제 fast-path 검증 사례(예: 제이시스메디칼 등 2단계 공개매수 딜) 확인은 DART 접근이 필요하다. 이번 세션은 DART가 프록시에서 403으로 차단되어 실측을 못 했고 `PROBE_RESULTS.md`에 이월로 기록했다.
+
+
 ## 2026-07-18 문장형 질의 검색 정확도 개선
 
 - 실사용에서 "사업보고서 제목 공시 중 전직·현직 임직원 주식보상이 함께 기재된 선례"처럼 문장형 질의가 확정(verified) 0건으로 고착되는 문제를 진단했다. 원인은 두 가지였다. (1) `plan_builder.query_variants`가 상계·출자전환 등 하드코딩 규칙에 걸리지 않는 질의는 문장 전체를 하나의 DART `keyword`로 넘겨, DART가 이를 개별 단어로 풀며 교보증권 주총소집 같은 무관한 후보가 섞였다. (2) `extract_evidence`는 같은 문장 전체를 원문에서 축자(substring)로 찾아 검증하므로 문장형 질의는 구조적으로 verified 0건이 보장됐다. 검색은 너무 넓고 검증은 너무 좁은 정반대 방향의 불일치였다.

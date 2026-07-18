@@ -1,5 +1,14 @@
 # 테스트 결과
 
+## 제목제약·질의분해 회귀 (2026-07-18 KST, 세션 샌드박스)
+
+- `python -m unittest discover -s tests -p "test*.py"`: 179 tests OK.
+- `python -m pytest -q`: 170 passed, 20 subtests passed.
+- `python -m app.evaluation`: 24/24.
+- 신규/확장 테스트: `tests/test_stage8_query_decomposition.py`(토큰 위생, 제목제약 plan, 검색변형 순서, 회귀, dart_fulltext mode 전달), `tests/test_stage4_approved_batch.py`(제목제약 batch가 report 모드로 검색하고 동시출현으로만 확정).
+- MCPB 재빌드: `dist/공시검색-MCP-0.3.1.mcpb`, SHA-256 `bf50c0c6b32aac1709ab41d3c895f73d2688303cec0f947d4cfd11f19e540363`.
+
+
 ## 문장형 질의 개선 회귀 (2026-07-18 KST, 세션 샌드박스)
 
 - `python -m pytest -q`: 168 passed, 20 subtests passed. 신규 `tests/test_stage8_query_decomposition.py` 6건 포함.

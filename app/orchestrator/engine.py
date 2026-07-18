@@ -163,6 +163,9 @@ class SearchEngine:
             stored_variants = continuation_state.get("query_variants")
             if stored_variants is not None and tuple(stored_variants) != plan.query_variants:
                 raise SearchError(ErrorCode.INVALID_CONTINUATION_TOKEN, "continuation token의 검색어 변형 계약이 현재 계획과 다릅니다.")
+            stored_mode = continuation_state.get("search_mode")
+            if stored_mode is not None and stored_mode != plan.search_mode:
+                raise SearchError(ErrorCode.INVALID_CONTINUATION_TOKEN, "continuation token의 검색 모드 계약이 현재 계획과 다릅니다.")
             self.continuations.discard(request.continuation_token)
 
         resolved_company_code = None
@@ -198,6 +201,7 @@ class SearchEngine:
                         plan.query_variants, from_date, to_date, diagnostics,
                         request_budget=plan.dart_request_budget,
                         max_unique=plan.effective_document_budget,
+                        mode=plan.search_mode,
                         company=resolved_company_code or request.company,
                         deadline=deadline,
                     )
@@ -403,6 +407,7 @@ class SearchEngine:
             "date_from": request.date_from,
             "date_to": request.date_to,
             "query_variants": list(plan.query_variants),
+            "search_mode": plan.search_mode,
             "processed_receipt_hashes": [*processed_hashes, *processed_this_run],
         }
         if not list_result.complete:

@@ -134,5 +134,83 @@ class EngineCooccurrenceTests(unittest.TestCase):
         self.assertIn(false_positive.receipt_no, excluded)
 
 
+
+MNA_SENTENCE = "공개매수가 완료될 것을 전제로 한 주식매매거래의 거래종결이 이루어지도록 규정한 주식매매계약 관련 공시 사례들을 10개 정도 찾아줘"
+
+
+class TokenHygieneTests(unittest.TestCase):
+    def setUp(self):
+        from app.orchestrator.plan_builder import search_term_rules
+        self.rules = search_term_rules()
+
+    def _clean(self, token):
+        from app.orchestrator.plan_builder import _clean_token
+        return _clean_token(token, self.rules)
+
+    def test_particles_and_verb_suffixes_are_stripped(self):
+        self.assertEqual(self._clean("공개매수가"), "공개매수")
+        self.assertEqual(self._clean("거래종결이"), "거래종결")
+        self.assertEqual(self._clean("전제로"), "전제")
+        self.assertEqual(self._clean("주식매매거래의"), "주식매매거래")
+
+    def test_directives_and_quantities_are_dropped(self):
+        self.assertIsNone(self._clean("찾아줘"))
+        self.assertIsNone(self._clean("이루어지도록"))
+        self.assertIsNone(self._clean("10개"))
+
+    def test_single_character_residue_is_not_stripped(self):
+        # Stripping the object particle from "주가" would leave a 1-char token.
+        self.assertEqual(self._clean("주가"), "주가")
+
+
+class TitleConstraintTests(unittest.TestCase):
+    def test_tender_offer_query_switches_to_report_mode(self):
+        plan = build_search_plan(SearchRequest(MNA_SENTENCE, date_from="2024-01-01", date_to="2024-12-31"))
+        self.assertEqual(plan.strategy, "S3_market_rare_phrase")
+        self.assertEqual(plan.search_mode, "report")
+        self.assertEqual(plan.query_variants, ("공개매수",))
+        groups = plan.verification_term_groups
+        self.assertEqual(len(groups), 4)
+        self.assertIn(("공개매수",), groups)
+        self.assertTrue(any("주식매매계약" in group for group in groups))
+        self.assertTrue(any("거래종결" in group for group in groups))
+        self.assertTrue(any("전제" in group for group in groups))
+
+    def test_search_variants_prefer_synonym_groups_first(self):
+        variants, _ = decompose_query(MNA_SENTENCE)
+        self.assertEqual(variants[0], "공개매수")
+        self.assertIn("주식매매계약", variants)
+
+    def test_regression_officer_stock_query_stays_contents(self):
+        q2 = "사업보고서에 전직 임직원 및 현직 임직원에 대한 주식보상이 함께 기재된 사례"
+        plan = build_search_plan(SearchRequest(q2, date_from="2026-01-01", date_to="2026-12-31"))
+        self.assertEqual(plan.search_mode, "contents")
+        self.assertNotEqual(plan.query_variants, ("공개매수",))
+
+    def test_setoff_legacy_stays_contents_with_empty_groups(self):
+        plan = build_search_plan(SearchRequest("상계납입", date_from="2026-01-01", date_to="2026-12-31"))
+        self.assertEqual(plan.search_mode, "contents")
+        self.assertEqual(plan.verification_term_groups, ())
+
+
+class DartModePassthroughTests(unittest.TestCase):
+    def test_search_variants_forwards_mode_to_search_page(self):
+        from datetime import date
+        from app.channels.dart_fulltext import DartFulltextClient, DartSearchPage
+        from app.contracts import SearchExecutionDiagnostics
+        client = DartFulltextClient()
+        seen = {}
+
+        def fake_search_page(query, date_from, date_to, diagnostics, *, mode="contents", page=1, **kwargs):
+            seen["mode"] = mode
+            seen["query"] = query
+            return DartSearchPage("normal_zero", 0, (), ("조회 결과가 없습니다.",), 1, None, None, False)
+
+        client.search_page = fake_search_page
+        client.search_variants(["공개매수"], date(2024, 1, 1), date(2024, 12, 31), SearchExecutionDiagnostics(), mode="report")
+        self.assertEqual(seen["mode"], "report")
+        self.assertEqual(seen["query"], "공개매수")
+
+
 if __name__ == "__main__":
     unittest.main()

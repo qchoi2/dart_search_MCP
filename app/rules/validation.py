@@ -19,10 +19,19 @@ def load_rule_file(path: Path, kind: str) -> dict[str, Any]:
         for key in ("precise", "concept", "broad_only"):
             if not isinstance(payload.get(key), list) or not all(isinstance(item, str) and item for item in payload[key]):
                 raise ValueError(f"{path.name}: {key} must be a non-empty string list")
-        for key in ("filler", "report_name_terms"):
+        for key in ("filler", "report_name_terms", "particles", "verb_suffixes", "drop_endings"):
             value = payload.get(key, [])
             if not isinstance(value, list) or not all(isinstance(item, str) and item for item in value):
                 raise ValueError(f"{path.name}: {key} must be a string list")
+        constraints = payload.get("title_constraints", {})
+        if not isinstance(constraints, dict):
+            raise ValueError(f"{path.name}: title_constraints must be an object")
+        for name, record in constraints.items():
+            triggers = record.get("trigger_terms") if isinstance(record, dict) else None
+            if not isinstance(record, dict) or not isinstance(record.get("title_query"), str) or not record["title_query"]:
+                raise ValueError(f"{path.name}: title_constraints.{name} needs a non-empty 'title_query'")
+            if not isinstance(triggers, list) or not triggers or not all(isinstance(item, str) and item for item in triggers):
+                raise ValueError(f"{path.name}: title_constraints.{name}.trigger_terms must be a non-empty string list")
         groups = payload.get("synonym_groups", {})
         if not isinstance(groups, dict):
             raise ValueError(f"{path.name}: synonym_groups must be an object")

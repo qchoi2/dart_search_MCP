@@ -1,5 +1,13 @@
 # Stage 0 Decisions
 
+## 43. 제목제약 검색 전략(제목검색 + 본문 동시출현 검증)
+
+- 결정: 질의에 `title_constraints` 트리거(현행 "공개매수")가 있으면 본문 전체검색 대신 DART 제목검색(`report` 모드, `detailSearchMain.do`)으로 후보 풀을 관련 보고서 수백 건대로 좁히고, 본문 개념(공개매수 포함)은 전부 AND-of-OR 동시출현 검증으로 확인한다. 이로써 12만+건·수십 시간 규모였던 배치 추정이 현실적 범위로 내려온다.
+- 근거: reportName+keyword 동시 지정(제목+본문 동시 필터)은 폼이 두 필드를 동시에 허용하는지 아직 실측(probe)되지 않아 measured-contract 원칙상 보류다. 반면 제목검색(`report` 모드)은 Stage 0.6에서 이미 계약이 실측된 경로라 probe 없이 즉시 채택할 수 있다. 그래서 "제목검색으로 풀 축소 + 본문 동시출현으로 정밀도 확보" 조합을 택했다.
+- 배선: `SearchPlan.search_mode`("contents"/"report"), 엔진·batch·`dart_fulltext`에 `mode` 전달, continuation token에 `search_mode` 저장·불일치 시 `INVALID_CONTINUATION_TOKEN`. 토큰 위생(조사·동사어미 박리(2회, 잔여 2자 이상), 지시어·수량 토큰 제거)은 `search_terms.yaml`의 particles/verb_suffixes/drop_endings 데이터로 규정하고 `validation.py`가 스키마를 검증한다.
+- 보류(측정 선행): reportName+keyword 동시 지정, DART keyword 공백 AND/OR·구문검색 의미론. DART 접근 가능 환경에서 `app/probe/dart_web.py`로 실측 후 반영한다.
+
+
 ## 42. 문장형 질의 분해와 동시출현 검증
 
 - 결정: 상계·출자전환 하드코딩에 걸리지 않는 자유문 질의는 `decompose_query`로 (선별적 검색어, 개념 그룹)으로 분해한다. 검색은 동의어로 넓히되 가장 선별적인 그룹 위주로 좁혀 DART 요청예산을 보호하고, 검증은 `verification_term_groups`(AND-of-OR)로 모든 개념이 한 문서에 동시출현할 때만 확정한다.

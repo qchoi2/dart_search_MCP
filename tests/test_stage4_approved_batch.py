@@ -67,7 +67,7 @@ class FakeOpenDart:
             if self.clock is not None:
                 with self.lock:
                     self.clock.value += self.advance_on_download
-            return f"이 문서는 {receipt_no} 상계 사례입니다."
+            return f"이 문서는 {receipt_no} 상계납입 사례입니다."
         finally:
             with self.lock:
                 self.active_downloads -= 1
@@ -439,6 +439,87 @@ class Stage4BatchTests(unittest.TestCase):
             self.assertEqual(record["mode"], "approved_batch")
             self.assertNotIn("query", record)
             self.assertTrue(record["normalized_query_hash"])
+
+
+
+class MnaSearchDart(FakeDart):
+    def __init__(self, clock: Clock, receipts: list[str]) -> None:
+        super().__init__(clock)
+        self.receipts = receipts
+        self.search_calls = 0
+        self.modes: list[str] = []
+
+    def search_page(self, query, date_from, date_to, diagnostics, **kwargs):
+        self.search_calls += 1
+        self.modes.append(kwargs.get("mode", "contents"))
+        diagnostics.dart_result_page_requests += 1
+        rows = tuple(
+            DartResultRow(
+                receipt_no=receipt,
+                corp_code="00126380",
+                company="딜회사",
+                market=None,
+                report_name="공개매수신고서",
+                report_name_prefixes=(),
+                snippet="공개매수",
+                disclosure_group=None,
+                match_scope="body",
+                filer_name="딜회사",
+                receipt_date="20240701",
+                row_tags=(),
+            )
+            for receipt in self.receipts
+        )
+        return DartSearchPage("normal_results", len(rows), rows, (), 1, 1, 1, False)
+
+
+class MnaOpenDart(FakeOpenDart):
+    def __init__(self, docs: dict[str, str]) -> None:
+        super().__init__([])
+        self.docs = docs
+
+    def download_document(self, receipt_no: str, **kwargs) -> str:
+        with self.lock:
+            self.download_calls += 1
+        return self.docs.get(receipt_no, "")
+
+
+class Stage4TitleConstraintBatchTests(unittest.TestCase):
+    MNA_QUERY = "공개매수가 완료될 것을 전제로 한 주식매매계약의 거래종결 사례를 찾아줘"
+
+    def test_title_constraint_batch_uses_report_mode_and_cooccurrence(self):
+        with tempfile.TemporaryDirectory() as raw:
+            clock = Clock()
+            docs = {
+                "20240701000001": "공개매수 완료를 전제로 한 주식매매계약의 거래종결 조항이 있다.",
+                "20240701000002": "공개매수 관련 주식매매계약 체결 사실을 공시한다.",
+            }
+            channel = MnaOpenDart(docs)
+            dart = MnaSearchDart(clock, list(docs.keys()))
+            service = BatchResearchService(
+                Engine(channel, dart),
+                root=Path(raw),
+                clock=clock,
+                wall_clock=clock,
+                plans=BatchPlanStore(clock=clock),
+            )
+            plan = service.preview(
+                query=self.MNA_QUERY,
+                date_from=date(2024, 1, 1),
+                date_to=date(2024, 12, 31),
+                target_count=10,
+                exhaustive=True,
+            )
+            self.assertEqual(plan["dart_query"]["mode"], "report")
+            self.assertEqual(plan["dart_query"]["variants"], ["공개매수"])
+            self.assertGreaterEqual(len(plan["dart_query"]["verification_term_groups"]), 4)
+            completed = service.run(plan_id=plan["plan_id"], approved=True, confirmation_interval_minutes=5)
+            self.assertEqual(completed["status"], "completed")
+            # Only the document where every concept co-occurs is verified.
+            self.assertEqual(completed["result_count"], 1)
+            self.assertTrue(all(mode == "report" for mode in dart.modes))
+            record = service.records.load(completed["search_record_id"])
+            self.assertEqual(record["results"][0]["receipt_no"], "20240701000001")
 
 
 if __name__ == "__main__":

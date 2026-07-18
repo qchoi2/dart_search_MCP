@@ -19,8 +19,8 @@ from app.config import Settings, defaults
 from app.errors import ErrorCode, SearchError
 from app.http_client import DeadlineBudget
 from app.contracts import ChannelStatus, SearchExecutionDiagnostics, SearchRequest
-from app.orchestrator.plan_builder import query_variants
-from app.research.evidence import extract_evidence
+from app.orchestrator.plan_builder import decompose_query, resolve_query_terms, title_constraint
+from app.research.evidence import extract_cooccurrence_evidence, extract_evidence
 from app.research.normalization import dart_viewer_url
 from app.security.csv_guard import escape_csv_cell, has_formula_prefix
 from app.storage.atomic import atomic_write_bytes
@@ -122,9 +122,20 @@ class BatchResearchService:
         )
         if existing is not None:
             return existing
-        variants = list(dict.fromkeys([query.strip(), *query_variants(query)]))
+        variants, verification_groups = resolve_query_terms(query)
+        search_mode = "contents"
+        title_query = title_constraint(query)
+        if title_query is not None:
+            # Title-mode shrinks the pool to the named report class; every body
+            # concept (including the trigger) then verifies by co-occurrence.
+            search_mode = "report"
+            if not verification_groups:
+                _, verification_groups = decompose_query(query)
+            variants = (title_query,)
+        variants = list(variants)
+        verification_groups = [list(group) for group in verification_groups]
         windows = list(reversed(split_date_windows(date_from, date_to)))
-        estimate = self._estimate(request, variants, windows, disclosure_scope, resolved_company_code)
+        estimate = self._estimate(request, variants, windows, disclosure_scope, resolved_company_code, search_mode)
         payload = {
             "status": "confirmation_required",
             "feature": "deep_search",
@@ -144,7 +155,7 @@ class BatchResearchService:
                 "target_count": target_count,
                 "exhaustive": exhaustive,
             },
-            "dart_query": {"variants": variants, "window_count": len(windows)},
+            "dart_query": {"variants": variants, "window_count": len(windows), "mode": search_mode, "verification_term_groups": verification_groups},
             **estimate,
             "output": ["CSV", "JSON"],
             "cache_policy": "temporary_metadata_evidence_ttl_24h",
@@ -256,6 +267,7 @@ class BatchResearchService:
         windows: list[Any],
         disclosure_types: list[str],
         resolved_company_code: str | None,
+        mode: str = "contents",
     ) -> dict[str, Any]:
         # Preview is deliberately metadata-only: no disclosure document is downloaded.
         type_scopes: list[str | None] = disclosure_types or [None]
@@ -301,6 +313,7 @@ class BatchResearchService:
                         window_end,
                         dart_diagnostics,
                         page=1,
+                        mode=mode,
                         request_budget=max(defaults.STANDARD_DART_REQUEST_BUDGET, len(windows) + 2),
                         deadline=deadline,
                     )
@@ -343,6 +356,8 @@ class BatchResearchService:
         request["query"] = None
         request["normalized_query_hash"] = str(plan["scope"]["query_hash"])
         request["query_variants"] = list(plan["dart_query"]["variants"])
+        request["search_mode"] = plan["dart_query"].get("mode", "contents")
+        request["verification_term_groups"] = plan["dart_query"].get("verification_term_groups", [])
         type_scopes: list[str | None] = list(request.get("disclosure_types") or [None])
         windows = [
             [start.isoformat(), end.isoformat(), disclosure_type]
@@ -398,6 +413,7 @@ class BatchResearchService:
         hard_deadline = DeadlineBudget(start + hard_seconds, clock=self.clock)
         request = state["request"]
         variants = list(request["query_variants"])
+        groups = [tuple(group) for group in request.get("verification_term_groups", [])]
         if self.opendart is None or not hasattr(self.opendart, "list_page"):
             return {"status": "channel_unavailable", "network_started": False, "job_id": state["job_id"]}
         processed = set(state.get("processed_receipts", []))
@@ -488,7 +504,7 @@ class BatchResearchService:
                     outcomes: dict[int, tuple[Any, ...] | Exception] = {}
                     with ThreadPoolExecutor(max_workers=concurrency) as pool:
                         futures = {
-                            index: pool.submit(self._download_evidence, candidate.receipt_no, variants, hard_deadline)
+                            index: pool.submit(self._download_evidence, candidate.receipt_no, variants, groups, hard_deadline)
                             for index, candidate in batch
                         }
                         for index, future in futures.items():
@@ -652,9 +668,12 @@ class BatchResearchService:
         self,
         receipt_no: str,
         variants: list[str],
+        groups: list[tuple[str, ...]],
         deadline: DeadlineBudget,
     ) -> tuple[Any, ...]:
         document = self.opendart.download_document(receipt_no, deadline=deadline)
+        if groups:
+            return extract_cooccurrence_evidence(receipt_no, document, groups)
         return extract_evidence(receipt_no, document, variants)
 
     def _discover_dart_candidates(
@@ -704,6 +723,7 @@ class BatchResearchService:
                     ),
                     company=state["request"].get("resolved_company_code"),
                     deadline=deadline,
+                    mode=state["request"].get("search_mode", "contents"),
                 )
                 after = (
                     diagnostics.health_check_requests

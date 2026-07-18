@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from functools import lru_cache
 from pathlib import Path
 
@@ -38,6 +39,53 @@ def query_variants(query: str) -> tuple[str, ...]:
     return tuple(dict.fromkeys(value for value in variants if value))
 
 
+_COUNT_TOKEN = re.compile(r"^\d+(?:개|건|년|월|일|여|여개)?$")
+
+
+def _clean_token(token: str, rules: dict) -> str | None:
+    """Normalize one whitespace token into a content term, or None to drop it.
+
+    Deterministic suffix stripping only (no morphological analysis): drop
+    instruction/count tokens outright, then peel trailing particles and verb
+    suffixes while at least two characters remain. This keeps nouns like
+    주가 intact (stripping would leave a single character) while reducing
+    공개매수가 → 공개매수 and 규정한 → 규정.
+    """
+    filler = set(rules.get("filler", []))
+    if _COUNT_TOKEN.match(token):
+        return None
+    if any(token.endswith(ending) for ending in rules.get("drop_endings", [])):
+        return None
+    current = token
+    for _ in range(2):
+        stripped = False
+        for suffix in (*rules.get("particles", []), *rules.get("verb_suffixes", [])):
+            if current.endswith(suffix) and len(current) - len(suffix) >= 2:
+                current = current[: -len(suffix)]
+                stripped = True
+                break
+        if not stripped:
+            break
+    if len(current) < 2 or current in filler or token in filler:
+        return None
+    return current
+
+
+def title_constraint(query: str) -> str | None:
+    """Return the report-title query when the query names a constrained class.
+
+    A matching class (e.g. 공개매수 filings) lets the DART channel search in
+    report(title) mode over a small document pool while every body concept
+    moves to co-occurrence verification.
+    """
+    rules = search_term_rules()
+    compact = " ".join(query.split())
+    for record in rules.get("title_constraints", {}).values():
+        if any(term in compact for term in record.get("trigger_terms", [])):
+            return record["title_query"]
+    return None
+
+
 def decompose_query(query: str) -> tuple[tuple[str, ...], tuple[tuple[str, ...], ...]]:
     """Split a free-text query into (search_variants, verification_term_groups).
 
@@ -51,7 +99,6 @@ def decompose_query(query: str) -> tuple[tuple[str, ...], tuple[tuple[str, ...],
     """
     rules = search_term_rules()
     groups_cfg = rules.get("synonym_groups", {})
-    filler = set(rules.get("filler", []))
     report_names = rules.get("report_name_terms", [])
     compact = " ".join(query.split())
     # Strip report-name (title) tokens: a body document does not reliably repeat
@@ -60,7 +107,11 @@ def decompose_query(query: str) -> tuple[tuple[str, ...], tuple[tuple[str, ...],
     stripped = compact
     for name in report_names:
         stripped = stripped.replace(name, " ")
-    tokens = [token for token in stripped.split() if len(token) >= 2 and token not in filler]
+    tokens: list[str] = []
+    for raw in stripped.split():
+        cleaned = _clean_token(raw, rules)
+        if cleaned is not None and cleaned not in tokens:
+            tokens.append(cleaned)
 
     verification_groups: list[tuple[str, ...]] = []
     group_search: list[str] = []
@@ -82,7 +133,8 @@ def decompose_query(query: str) -> tuple[tuple[str, ...], tuple[tuple[str, ...],
         leftover_search.append(token)
         covered.add(token)
 
-    search_variants = list(dict.fromkeys(value for value in (*leftover_search, *group_search) if value))
+    # Selective synonym-group terms lead; loose leftover tokens only backfill.
+    search_variants = list(dict.fromkeys(value for value in (*group_search, *leftover_search) if value))
     if not search_variants or not verification_groups:
         return (compact,), ()
     return tuple(search_variants[: defaults.DECOMPOSED_SEARCH_VARIANT_MAX]), tuple(verification_groups)
@@ -153,6 +205,16 @@ def strategy_query_variants(request: SearchRequest, strategy: str) -> tuple[str,
 def build_search_plan(request: SearchRequest) -> SearchPlan:
     strategy, primary, secondary = choose_strategy(request)
     variants, verification_groups = strategy_terms(request, strategy)
+    search_mode = "contents"
+    if strategy in {"S2_company_fulltext", "S3_market_rare_phrase"}:
+        title_query = title_constraint(request.query)
+        if title_query is not None:
+            # Title mode shrinks the pool to the named report class; every body
+            # concept (including the trigger itself) verifies by co-occurrence.
+            search_mode = "report"
+            if not verification_groups:
+                _, verification_groups = decompose_query(request.query)
+            variants = (title_query,)
     if request.mode == "fast":
         list_budget = defaults.FAST_LIST_REQUEST_BUDGET
         dart_budget = defaults.FAST_DART_REQUEST_BUDGET
@@ -203,4 +265,5 @@ def build_search_plan(request: SearchRequest) -> SearchPlan:
         max_escalations=defaults.MAX_ESCALATIONS,
         batch_threshold=(("estimated_documents", defaults.BATCH_ESTIMATED_DOCUMENT_THRESHOLD), ("estimated_seconds", defaults.BATCH_ESTIMATED_SECONDS_THRESHOLD)),
         verification_term_groups=verification_groups,
+        search_mode=search_mode,
     )
