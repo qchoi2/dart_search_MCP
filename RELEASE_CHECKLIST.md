@@ -2,7 +2,7 @@
 
 ## 자동 완료
 
-- `dist/공시검색-MCP-0.3.2.mcpb` 생성
+- `dist/공시검색-MCP-0.3.3.mcpb` 생성
 - `dist/사용설명서.html` 생성
 - `dist/SHA256SUMS.txt` 생성
 - MCPB manifest v0.4 schema validation 통과
@@ -14,7 +14,7 @@
 ## 사용자 최종 확인
 
 1. Claude Desktop을 최신 버전으로 업데이트한다.
-2. 설정 → 확장 → 고급 설정 → 확장 설치에서 `dist/공시검색-MCP-0.3.2.mcpb`를 선택한다.
+2. 설정 → 확장 → 고급 설정 → 확장 설치에서 `dist/공시검색-MCP-0.3.3.mcpb`를 선택한다.
 3. OpenDART API 인증키 40자리를 입력한다.
 4. Claude Desktop을 완전히 종료한 뒤 다시 실행한다.
 5. 커넥터 또는 도구 목록에 공시검색 MCP가 보이는지 확인한다.
@@ -26,12 +26,12 @@
 
 ## 배포 파일
 
-- 패키지: `dist/공시검색-MCP-0.3.2.mcpb`
+- 패키지: `dist/공시검색-MCP-0.3.3.mcpb`
 - 안내서: `dist/사용설명서.html`
 - 체크섬: `dist/SHA256SUMS.txt`
 
 SHA-256:
 
 ```text
-fdf6fe62da9e99456a7a150d4307bab52a54bd8061f7b68ce0e7835d89625c40  공시검색-MCP-0.3.2.mcpb
+9026214fd659170648b637a91929f002b82c924778f3efa666b5ff3ac699a757  공시검색-MCP-0.3.3.mcpb
 ```

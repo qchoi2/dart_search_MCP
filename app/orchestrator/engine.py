@@ -8,6 +8,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, replace
 from datetime import date, datetime, timezone
+from calendar import monthrange
 from typing import Any
 from typing import Callable
 
@@ -40,6 +41,20 @@ def _deep_search_guidance(*, continuation_available: bool = False) -> str:
         else "공시 MCP의 심화 검색기능으로 범위와 예상시간을 먼저 확인해 주세요."
     )
     return f"공시 MCP의 속도우선 기능에서는 요청 범위를 모두 확인하지 못했습니다. {next_action} {DEEP_SEARCH_HELP}"
+
+
+def _suggested_recent_scope(today: date, months: int) -> tuple[str, str]:
+    """Propose a recent [from, to] window ``months`` back from ``today``.
+
+    Used when a query does not name a period: rather than silently scanning the
+    whole market/history, the engine offers this narrow default and asks the
+    caller to confirm before widening.
+    """
+    total = today.year * 12 + (today.month - 1) - months
+    year, month_index = divmod(total, 12)
+    month = month_index + 1
+    day = min(today.day, monthrange(year, month)[1])
+    return date(year, month, day).isoformat(), today.isoformat()
 
 
 def _lineage(request: SearchRequest) -> str:
@@ -122,10 +137,27 @@ class SearchEngine:
     def execute(self, request: SearchRequest) -> dict[str, Any]:
         lineage = _lineage(request)
         if not request.date_from or not request.date_to:
+            months = defaults.DEFAULT_SUGGESTED_SCOPE_MONTHS
+            today = datetime.now(timezone.utc).date()
+            suggested_from, suggested_to = _suggested_recent_scope(today, months)
+            prompt = (
+                f"검색기간을 지정하지 않으셨습니다. 범위를 넓게 잡으면 검토량이 커질 수 있어, "
+                f"우선 최근 {months}개월({suggested_from}~{suggested_to})만 빠르게 살펴보려 합니다. "
+                f"이대로 진행할까요? 더 넓거나 다른 기간이 필요하면 기간을 지정해 주세요."
+            )
             return self._base_response(
                 "clarification_required", lineage,
-                warnings=["검색기간이 지정되지 않았습니다. 네트워크 검색 전에 시작일과 종료일을 확인해 주세요."],
-                error={"code": ErrorCode.DATE_RANGE_REQUIRED.value, "message": "date_from과 date_to가 필요합니다."},
+                warnings=[prompt],
+                scope_confirmation_required=True,
+                confirmation_prompt=prompt,
+                suggested_scope={
+                    "date_from": suggested_from,
+                    "date_to": suggested_to,
+                    "months": months,
+                    "reason": "period_unspecified",
+                    "rationale": "범위 미지정 시 방대한 검토를 피하기 위해 좁은 기본 기간을 먼저 제안하고 확인을 받습니다.",
+                },
+                error={"code": ErrorCode.DATE_RANGE_REQUIRED.value, "message": "date_from과 date_to가 필요합니다. 제안된 좁은 기간으로 진행하려면 확인해 주세요."},
             )
         if request.exhaustive or request.output_mode == "batch":
             return self._base_response(

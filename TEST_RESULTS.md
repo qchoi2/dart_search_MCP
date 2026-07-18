@@ -1,5 +1,12 @@
 # 테스트 결과
 
+## 범위 확인 프로토콜 (2026-07-18 KST, 세션 샌드박스)
+
+- `python -m pytest -q`: 186 passed, 20 subtests passed.
+- 신규 테스트: 기간 미지정 → `clarification_required` + `suggested_scope`(최근 24개월) + `scope_confirmation_required`; `_suggested_recent_scope` 월 역산·말일 클램프.
+- MCPB 재빌드: `dist/공시검색-MCP-0.3.3.mcpb`, SHA-256 `9026214fd659170648b637a91929f002b82c924778f3efa666b5ff3ac699a757`.
+
+
 ## D004 스코프 전환 회귀 (2026-07-18 KST, 세션 샌드박스)
 
 - `python -m unittest discover -s tests -p "test*.py"`: 184 tests OK.

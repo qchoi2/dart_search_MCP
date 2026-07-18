@@ -7,7 +7,7 @@ describe behaviour, but do not duplicate these operational limits.
 from __future__ import annotations
 
 SCHEMA_VERSION = "1.0"
-PRODUCT_VERSION = "0.3.2"
+PRODUCT_VERSION = "0.3.3"
 # Stage 0/0.6 measurement used this explicitly identifying, non-browser UA.
 USER_AGENT = "dart-search-mcp-stage0-probe/0.1 (local measurement; concurrency=1)"
 
@@ -40,6 +40,10 @@ STANDARD_SOFT_TIMEOUT_SECONDS = 60
 STANDARD_HARD_TIMEOUT_SECONDS = 90
 FIRST_CANDIDATE_TARGET_SECONDS = 8
 MAX_ESCALATIONS = 2
+# When a query does not name a period (or is otherwise unscoped enough to risk a
+# very large review), propose this recent window first and ask for confirmation
+# before scanning anything wider.
+DEFAULT_SUGGESTED_SCOPE_MONTHS = 24
 # Upper bound on decomposed free-text search variants, so a broadened synonym
 # expansion cannot exhaust the small DART request budget.
 DECOMPOSED_SEARCH_VARIANT_MAX = 6

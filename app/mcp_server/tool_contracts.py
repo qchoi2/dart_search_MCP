@@ -4,7 +4,7 @@ from app.config import defaults
 
 SEARCH_TOOL = {
     "name": "search_disclosure_cases",
-    "description": "공시 MCP의 속도우선 기능으로 기간이 명확한 한국 DART 공시에서 원문 근거가 있는 사례를 검색합니다. 사용자에게 검색 결과를 제시할 때 각 결과의 original_document_url 또는 original_document_links에 있는 DART 공시 원문 링크를 항상 함께 표시해야 합니다. amendment_comparison 또는 sequence_required를 켜면 S6/S7 온디맨드 관계분석을 수행합니다. 공개매수 후 주식교환처럼 여러 공시의 선후관계·사건순서를 묻는 질의에는 sequence_required=true를 사용하세요. 더 넓은 범위가 필요하면 공시 MCP의 심화 검색기능을 안내합니다.",
+    "description": "공시 MCP의 속도우선 기능으로 기간이 명확한 한국 DART 공시에서 원문 근거가 있는 사례를 검색합니다. 사용자에게 검색 결과를 제시할 때 각 결과의 original_document_url 또는 original_document_links에 있는 DART 공시 원문 링크를 항상 함께 표시해야 합니다. amendment_comparison 또는 sequence_required를 켜면 S6/S7 온디맨드 관계분석을 수행합니다. 공개매수 후 주식교환처럼 여러 공시의 선후관계·사건순서를 묻는 질의에는 sequence_required=true를 사용하세요. 기간을 지정하지 않으면 status가 'clarification_required'로 오고 suggested_scope(최근 24개월 기본 제안)가 함께 옵니다. 이때는 사용자에게 그 좁은 기간으로 먼저 살펴봐도 될지 확인한 뒤, 동의하면 suggested_scope의 date_from·date_to로 다시 호출하고 사용자가 다른 기간을 원하면 그 기간으로 호출하세요. 사용자가 범위를 명확히 정하지 않아 방대한 검토가 우려되는 경우에도 같은 방식으로 좁은 기본 범위를 먼저 제안하고 확인을 받으세요. 더 넓은 범위가 필요하면 공시 MCP의 심화 검색기능을 안내합니다.",
     "inputSchema": {
         "type": "object",
         "required": ["query"],

@@ -1,5 +1,13 @@
 # Stage 0 Decisions
 
+## 45. 범위 미지정 시 좁은 기본 기간 확인 프로토콜
+
+- 배경: 기간 없는 질의("…사례 찾아줘")를 클라이언트가 임의의 넓은 기간+standard로 실행하면 대형 원문(공개매수설명서 등) 다운로드로 MCP 클라이언트 타임아웃을 넘길 수 있다(서버는 정상 처리 중).
+- 결정: 사용자가 기간(범위)을 명확히 지정하지 않으면 엔진은 즉시 검색하지 않고 `status="clarification_required"`와 함께 `suggested_scope`(오늘 기준 최근 `DEFAULT_SUGGESTED_SCOPE_MONTHS=24`개월), `confirmation_prompt`, `scope_confirmation_required=true`를 반환한다. 클라이언트는 "그 좁은 기간으로 먼저 볼지"를 사용자에게 확인하고 동의 시 제안 기간으로 재호출한다.
+- 원칙 일반화: 사용자가 범위를 명확히 정하지 않아 방대한 검토가 우려되는 경우 모두 동일하게 "좁은 기본 범위 먼저 제안·확인"을 적용한다. 도구 description에도 이 지침을 명시했다.
+- 근거: 기본을 넓게 잡아 방대한 스캔·타임아웃을 유발하기보다 좁게 시작해 필요 시 확장하는 것이 안전·응답성 면에서 낫다. 좁은 기간은 D004 스코프에서 목록 1회·수백 ms로 확인됨(PROBE_RESULTS).
+
+
 ## 44. 제목검색(report 모드) 폐기와 OpenDART D004 detail 스코프 전환
 
 - 발견: 0.3.1 실검색에서 `search_mode="report"`, `query_variants=["공개매수"]`로 정상 실행됐으나 DART가 0건을 반환했고(후보 전원 `source_channels=["opendart"]`), 과거 stage 0.6 probe(withdrawal_report_seed)도 reportName 기반 10년 범위에서 normal_zero였다. 즉 report(제목)검색 폼 계약은 한 번도 양성 검증된 적이 없다.

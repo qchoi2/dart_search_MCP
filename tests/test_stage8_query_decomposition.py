@@ -276,5 +276,29 @@ class UnscopedMarketGuardTests(unittest.TestCase):
         self.assertTrue(any("무필터" in warning for warning in result.get("warnings", [])))
 
 
+
+class ScopeConfirmationTests(unittest.TestCase):
+    def test_missing_period_proposes_recent_window_for_confirmation(self):
+        # No period given: the engine must not scan silently; it proposes a
+        # narrow default window and asks the caller to confirm.
+        result = SearchEngine(opendart=None, dart=None).execute(
+            SearchRequest("공개매수 거래종결 사례 찾아줘")
+        )
+        self.assertEqual(result["status"], "clarification_required")
+        self.assertTrue(result["scope_confirmation_required"])
+        scope = result["suggested_scope"]
+        self.assertEqual(scope["months"], 24)
+        self.assertEqual(scope["reason"], "period_unspecified")
+        self.assertLess(scope["date_from"], scope["date_to"])
+        self.assertIn("suggested_scope", result)
+
+    def test_suggested_recent_scope_counts_months_back_and_clamps_month_end(self):
+        from datetime import date
+        from app.orchestrator.engine import _suggested_recent_scope
+        self.assertEqual(_suggested_recent_scope(date(2026, 7, 18), 24), ("2024-07-18", "2026-07-18"))
+        # 1 month before Mar 31 clamps to the last day of February.
+        self.assertEqual(_suggested_recent_scope(date(2026, 3, 31), 1), ("2026-02-28", "2026-03-31"))
+
+
 if __name__ == "__main__":
     unittest.main()
