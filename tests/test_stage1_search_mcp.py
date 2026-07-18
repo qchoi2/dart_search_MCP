@@ -164,7 +164,8 @@ class SearchExecutionTests(unittest.TestCase):
         self.assertTrue(result["continuation_token"].startswith("cursor_"))
 
     def test_hard_timeout_returns_partial_with_continuation(self):
-        ticks = iter([0.0, *([100.0] * 20)])
+        # jump the clock past STANDARD_HARD_TIMEOUT_SECONDS (currently 210s)
+        ticks = iter([0.0, *([300.0] * 20)])
         opendart = FakeOpenDart([candidate_from_list_row(row())])
         result = SearchEngine(opendart=opendart, dart=None, clock=lambda: next(ticks)).execute(
             SearchRequest("공시 목록", company="00123456", date_from="2026-01-01", date_to="2026-01-31")

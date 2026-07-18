@@ -300,5 +300,21 @@ class ScopeConfirmationTests(unittest.TestCase):
         self.assertEqual(_suggested_recent_scope(date(2026, 3, 31), 1), ("2026-02-28", "2026-03-31"))
 
 
+
+class ServerVersionTests(unittest.TestCase):
+    def test_tool_result_exposes_server_version(self):
+        from app.mcp_server.server import McpApplication
+        from app.config.defaults import PRODUCT_VERSION
+        app = McpApplication(SearchEngine(opendart=None, dart=None))
+        response = app.handle({
+            "jsonrpc": "2.0", "id": 1, "method": "tools/call",
+            "params": {"name": "search_disclosure_cases", "arguments": {"query": "공개매수 거래종결 사례"}},
+        })
+        import json
+        result = response["result"]
+        payload = result.get("structuredContent") or json.loads(result["content"][0]["text"])
+        self.assertEqual(payload["server_version"], PRODUCT_VERSION)
+
+
 if __name__ == "__main__":
     unittest.main()

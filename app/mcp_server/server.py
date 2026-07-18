@@ -118,6 +118,9 @@ class McpApplication:
                 result.setdefault("feature_label", "공시 MCP의 심화 검색기능")
                 result.setdefault("help", "심화 검색기능이 무엇인지 궁금하면 물어봐 주세요.")
             result.setdefault("schema_version", SCHEMA_VERSION)
+            # Expose the installed package version in every tool result so the
+            # client (and the user) can confirm which build is actually running.
+            result.setdefault("server_version", PRODUCT_VERSION)
             return result
         except (SearchError, ValueError, TypeError) as exc:
             if isinstance(exc, SearchError):

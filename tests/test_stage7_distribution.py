@@ -134,7 +134,7 @@ class ReleaseBuildTests(unittest.TestCase):
             self.assertEqual(completed.returncode, 0, completed.stderr)
             response = json.loads(completed.stdout.strip())
             self.assertEqual(response["id"], 7)
-            self.assertEqual(response["result"]["serverInfo"]["version"], "0.3.3")
+            self.assertEqual(response["result"]["serverInfo"]["version"], "0.3.4")
 
     def test_icons_include_alpha_png_and_seven_windows_sizes(self):
         png = ROOT / "app" / "assets" / "disclosure-detective.png"

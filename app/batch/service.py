@@ -517,6 +517,18 @@ class BatchResearchService:
                                 outcomes[index] = future.result()
                             except Exception as exc:
                                 outcomes[index] = exc
+                    # Per-document permanent failures (missing original file,
+                    # unparseable document, privacy-expired) can never succeed
+                    # on retry: mark the receipt processed and move on. Only
+                    # transient/account-level errors may rewind the checkpoint
+                    # and stop the run — rewinding on a permanent failure
+                    # re-downloads the same document forever and stalls the
+                    # batch at one row.
+                    skippable = {
+                        ErrorCode.OPENDART_FILE_NOT_FOUND,
+                        ErrorCode.DOCUMENT_PARSE_FAILED,
+                        ErrorCode.OPENDART_PRIVACY_RETENTION_EXPIRED,
+                    }
                     for index, candidate in batch:
                         outcome = outcomes[index]
                         if isinstance(outcome, SearchError):
@@ -527,13 +539,26 @@ class BatchResearchService:
                             if adaptive.observe(outcome):
                                 state["document_concurrency"] = adaptive.current
                                 state.setdefault("document_concurrency_events", []).extend(adaptive.events)
+                            if outcome.code in skippable:
+                                processed.add(candidate.receipt_no)
+                                state["diagnostics"].append({
+                                    "channel": "opendart_document",
+                                    "reason": outcome.code.value,
+                                    "receipt_no": candidate.receipt_no,
+                                    "action": "skipped_permanent_document_failure",
+                                })
+                                continue
                             if failed_index is None or index < failed_index:
                                 failed_index, failed_error = index, outcome
                             continue
                         if isinstance(outcome, Exception):
-                            exc = SearchError(ErrorCode.DOCUMENT_PARSE_FAILED, "배치 원문 처리에 실패했습니다.")
-                            if failed_index is None or index < failed_index:
-                                failed_index, failed_error = index, exc
+                            processed.add(candidate.receipt_no)
+                            state["diagnostics"].append({
+                                "channel": "opendart_document",
+                                "reason": ErrorCode.DOCUMENT_PARSE_FAILED.value,
+                                "receipt_no": candidate.receipt_no,
+                                "action": "skipped_permanent_document_failure",
+                            })
                             continue
                         evidence = outcome
                         if evidence and (

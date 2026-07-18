@@ -1,5 +1,14 @@
 # 테스트 결과
 
+## 배치 정체 수정·예산 상향 (2026-07-19 KST, 세션 샌드박스)
+
+- `python -m pytest -q`: 188 passed, 20 subtests passed.
+- `python -m app.evaluation`: 24/24.
+- 신규 테스트: 영구 문서오류(FILE_NOT_FOUND) 섞인 배치가 정체 없이 완주·`skipped_permanent_document_failure` 기록; 모든 도구 결과 `server_version` 노출.
+- 예산 반영: `settings.json` interactive_document_budget 60 동기화, 하드타임아웃 테스트 시계값 210s 초과로 조정.
+- MCPB 재빌드: `dist/공시검색-MCP-0.3.4.mcpb`, SHA-256 `a61538a89e0ab25208d576cda86f588a706d22278327a8cda628d304d9a7f538`.
+
+
 ## 범위 확인 프로토콜 (2026-07-18 KST, 세션 샌드박스)
 
 - `python -m pytest -q`: 186 passed, 20 subtests passed.

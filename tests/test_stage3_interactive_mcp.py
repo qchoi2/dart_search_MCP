@@ -94,7 +94,7 @@ class Stage3ContractTests(unittest.TestCase):
             with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
                 SearchRequest("x", **kwargs)
 
-    def test_interactive_document_and_result_caps_remain_40_and_20(self):
+    def test_interactive_document_and_result_caps_follow_defaults(self):
         plan = build_search_plan(SearchRequest(
             "목록", company="00123456", target_count=20,
             max_documents=defaults.DOCUMENT_BUDGET_ABSOLUTE_MAX,

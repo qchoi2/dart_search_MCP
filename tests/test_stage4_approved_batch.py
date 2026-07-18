@@ -500,5 +500,41 @@ class Stage4TitleConstraintBatchTests(unittest.TestCase):
             self.assertEqual(record["results"][0]["receipt_no"], "20240701000001")
 
 
+
+class Stage4PermanentDocumentFailureTests(unittest.TestCase):
+    def test_permanent_document_failure_is_skipped_and_batch_completes(self):
+        # A permanent per-document error (missing original file) must not rewind
+        # the checkpoint and stall; the batch skips that receipt and finishes.
+        class MissingDocOpenDart(FakeOpenDart):
+            def download_document(self, receipt_no, **kwargs):
+                if receipt_no.endswith("02"):
+                    with self.lock:
+                        self.download_calls += 1
+                    raise SearchError(ErrorCode.OPENDART_FILE_NOT_FOUND, "원본 파일 없음")
+                return super().download_document(receipt_no, **kwargs)
+
+        with tempfile.TemporaryDirectory() as raw:
+            clock = Clock()
+            rows = [row("20240701000001"), row("20240701000002"), row("20240701000003")]
+            channel = MissingDocOpenDart(rows)
+            service = BatchResearchService(
+                Engine(channel, dart=None), root=Path(raw),
+                clock=clock, wall_clock=clock, plans=BatchPlanStore(clock=clock),
+            )
+            plan = service.preview(
+                query="상계", date_from=date(2024, 7, 1), date_to=date(2024, 7, 31),
+                target_count=10, exhaustive=True,
+            )
+            completed = service.run(plan_id=plan["plan_id"], approved=True, confirmation_interval_minutes=5)
+            self.assertEqual(completed["status"], "completed")
+            record = service.records.load(completed["search_record_id"])
+            receipts = {item["receipt_no"] for item in record["results"]}
+            self.assertNotIn("20240701000002", receipts)
+            self.assertIn("20240701000001", receipts)
+            self.assertIn("20240701000003", receipts)
+            skipped = [d for d in record["diagnostics"] if d.get("action") == "skipped_permanent_document_failure"]
+            self.assertTrue(any(d.get("receipt_no") == "20240701000002" for d in skipped))
+
+
 if __name__ == "__main__":
     unittest.main()

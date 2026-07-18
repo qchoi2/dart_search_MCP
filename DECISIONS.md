@@ -1,5 +1,14 @@
 # Stage 0 Decisions
 
+## 46. 배치 정체 수정·기본 검색 예산 상향·server_version 노출
+
+- 배치 정체 수정: 문서 검증 단계에서 영구 문서오류(`OPENDART_FILE_NOT_FOUND`/`DOCUMENT_PARSE_FAILED`/`OPENDART_PRIVACY_RETENTION_EXPIRED` 및 일반 예외)는 해당 접수번호를 processed로 표시하고 diagnostics에 `skipped_permanent_document_failure`로 기록 후 전진한다. 일시 오류(rate limit/temporary/timeout)와 계정 오류만 체크포인트를 되감고 중단한다. 되감기+재다운로드 무한반복으로 배치가 한 행에서 정체되던 문제를 해결.
+- 기본 검색 예산 상향: standard 모드의 확인 문서 수·시간 예산을 늘려 3~4분 내 충실한 1차 결과가 가능하도록 했다. `DOCUMENT_CANDIDATE_HEADROOM_MULTIPLIER` 2→4, `STANDARD_DOCUMENT_BUDGET` 40→60, `STANDARD_SOFT_TIMEOUT_SECONDS` 60→180, `STANDARD_HARD_TIMEOUT_SECONDS` 90→210(target 10 기준 검증 문서 20→40). `settings.json`도 동기화.
+- server_version 노출: 모든 도구 실행 결과에 `server_version`(PRODUCT_VERSION)을 포함해 설치본 버전을 즉시 확인할 수 있게 했다. 라이브 검증 첫 단계는 항상 server_version 확인.
+- verified 정확도 판단: 라이브(좁은 기간)에서 공개매수 D004 스코프가 verified 사례(제이시스메디칼)를 정상 반환하므로 검증그룹 AND(condition_precedent 포함)는 과엄격이 아니다. 앞선 verified 0/61은 배치 정체가 주원인. 완화 옵션(그룹 3/4 충족 시 preliminary_strong 노출)은 실측이 필요할 때만 후속으로 둔다.
+- 포터블 배포: 별도 포터블/실행형 산출물은 만들지 않는다(단계 7에서 MCPB로 대체, [[DECISIONS #40]]). 배포 산출물은 `dist/공시검색-MCP-x.y.z.mcpb` + `사용설명서.html` + `SHA256SUMS.txt`로 일원화.
+
+
 ## 45. 범위 미지정 시 좁은 기본 기간 확인 프로토콜
 
 - 배경: 기간 없는 질의("…사례 찾아줘")를 클라이언트가 임의의 넓은 기간+standard로 실행하면 대형 원문(공개매수설명서 등) 다운로드로 MCP 클라이언트 타임아웃을 넘길 수 있다(서버는 정상 처리 중).
