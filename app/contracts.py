@@ -110,6 +110,10 @@ class SearchPlan:
     # DART full-text channel mode: "contents" (body keyword) or "report"
     # (title-constrained pool; body concepts verify by co-occurrence).
     search_mode: str = "contents"
+    # OpenDART pblntf_detail_ty scope (e.g. "D004" 공개매수). When set, the
+    # OpenDART list channel provides the newest-first candidate pool and body
+    # concepts verify by co-occurrence.
+    opendart_detail_type: str | None = None
 
 
 @dataclass(slots=True)

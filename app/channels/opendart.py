@@ -291,11 +291,15 @@ class OpenDartClient:
             raise SearchError(ErrorCode.OPENDART_TEMPORARY_FAILURE, "OpenDART JSON 응답을 해석하지 못했습니다.") from exc
 
     def list_page(self, *, date_from: date, date_to: date, page_no: int = 1, corp_code: str | None = None, corp_cls: str | None = None, disclosure_type: str | None = None, deadline: DeadlineBudget | None = None) -> dict:
+        # A broad type is one letter ("B"); a detail type looks like "D004" and
+        # must be sent as pblntf_detail_ty (OpenDART 개발가이드 공시검색 계약).
+        detail = disclosure_type if disclosure_type and len(disclosure_type) == 4 else None
         params = {
             "corp_code": corp_code,
             "bgn_de": date_from.strftime("%Y%m%d"),
             "end_de": date_to.strftime("%Y%m%d"),
-            "pblntf_ty": disclosure_type,
+            "pblntf_ty": None if detail else disclosure_type,
+            "pblntf_detail_ty": detail,
             "corp_cls": corp_cls,
             "sort": "date",
             "sort_mth": "desc",

@@ -1,5 +1,14 @@
 # 테스트 결과
 
+## D004 스코프 전환 회귀 (2026-07-18 KST, 세션 샌드박스)
+
+- `python -m unittest discover -s tests -p "test*.py"`: 184 tests OK.
+- `python -m pytest -q`: 184 passed, 20 subtests passed.
+- `python -m app.evaluation`: 24/24.
+- 신규/갱신 테스트: 공개매수→D004 opendart 스코프 plan, 포괄적 주식교환 그룹+토큰 제거, `list_page`의 D004→`pblntf_detail_ty`·B→`pblntf_ty`(mock), 무스코프 S3 전시장 나열 차단+경고, batch D004 스코프(dart 배제)+동시출현 검증.
+- MCPB 재빌드: `dist/공시검색-MCP-0.3.2.mcpb`, SHA-256 `fdf6fe62da9e99456a7a150d4307bab52a54bd8061f7b68ce0e7835d89625c40`.
+
+
 ## 제목제약·질의분해 회귀 (2026-07-18 KST, 세션 샌드박스)
 
 - `python -m unittest discover -s tests -p "test*.py"`: 179 tests OK.

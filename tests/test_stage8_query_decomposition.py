@@ -164,11 +164,15 @@ class TokenHygieneTests(unittest.TestCase):
 
 
 class TitleConstraintTests(unittest.TestCase):
-    def test_tender_offer_query_switches_to_report_mode(self):
+    def test_tender_offer_query_scopes_to_d004_opendart(self):
         plan = build_search_plan(SearchRequest(MNA_SENTENCE, date_from="2024-01-01", date_to="2024-12-31"))
         self.assertEqual(plan.strategy, "S3_market_rare_phrase")
-        self.assertEqual(plan.search_mode, "report")
-        self.assertEqual(plan.query_variants, ("공개매수",))
+        # Report(title) mode is dormant; the pool is scoped via the OpenDART
+        # D004 detail type and every body concept verifies by co-occurrence.
+        self.assertEqual(plan.search_mode, "contents")
+        self.assertEqual(plan.primary_channel, "opendart")
+        self.assertEqual(plan.secondary_channels, ("dart_fulltext",))
+        self.assertEqual(plan.opendart_detail_type, "D004")
         groups = plan.verification_term_groups
         self.assertEqual(len(groups), 4)
         self.assertIn(("공개매수",), groups)
@@ -210,6 +214,66 @@ class DartModePassthroughTests(unittest.TestCase):
         client.search_variants(["공개매수"], date(2024, 1, 1), date(2024, 12, 31), SearchExecutionDiagnostics(), mode="report")
         self.assertEqual(seen["mode"], "report")
         self.assertEqual(seen["query"], "공개매수")
+
+
+
+class ComprehensiveShareExchangeTests(unittest.TestCase):
+    Q = "공개매수 후 포괄적 주식교환이 이어진 실제 사례 10건 찾아줘"
+
+    def test_group_included_and_directive_tokens_dropped(self):
+        variants, groups = decompose_query(self.Q)
+        self.assertTrue(any("포괄적 주식교환" in group for group in groups))
+        self.assertIn(("공개매수",), groups)
+        self.assertNotIn("이어진", variants)
+        self.assertNotIn("실제", variants)
+        self.assertFalse(any("10" in variant for variant in variants))
+
+    def test_plan_scopes_to_d004(self):
+        plan = build_search_plan(SearchRequest(self.Q, date_from="2023-01-01", date_to="2024-12-31"))
+        self.assertEqual(plan.opendart_detail_type, "D004")
+        self.assertEqual(plan.primary_channel, "opendart")
+
+
+class OpenDartDetailTypeTests(unittest.TestCase):
+    def _client(self):
+        from app.channels.opendart import OpenDartClient
+        return OpenDartClient("testkey0000000000000000000000000000000000")
+
+    def _capture_params(self, disclosure_type):
+        from datetime import date
+        client = self._client()
+        captured = {}
+
+        def fake_json(endpoint, params, **kwargs):
+            captured.clear()
+            captured.update(params)
+            return {"status": "000", "list": [], "total_count": 0, "total_page": 1}
+
+        client._json = fake_json
+        client.list_page(date_from=date(2024, 1, 1), date_to=date(2024, 12, 31), disclosure_type=disclosure_type)
+        return captured
+
+    def test_four_char_type_is_sent_as_detail_type(self):
+        params = self._capture_params("D004")
+        self.assertEqual(params["pblntf_detail_ty"], "D004")
+        self.assertIsNone(params["pblntf_ty"])
+
+    def test_single_char_type_is_sent_as_broad_type(self):
+        params = self._capture_params("B")
+        self.assertEqual(params["pblntf_ty"], "B")
+        self.assertIsNone(params["pblntf_detail_ty"])
+
+
+class UnscopedMarketGuardTests(unittest.TestCase):
+    def test_unscoped_s3_with_dart_skips_market_listing_and_warns(self):
+        # dart is present but yields nothing; the engine must not dump the whole
+        # market's newest filings from OpenDART just to fill the budget.
+        opendart = FakeOpenDart([candidate_from_list_row(_row("20260101000009"))], {})
+        result = SearchEngine(opendart=opendart, dart=FakeDart([])).execute(
+            SearchRequest("희귀한본문문구", date_from="2026-01-01", date_to="2026-01-31")
+        )
+        self.assertEqual(opendart.downloads, [])
+        self.assertTrue(any("무필터" in warning for warning in result.get("warnings", [])))
 
 
 if __name__ == "__main__":

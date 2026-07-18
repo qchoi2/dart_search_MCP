@@ -1,5 +1,14 @@
 # Stage 0 Decisions
 
+## 44. 제목검색(report 모드) 폐기와 OpenDART D004 detail 스코프 전환
+
+- 발견: 0.3.1 실검색에서 `search_mode="report"`, `query_variants=["공개매수"]`로 정상 실행됐으나 DART가 0건을 반환했고(후보 전원 `source_channels=["opendart"]`), 과거 stage 0.6 probe(withdrawal_report_seed)도 reportName 기반 10년 범위에서 normal_zero였다. 즉 report(제목)검색 폼 계약은 한 번도 양성 검증된 적이 없다.
+- 결정: 제목검색(report 모드)은 휴면(폐기)하고, 트리거 질의("공개매수")를 OpenDART 공시검색 상세유형 `pblntf_detail_ty="D004"`(공개매수 신고서·설명서·결과보고서 커버)로 스코프한다. 본문 개념은 전부 AND-of-OR 동시출현 검증으로 확인한다.
+- 근거: D004는 OpenDART 개발가이드/공식 REPORT TYPES(A001 사업보고서, B001 주요사항보고서, C004 증권신고(합병등), D004 공개매수 등)로 확인된 계약이라 probe 없이 채택 가능하다. reportName+keyword 동시지정과 report 폼은 여전히 probe-gated(실측 시 복원 가능).
+- 배선: `SearchPlan.opendart_detail_type`, `list_page`의 4자리코드→`pblntf_detail_ty` 매핑, S2/S3에서 detail 있으면 primary=opendart·secondary=(dart_fulltext,). 무필터 전시장 목록 나열 차단 가드 추가(단 dart 채널 자체가 없으면 opendart 폴백 허용). batch도 detail 스코프 시 dart 채널을 추정·실행에서 배제.
+- 이월: report 폼 재probe(브라우저 실폼 캡처), title_constraints 확대(합병 B001/C004, 분할, 유상증자 등)는 후속.
+
+
 ## 43. 제목제약 검색 전략(제목검색 + 본문 동시출현 검증)
 
 - 결정: 질의에 `title_constraints` 트리거(현행 "공개매수")가 있으면 본문 전체검색 대신 DART 제목검색(`report` 모드, `detailSearchMain.do`)으로 후보 풀을 관련 보고서 수백 건대로 좁히고, 본문 개념(공개매수 포함)은 전부 AND-of-OR 동시출현 검증으로 확인한다. 이로써 12만+건·수십 시간 규모였던 배치 추정이 현실적 범위로 내려온다.

@@ -4,7 +4,7 @@ from app.config import defaults
 
 SEARCH_TOOL = {
     "name": "search_disclosure_cases",
-    "description": "공시 MCP의 속도우선 기능으로 기간이 명확한 한국 DART 공시에서 원문 근거가 있는 사례를 검색합니다. 사용자에게 검색 결과를 제시할 때 각 결과의 original_document_url 또는 original_document_links에 있는 DART 공시 원문 링크를 항상 함께 표시해야 합니다. amendment_comparison 또는 sequence_required를 켜면 S6/S7 온디맨드 관계분석을 수행합니다. 더 넓은 범위가 필요하면 공시 MCP의 심화 검색기능을 안내합니다.",
+    "description": "공시 MCP의 속도우선 기능으로 기간이 명확한 한국 DART 공시에서 원문 근거가 있는 사례를 검색합니다. 사용자에게 검색 결과를 제시할 때 각 결과의 original_document_url 또는 original_document_links에 있는 DART 공시 원문 링크를 항상 함께 표시해야 합니다. amendment_comparison 또는 sequence_required를 켜면 S6/S7 온디맨드 관계분석을 수행합니다. 공개매수 후 주식교환처럼 여러 공시의 선후관계·사건순서를 묻는 질의에는 sequence_required=true를 사용하세요. 더 넓은 범위가 필요하면 공시 MCP의 심화 검색기능을 안내합니다.",
     "inputSchema": {
         "type": "object",
         "required": ["query"],

@@ -442,41 +442,15 @@ class Stage4BatchTests(unittest.TestCase):
 
 
 
-class MnaSearchDart(FakeDart):
-    def __init__(self, clock: Clock, receipts: list[str]) -> None:
-        super().__init__(clock)
-        self.receipts = receipts
-        self.search_calls = 0
-        self.modes: list[str] = []
-
-    def search_page(self, query, date_from, date_to, diagnostics, **kwargs):
-        self.search_calls += 1
-        self.modes.append(kwargs.get("mode", "contents"))
-        diagnostics.dart_result_page_requests += 1
-        rows = tuple(
-            DartResultRow(
-                receipt_no=receipt,
-                corp_code="00126380",
-                company="딜회사",
-                market=None,
-                report_name="공개매수신고서",
-                report_name_prefixes=(),
-                snippet="공개매수",
-                disclosure_group=None,
-                match_scope="body",
-                filer_name="딜회사",
-                receipt_date="20240701",
-                row_tags=(),
-            )
-            for receipt in self.receipts
-        )
-        return DartSearchPage("normal_results", len(rows), rows, (), 1, 1, 1, False)
-
-
 class MnaOpenDart(FakeOpenDart):
-    def __init__(self, docs: dict[str, str]) -> None:
-        super().__init__([])
+    def __init__(self, docs: dict[str, str], receipts: list[str]) -> None:
+        super().__init__([row(receipt) for receipt in receipts])
         self.docs = docs
+        self.list_disclosure_types: list[str | None] = []
+
+    def list_page(self, **kwargs):
+        self.list_disclosure_types.append(kwargs.get("disclosure_type"))
+        return super().list_page(**kwargs)
 
     def download_document(self, receipt_no: str, **kwargs) -> str:
         with self.lock:
@@ -487,15 +461,15 @@ class MnaOpenDart(FakeOpenDart):
 class Stage4TitleConstraintBatchTests(unittest.TestCase):
     MNA_QUERY = "공개매수가 완료될 것을 전제로 한 주식매매계약의 거래종결 사례를 찾아줘"
 
-    def test_title_constraint_batch_uses_report_mode_and_cooccurrence(self):
+    def test_batch_scopes_pool_to_d004_and_verifies_by_cooccurrence(self):
         with tempfile.TemporaryDirectory() as raw:
             clock = Clock()
             docs = {
                 "20240701000001": "공개매수 완료를 전제로 한 주식매매계약의 거래종결 조항이 있다.",
                 "20240701000002": "공개매수 관련 주식매매계약 체결 사실을 공시한다.",
             }
-            channel = MnaOpenDart(docs)
-            dart = MnaSearchDart(clock, list(docs.keys()))
+            channel = MnaOpenDart(docs, list(docs.keys()))
+            dart = FakeSearchDart(clock)
             service = BatchResearchService(
                 Engine(channel, dart),
                 root=Path(raw),
@@ -510,14 +484,18 @@ class Stage4TitleConstraintBatchTests(unittest.TestCase):
                 target_count=10,
                 exhaustive=True,
             )
-            self.assertEqual(plan["dart_query"]["mode"], "report")
-            self.assertEqual(plan["dart_query"]["variants"], ["공개매수"])
+            # Pool is scoped to the D004 detail type; report(title) mode stays off
+            # and the DART body channel is idle for both estimate and execution.
+            self.assertEqual(plan["scope"]["disclosure_types"], ["D004"])
+            self.assertEqual(plan["dart_query"]["mode"], "contents")
+            self.assertEqual(plan["estimated_dart_requests"], 0)
             self.assertGreaterEqual(len(plan["dart_query"]["verification_term_groups"]), 4)
             completed = service.run(plan_id=plan["plan_id"], approved=True, confirmation_interval_minutes=5)
             self.assertEqual(completed["status"], "completed")
             # Only the document where every concept co-occurs is verified.
             self.assertEqual(completed["result_count"], 1)
-            self.assertTrue(all(mode == "report" for mode in dart.modes))
+            self.assertIn("D004", channel.list_disclosure_types)
+            self.assertEqual(dart.search_calls, 0)
             record = service.records.load(completed["search_record_id"])
             self.assertEqual(record["results"][0]["receipt_no"], "20240701000001")
 

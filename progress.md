@@ -1,5 +1,15 @@
 # 진행 기록
 
+## 2026-07-18 제목검색 폐기·D004 스코프 전환 마무리
+
+- 라이브에서 DART 제목검색(report 모드)이 0건을 반환함을 확인(0.3.1). report 폼 계약은 과거 probe에서도 양성 검증된 적이 없어 휴면 처리하고, 공개매수 트리거를 OpenDART 상세유형 D004로 스코프하는 방식으로 전환했다.
+- 코드(이전 세션 반영, 이번 세션 검증·정합화): `list_page`의 4자리코드→`pblntf_detail_ty`, `SearchPlan.opendart_detail_type`, plan_builder의 `title_constraint`(dict 반환)·detail 스코프 시 primary=opendart, engine의 `disclosure_type=plan.opendart_detail_type`, batch의 D004 disclosure_scope. search_terms.yaml에 M&A/포괄적주식교환 동의어그룹·particles/verb_suffixes/drop_endings·title_constraints(D004) 추가.
+- 회귀 수정: (1) 무필터 전시장 나열 차단 가드가 dart 채널이 아예 없는(=opendart 유일) 폴백까지 막아 상계납입 audit이 후보 0이던 문제를 dart 미구성 예외로 해결. (2) batch preview가 title 제약 처리(disclosure_scope=[D004]) 전에 scope 스냅샷을 떠 preview의 scope.disclosure_types가 빈 채 표시되고 scope_signature도 무스코프로 계산되던 순서 버그 수정. (3) batch `_estimate`가 detail 스코프에도 dart 본문검색으로 추정을 부풀리던 것을 dart 배제로 수정.
+- 테스트: `unittest discover` 184 tests OK, `app.evaluation` 24/24. 신규/갱신: 토큰위생·D004 plan·포괄적주식교환 그룹·`list_page`의 D004→`pblntf_detail_ty`·무스코프 나열 차단·batch D004 스코프(dart 배제)+동시출현.
+- 배포: 버전 0.3.1→0.3.2 빌드(`dist/공시검색-MCP-0.3.2.mcpb`). MCP 도구 설명에 선후관계·사건순서 질의 `sequence_required=true` 안내 추가.
+- 이월(측정 선행): D004 스코프 라이브 확인(공개매수 최근 1~2년 verified 근접, SK디앤디/제이시스메디칼 등), 포괄적 주식교환 2단계 딜(비올·한솔피엔에스 등). DART가 이 세션 프록시에서 403 차단이라 미수행, PROBE_RESULTS에 이월.
+
+
 ## 2026-07-18 제목제약 검색 + 질의 분해 마무리
 
 - 배경: "공개매수가 완료될 것을 전제로 … 주식매매계약 관련 공시" 같은 문장형 질의가 (1) 조사·어미가 붙은 토큰("공개매수가", "찾아줘")으로 잘못 분해되고 (2) 본문 전체검색이라 후보 풀 12만+건·배치 37시간대 추정으로 사실상 불가였다.

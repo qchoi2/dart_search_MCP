@@ -180,7 +180,10 @@ class SearchEngine:
                     return self._channel_error_response(exc, lineage, plan, diagnostics, warnings, candidates)
 
         fallback = False
-        disclosure_type = self._opendart_disclosure_type(request)
+        # A report-class scope (pblntf_detail_ty, e.g. D004 공개매수) narrows the
+        # OpenDART list pool to the named class and takes precedence over the
+        # broad-type inference from the query text.
+        disclosure_type = plan.opendart_detail_type or self._opendart_disclosure_type(request)
         if not hard_timeout and plan.primary_channel == "dart_fulltext" and self.dart is not None:
             try:
                 if not self.dart.health_check(diagnostics, deadline=deadline):
@@ -229,11 +232,26 @@ class SearchEngine:
                     )
                 else:
                     raise
+        # An unscoped market-wide list (no company, no disclosure-type scope) is
+        # just the newest filings of the whole market: it carries no candidate
+        # precision for body strategies and only burns the verification budget.
+        listing_scoped = bool(resolved_company_code) or disclosure_type is not None
+        if (
+            self.dart is not None
+            and not listing_scoped
+            and plan.strategy in {"S2_company_fulltext", "S3_market_rare_phrase"}
+            and plan.primary_channel != "opendart"
+            and len(candidates) < plan.result_budget
+        ):
+            warnings.append(
+                "본문검색 후보가 부족하지만 시장 전체 무필터 목록은 검증 가치가 없어 나열하지 않았습니다. "
+                "회사·기간·보고서 유형을 좁히거나 검색어를 바꿔 다시 시도해 주세요."
+            )
         if not hard_timeout and (
             plan.primary_channel == "opendart"
-            or fallback
-            or len(candidates) < plan.result_budget
+            or ((fallback or len(candidates) < plan.result_budget) and (listing_scoped or plan.strategy not in {"S2_company_fulltext", "S3_market_rare_phrase"}))
             or disclosure_type is not None
+            or (self.dart is None and len(candidates) < plan.result_budget)
         ):
             if self.opendart is None:
                 if candidates:

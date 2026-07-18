@@ -71,18 +71,20 @@ def _clean_token(token: str, rules: dict) -> str | None:
     return current
 
 
-def title_constraint(query: str) -> str | None:
-    """Return the report-title query when the query names a constrained class.
+def title_constraint(query: str) -> dict | None:
+    """Return the matched report-class constraint record, or None.
 
-    A matching class (e.g. 공개매수 filings) lets the DART channel search in
-    report(title) mode over a small document pool while every body concept
-    moves to co-occurrence verification.
+    A matching class (e.g. 공개매수 filings) narrows the candidate pool to that
+    report class while every body concept moves to co-occurrence verification.
+    The pool comes from the OpenDART list API's pblntf_detail_ty scope
+    (documented contract); the DART report(title) mode stays dormant until a
+    live probe shows it returning rows (stage 0.6 probe: normal_zero).
     """
     rules = search_term_rules()
     compact = " ".join(query.split())
     for record in rules.get("title_constraints", {}).values():
         if any(term in compact for term in record.get("trigger_terms", [])):
-            return record["title_query"]
+            return record
     return None
 
 
@@ -206,15 +208,18 @@ def build_search_plan(request: SearchRequest) -> SearchPlan:
     strategy, primary, secondary = choose_strategy(request)
     variants, verification_groups = strategy_terms(request, strategy)
     search_mode = "contents"
+    opendart_detail_type: str | None = None
     if strategy in {"S2_company_fulltext", "S3_market_rare_phrase"}:
-        title_query = title_constraint(request.query)
-        if title_query is not None:
-            # Title mode shrinks the pool to the named report class; every body
-            # concept (including the trigger itself) verifies by co-occurrence.
-            search_mode = "report"
+        constraint = title_constraint(request.query)
+        if constraint is not None and constraint.get("opendart_detail_type"):
+            # Report-class scope: the OpenDART list (pblntf_detail_ty) provides
+            # a small newest-first pool; every body concept (including the
+            # trigger itself) verifies by co-occurrence. The engine walks the
+            # pool newest-first and stops once result_budget cases verify.
+            opendart_detail_type = constraint["opendart_detail_type"]
+            primary, secondary = "opendart", ("dart_fulltext",)
             if not verification_groups:
                 _, verification_groups = decompose_query(request.query)
-            variants = (title_query,)
     if request.mode == "fast":
         list_budget = defaults.FAST_LIST_REQUEST_BUDGET
         dart_budget = defaults.FAST_DART_REQUEST_BUDGET
@@ -266,4 +271,5 @@ def build_search_plan(request: SearchRequest) -> SearchPlan:
         batch_threshold=(("estimated_documents", defaults.BATCH_ESTIMATED_DOCUMENT_THRESHOLD), ("estimated_seconds", defaults.BATCH_ESTIMATED_SECONDS_THRESHOLD)),
         verification_term_groups=verification_groups,
         search_mode=search_mode,
+        opendart_detail_type=opendart_detail_type,
     )

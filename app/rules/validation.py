@@ -32,6 +32,9 @@ def load_rule_file(path: Path, kind: str) -> dict[str, Any]:
                 raise ValueError(f"{path.name}: title_constraints.{name} needs a non-empty 'title_query'")
             if not isinstance(triggers, list) or not triggers or not all(isinstance(item, str) and item for item in triggers):
                 raise ValueError(f"{path.name}: title_constraints.{name}.trigger_terms must be a non-empty string list")
+            detail = record.get("opendart_detail_type")
+            if detail is not None and not (isinstance(detail, str) and len(detail) == 4):
+                raise ValueError(f"{path.name}: title_constraints.{name}.opendart_detail_type must be a 4-char code like D004")
         groups = payload.get("synonym_groups", {})
         if not isinstance(groups, dict):
             raise ValueError(f"{path.name}: synonym_groups must be an object")

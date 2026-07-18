@@ -97,6 +97,20 @@ class BatchResearchService:
             exhaustive=exhaustive,
             output_mode="batch",
         )
+        variants, verification_groups = resolve_query_terms(query)
+        search_mode = "contents"
+        constraint = title_constraint(query)
+        if constraint is not None and constraint.get("opendart_detail_type"):
+            # Report-class scope: the OpenDART list (pblntf_detail_ty) shrinks
+            # the pool to the named class; every body concept (including the
+            # trigger) then verifies by co-occurrence. The DART report(title)
+            # mode stays dormant until a live probe shows it returning rows.
+            if not disclosure_scope:
+                disclosure_scope = [constraint["opendart_detail_type"]]
+            if not verification_groups:
+                _, verification_groups = decompose_query(query)
+        variants = list(variants)
+        verification_groups = [list(group) for group in verification_groups]
         scope = {
             "query_hash": hashlib.sha256(query.strip().lower().encode("utf-8")).hexdigest(),
             "company": company,
@@ -122,18 +136,6 @@ class BatchResearchService:
         )
         if existing is not None:
             return existing
-        variants, verification_groups = resolve_query_terms(query)
-        search_mode = "contents"
-        title_query = title_constraint(query)
-        if title_query is not None:
-            # Title-mode shrinks the pool to the named report class; every body
-            # concept (including the trigger) then verifies by co-occurrence.
-            search_mode = "report"
-            if not verification_groups:
-                _, verification_groups = decompose_query(query)
-            variants = (title_query,)
-        variants = list(variants)
-        verification_groups = [list(group) for group in verification_groups]
         windows = list(reversed(split_date_windows(date_from, date_to)))
         estimate = self._estimate(request, variants, windows, disclosure_scope, resolved_company_code, search_mode)
         payload = {
@@ -272,7 +274,10 @@ class BatchResearchService:
         # Preview is deliberately metadata-only: no disclosure document is downloaded.
         type_scopes: list[str | None] = disclosure_types or [None]
         opendart_available = self.opendart is not None and hasattr(self.opendart, "list_page")
-        dart_available = self.dart is not None and hasattr(self.dart, "search_page")
+        # A report-class scope (e.g. D004) runs the deep search on the scoped
+        # OpenDART list only; the DART body channel is idle, so it must not
+        # inflate the estimate with unscoped whole-market keyword hits.
+        dart_available = self.dart is not None and hasattr(self.dart, "search_page") and not disclosure_types
         estimated_list_requests = len(windows) * len(type_scopes) if opendart_available else 0
         estimated_dart_requests = len(windows) * max(1, len(variants)) if dart_available else 0
         observed_list_rows = 0
