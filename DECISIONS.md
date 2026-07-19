@@ -1,5 +1,14 @@
 # Stage 0 Decisions
 
+## 47. 대화형 타임아웃 계약 복원 (클라이언트 한도 우선)
+
+- 사건: 0.3.4에서 standard soft/hard를 180/210으로 올리자 표준 질의가 클라이언트(Claude Desktop) 도구 타임아웃을 넘겨 4분+ 대기 후 "서버 무응답"으로 취급됐다. 서버는 정상 처리 중이었다.
+- 결정: standard soft/hard를 60/90으로 복원한다. 대화형 호출은 반드시 MCP 클라이언트의 도구 타임아웃 안에서 끝나야 하며, 한 호출에서 못 끝낸 몫은 설계대로 continuation token으로 이어진다. 이 값들은 "한 호출에 더 담으려" 올리지 않는다(defaults.py 경고 주석 명시).
+- 문서 예산(headroom 4, `STANDARD_DOCUMENT_BUDGET` 60)은 유지: 시간이 아니라 한 호출 내 확인 문서 수를 늘리는 것이라 클라이언트 타임아웃과 무관하며, 90초 안에 처리되지 못한 후보는 continuation으로 넘어간다.
+- 회귀 방지: `build_search_plan` 표준 계획에서 hard_timeout<=90을 단언하는 테스트를 추가했다. `RELEASE_CHECKLIST` 스모크 1번 항목을 server_version 확인으로 바꿔 설치본 불일치를 최우선 점검한다(설치 경로도 "설정 → 확장 → 확장 설치"로 정정).
+- 이월(라이브): 재설치(0.3.5)·완전 재시작 후 (a) "2025년 상계납입" 90초 내 verified, (b) D004 심화검색 2건 완주·verified 확인. 이 세션은 로컬 MCP 연결이 끊기고 DART가 차단되어 미수행.
+
+
 ## 46. 배치 정체 수정·기본 검색 예산 상향·server_version 노출
 
 - 배치 정체 수정: 문서 검증 단계에서 영구 문서오류(`OPENDART_FILE_NOT_FOUND`/`DOCUMENT_PARSE_FAILED`/`OPENDART_PRIVACY_RETENTION_EXPIRED` 및 일반 예외)는 해당 접수번호를 processed로 표시하고 diagnostics에 `skipped_permanent_document_failure`로 기록 후 전진한다. 일시 오류(rate limit/temporary/timeout)와 계정 오류만 체크포인트를 되감고 중단한다. 되감기+재다운로드 무한반복으로 배치가 한 행에서 정체되던 문제를 해결.

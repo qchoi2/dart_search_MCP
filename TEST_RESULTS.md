@@ -1,5 +1,13 @@
 # 테스트 결과
 
+## 타임아웃 계약 복원 (2026-07-19 KST, 세션 샌드박스)
+
+- `python -m pytest -q`: 189 passed, 20 subtests passed.
+- `python -m app.evaluation`: 24/24.
+- 신규/변경: 표준 계획 hard_timeout<=90 회귀방지 테스트, 하드타임아웃 테스트 시계값 원복, RELEASE_CHECKLIST 스모크(server_version 1번).
+- MCPB 재빌드: `dist/공시검색-MCP-0.3.5.mcpb`, SHA-256 `ac89a63938be13f184b68832e414e39f381618f8e6e047d61ebfdf424f1a068c`.
+
+
 ## 배치 정체 수정·예산 상향 (2026-07-19 KST, 세션 샌드박스)
 
 - `python -m pytest -q`: 188 passed, 20 subtests passed.

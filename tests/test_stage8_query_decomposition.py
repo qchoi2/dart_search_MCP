@@ -316,5 +316,18 @@ class ServerVersionTests(unittest.TestCase):
         self.assertEqual(payload["server_version"], PRODUCT_VERSION)
 
 
+
+class StandardTimeoutContractTests(unittest.TestCase):
+    def test_standard_plan_stays_within_client_tool_timeout(self):
+        # Interactive/standard calls must finish inside the MCP client's own tool
+        # timeout; work beyond one call flows through continuation tokens, not
+        # longer waits (0.3.4 raised these to 210s and clients aborted).
+        plan = build_search_plan(SearchRequest(
+            "공개매수 거래종결 사례", date_from="2024-01-01", date_to="2024-12-31",
+        ))
+        self.assertLessEqual(plan.hard_timeout_seconds, 90)
+        self.assertLessEqual(plan.soft_timeout_seconds, plan.hard_timeout_seconds)
+
+
 if __name__ == "__main__":
     unittest.main()

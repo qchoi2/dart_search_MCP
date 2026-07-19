@@ -1,5 +1,14 @@
 # 진행 기록
 
+## 2026-07-19 대화형 타임아웃 계약 복원 (핸드오프 v4, 0.3.5)
+
+- 사건: 0.3.4에서 올린 standard 타임아웃(soft 180/hard 210)이 Claude Desktop 도구 타임아웃을 넘겨, 표준 질의("2025년 상계납입")가 4분+ 대기 후 "서버 무응답"으로 판정됐다. 진단상 서버·패키지는 정상(샌드박스에서 동일 질의 40초 내 completed), 원인은 클라이언트가 먼저 포기한 것.
+- 수정: standard soft/hard를 60/90으로 복원(+ defaults.py 경고 주석). 문서 예산 상향(headroom 4, DOCUMENT_BUDGET 60)은 유지 — 한 호출에서 못 끝낸 몫은 continuation token으로 이어진다. PRODUCT_VERSION 0.3.5.
+- 회귀 방지: 표준 계획 hard_timeout<=90 단언 테스트 추가, 하드타임아웃 테스트 시계값 원복. RELEASE_CHECKLIST 스모크 1번을 server_version 확인으로 교체(+설치 경로 "설정 → 확장 → 확장 설치"로 정정, 자동시험 수 189로 갱신).
+- 검증: pytest 189 passed, app.evaluation 24/24. 배포: 0.3.4→0.3.5 재빌드.
+- 이월(라이브, DART/로컬 MCP 접근 필요): (a) "2025년 상계납입" 90초 내 verified, (b) D004 심화검색 2건 정체 없이 완주·verified. 이 세션에서 로컬 공시검색 MCP 연결이 끊기고 DART가 프록시에서 차단되어 미수행. PROBE_RESULTS에 이월.
+
+
 ## 2026-07-19 배치 정체 수정·예산 상향·server_version (핸드오프 v3)
 
 - 핸드오프 v3 반영: (1) 배치 문서검증의 영구오류(FILE_NOT_FOUND/PARSE/PRIVACY/일반예외)는 processed로 전진, 일시오류만 되감기·중단 — 되감기 무한반복 정체 해소. (2) 모든 도구 결과에 server_version 노출.

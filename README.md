@@ -1,4 +1,4 @@
-# DART 공시검색 MCP v0.3.4
+# DART 공시검색 MCP v0.3.5
 
 이 저장소는 OpenDART 목록·원문과 DART 본문검색을 제한 예산 안에서 결합해, 접수번호와 원문 근거가 있는 공시 사례를 반환하는 Claude Desktop MCP 서버다. 모든 검색결과에는 `original_document_url`을 제공하며, 여러 원문으로 구성된 결과는 `original_document_links`에 DART 원문 링크를 함께 제공한다.
 
@@ -7,7 +7,7 @@
 배포용 파일은 MCPB 패키지다.
 
 ```text
-dist/공시검색-MCP-0.3.4.mcpb
+dist/공시검색-MCP-0.3.5.mcpb
 dist/사용설명서.html
 dist/SHA256SUMS.txt
 ```

@@ -7,7 +7,7 @@ describe behaviour, but do not duplicate these operational limits.
 from __future__ import annotations
 
 SCHEMA_VERSION = "1.0"
-PRODUCT_VERSION = "0.3.4"
+PRODUCT_VERSION = "0.3.5"
 # Stage 0/0.6 measurement used this explicitly identifying, non-browser UA.
 USER_AGENT = "dart-search-mcp-stage0-probe/0.1 (local measurement; concurrency=1)"
 
@@ -36,8 +36,12 @@ STANDARD_DART_REQUEST_BUDGET = 10
 STANDARD_DOCUMENT_BUDGET = 60
 STANDARD_RESULT_BUDGET = 20
 STANDARD_PRELIMINARY_BUDGET = 10
-STANDARD_SOFT_TIMEOUT_SECONDS = 180
-STANDARD_HARD_TIMEOUT_SECONDS = 210
+# Interactive calls must answer inside the MCP client's own tool timeout
+# (Claude Desktop aborts long tool calls and reports the server unresponsive —
+# observed live with 210s). Coverage beyond one call flows through
+# continuation tokens by design; do not raise these to "fit more in one call".
+STANDARD_SOFT_TIMEOUT_SECONDS = 60
+STANDARD_HARD_TIMEOUT_SECONDS = 90
 FIRST_CANDIDATE_TARGET_SECONDS = 8
 MAX_ESCALATIONS = 2
 # When a query does not name a period (or is otherwise unscoped enough to risk a
